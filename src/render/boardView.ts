@@ -11,6 +11,7 @@ const BASE_A = new THREE.Color(0x8d7a78);
 const BASE_B = new THREE.Color(0x84716f);
 const INFLAMED = new THREE.Color(0xc4554a);
 const HOVER_TINT = new THREE.Color(0xffffff);
+const PULSE_TINT = new THREE.Color(0xff8a5c);
 const SLAB = 0x3a2f31;
 // Order UI: magenta-violet, apart from the telegraph's yellow/blue/red/white. Shape carries it too:
 // a thick solid frame for the selection, filled discs with a ring for destinations.
@@ -26,6 +27,9 @@ export interface BoardView {
   setSelected(coord: Coord | null): void;
   /** Marks legal destination tiles for the selected swarm. */
   setOptions(coords: readonly Coord[]): void;
+  /** Playback: 0..1 warm tint on a tile (inflammation change or summary pulse). */
+  setPulse(coord: Coord, amount: number): void;
+  clearPulses(): void;
   /** Centre of a tile in world space (y = top surface), for later views to place things. */
   tilePosition(coord: Coord): THREE.Vector3;
 }
@@ -123,6 +127,7 @@ export function createBoardView(
   let hover: Coord | null = null;
   let selected: Coord | null = null;
   let lastState = state;
+  const pulses = new Float32Array(board.tiles.length);
 
   const colorTile = (id: number, s: BattleState) => {
     const c = coordOf(board, id);
@@ -136,6 +141,7 @@ export function createBoardView(
     );
     const mat = meshes[id]!.material as THREE.MeshStandardMaterial;
     mat.color.copy(base).lerp(INFLAMED, t * 0.7);
+    if (pulses[id]! > 0) mat.color.lerp(PULSE_TINT, pulses[id]! * 0.8);
     if (hover && sameCoord(hover, c)) mat.color.lerp(HOVER_TINT, 0.25);
   };
 
@@ -192,6 +198,20 @@ export function createBoardView(
           g.position.set(p.x, 0.01, p.z);
         }
       });
+    },
+    setPulse(coord, amount) {
+      if (!inBounds(board, coord)) return;
+      const id = tileId(board, coord);
+      if (pulses[id] === amount) return;
+      pulses[id] = amount;
+      colorTile(id, lastState);
+    },
+    clearPulses() {
+      for (let id = 0; id < pulses.length; id++) {
+        if (pulses[id] === 0) continue;
+        pulses[id] = 0;
+        colorTile(id, lastState);
+      }
     },
     tilePosition: (c) => toWorld(c),
   };

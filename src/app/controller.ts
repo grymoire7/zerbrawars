@@ -12,6 +12,7 @@ import {
 import { PARAMS } from "../sim/params";
 import { resolveTurn } from "../sim/battle/resolve";
 import { pathogenKind } from "../sim/pathogens";
+import { createPlayback, type Playback, type Speed } from "../render/playback";
 import type {
   BattleState,
   Coord,
@@ -209,9 +210,28 @@ export function oddsFor(
   };
 }
 
+export type ControllerMode = "plan" | "playback";
+
 export interface Controller {
+  /** The sim state (already the post-turn state during playback). */
   state(): BattleState;
-  /** Events from the most recent resolve; empty after a reset. */
+  /** What the board should show: the pre-turn state while a turn plays, else state(). */
+  displayState(): BattleState;
+  mode(): ControllerMode;
+  /** The latest turn's playback (finished ones included); null before the first turn. */
+  playback(): Playback | null;
+  /** Advances playback by real seconds; back to plan mode when it ends. */
+  tick(dtSeconds: number): void;
+  skip(): void;
+  /** Plays the last turn again from its saved pre-turn state and events. */
+  replay(): void;
+  canReplay(): boolean;
+  speed(): Speed;
+  setSpeed(speed: Speed): void;
+  /** Skip playback by default (prefers-reduced-motion), with a summary pulse instead. */
+  reducedMotion(): boolean;
+  setReducedMotion(on: boolean): void;
+  /** Events from the most recent resolve, as far as playback has revealed them; empty after a reset. */
   lastEvents(): readonly SimEvent[];
   canEndTurn(): boolean;
   orders(): readonly Order[];
@@ -235,32 +255,79 @@ export interface Controller {
   cycle(dir?: 1 | -1): void;
   tap(at: Coord | null): void;
   clearOrder(id: SwarmId): void;
-  /** Resolves with the pending orders and swaps in the new state (no playback yet). */
+  /** Resolves with the pending orders, swaps in the new state and plays the turn. */
   endTurn(): void;
   /** Reloads the scenario with the same seed. */
   reset(): void;
 }
 
+/** What a played turn needs to be replayed. */
+interface PlayedTurn {
+  readonly before: BattleState;
+  readonly orders: readonly Order[];
+  readonly events: readonly SimEvent[];
+  readonly after: BattleState;
+}
+
 export function createController(
   load: () => BattleState,
   onChange: (c: Controller) => void,
+  options: { reducedMotion?: boolean } = {},
 ): Controller {
   let state = load();
   let events: readonly SimEvent[] = [];
   let ui: OrderUi = NONE;
   let problems: readonly string[] = [];
   let hovered: Coord | null = null;
+  let last: PlayedTurn | null = null;
+  let pb: Playback | null = null;
+  let speed: Speed = 1;
+  let reduced = options.reducedMotion ?? false;
+  const playing = () => pb !== null && !pb.done;
   const hoverTarget = () =>
     hovered ? targetAt(state, ui, hovered) : undefined;
   const set = (next: OrderUi) => {
+    if (playing()) return;
     ui = next;
     problems = [];
     onChange(c);
   };
+  const play = (turn: PlayedTurn, instant: boolean) => {
+    pb = createPlayback(turn.before, turn.events, turn.after, speed);
+    if (instant) pb.skip();
+    onChange(c);
+  };
   const c: Controller = {
     state: () => state,
-    lastEvents: () => events,
-    canEndTurn: () => state.turn <= state.maxTurns,
+    displayState: () => (pb && !pb.done ? pb.displayState() : state),
+    mode: () => (playing() ? "playback" : "plan"),
+    playback: () => pb,
+    tick(dt) {
+      if (pb && !pb.done && pb.advance(dt)) onChange(c);
+    },
+    skip() {
+      if (!playing()) return;
+      pb!.skip();
+      onChange(c);
+    },
+    replay() {
+      if (playing() || !last) return;
+      play(last, false);
+    },
+    canReplay: () => !playing() && last !== null,
+    speed: () => speed,
+    setSpeed(next) {
+      speed = next;
+      if (pb) pb.speed = next;
+      onChange(c);
+    },
+    reducedMotion: () => reduced,
+    setReducedMotion(on) {
+      reduced = on;
+      onChange(c);
+    },
+    lastEvents: () => (pb && !pb.done ? pb.revealed() : events),
+    canEndTurn: () => !playing() && state.turn <= state.maxTurns,
     orders: () => ui.orders,
     selected: () => ui.selected,
     options: () => orderOptions(state, ui),
@@ -291,11 +358,15 @@ export function createController(
       });
     },
     hover(at) {
+      if (playing()) return;
       const before = hoverTarget()?.pathogenId;
       hovered = at;
       if (hoverTarget()?.pathogenId !== before) onChange(c);
     },
-    marks: () => telegraph(state, ui.orders),
+    marks: () =>
+      playing() && last
+        ? telegraph(last.before, last.orders)
+        : telegraph(state, ui.orders),
     pending() {
       const list = ui.orders.map((o) => ({
         swarmId: o.swarmId,
@@ -327,18 +398,23 @@ export function createController(
         onChange(c);
         return;
       }
+      const before = state;
       const r = resolveTurn(state, ui.orders);
+      last = { before, orders: ui.orders, events: r.events, after: r.state };
       state = r.state;
       events = r.events;
       ui = NONE;
       problems = [];
-      onChange(c);
+      hovered = null;
+      play(last, reduced);
     },
     reset() {
       state = load();
       events = [];
       ui = NONE;
       problems = [];
+      last = null;
+      pb = null;
       onChange(c);
     },
   };

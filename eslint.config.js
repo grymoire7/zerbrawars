@@ -34,4 +34,21 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Pure presentation logic that tests run in Node.
+    files: ["src/render/playback.ts", "src/render/**/*.test.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["three", "three/*"],
+              message: "Pure render modules must not import three.js.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

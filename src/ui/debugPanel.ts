@@ -3,13 +3,22 @@ import { SCENARIO_NAMES } from "../sim/scenarios";
 export interface DebugPanelOptions {
   readonly scenario: string;
   readonly seed: number;
+  /** Skip turn playback (starts from prefers-reduced-motion). */
+  readonly skipPlayback: boolean;
+  onSkipPlayback(on: boolean): void;
+}
+
+export interface DebugPanel {
+  readonly element: HTMLElement;
+  /** Frame stats line, e.g. "60 fps  16.6 ms (max 18.0)". */
+  setStats(text: string): void;
 }
 
 /** Small collapsible panel. Changing scenario or seed reloads with matching URL parameters. */
 export function createDebugPanel(
   root: HTMLElement,
   opts: DebugPanelOptions,
-): HTMLElement {
+): DebugPanel {
   const panel = document.createElement("div");
   panel.style.cssText =
     "position:absolute;right:8px;top:8px;pointer-events:auto;font:14px sans-serif;" +
@@ -58,7 +67,20 @@ export function createDebugPanel(
   select.addEventListener("change", apply);
   seed.addEventListener("change", apply);
 
-  body.append(label("Scenario", select), label("Seed", seed));
+  const skip = document.createElement("input");
+  skip.type = "checkbox";
+  skip.checked = opts.skipPlayback;
+  skip.style.cssText = "width:20px;height:20px;margin:0;";
+  skip.addEventListener("change", () => opts.onSkipPlayback(skip.checked));
+  const skipRow = document.createElement("label");
+  skipRow.style.cssText =
+    "display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;";
+  skipRow.append(skip, "Skip playback (reduced motion)");
+
+  const stats = document.createElement("div");
+  stats.style.cssText = "font:11px monospace;opacity:0.8;padding:0 4px;";
+
+  body.append(label("Scenario", select), label("Seed", seed), skipRow);
 
   let open = false;
   const sync = () => {
@@ -73,7 +95,12 @@ export function createDebugPanel(
   });
   sync();
 
-  panel.append(toggle, body);
+  panel.append(toggle, stats, body);
   root.appendChild(panel);
-  return panel;
+  return {
+    element: panel,
+    setStats(text) {
+      stats.textContent = text;
+    },
+  };
 }

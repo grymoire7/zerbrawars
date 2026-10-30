@@ -14,6 +14,14 @@ export interface HudOdds {
   readonly valid: boolean;
 }
 
+export interface HudPlayback {
+  readonly playing: boolean;
+  readonly speed: 1 | 2;
+  readonly canReplay: boolean;
+  /** Turn being played (the pre-turn number). */
+  readonly turn: number;
+}
+
 export interface HudModel {
   readonly turn: number;
   readonly maxTurns: number;
@@ -23,14 +31,22 @@ export interface HudModel {
   readonly orders: readonly HudOrder[];
   readonly odds: readonly HudOdds[];
   readonly problems: readonly string[];
+  readonly playback: HudPlayback;
 }
 
 export interface Hud {
   update(model: HudModel): void;
+  /** Cheap per-frame update while a turn plays: ticking tissue number and progress 0..1. */
+  setLive(tissueHealth: number, progress: number): void;
+  /** Brief highlight of the log (the reduced-motion summary). */
+  pulse(): void;
 }
 
 export interface HudHandlers {
   onEndTurn(): void;
+  onSkip(): void;
+  onReplay(): void;
+  onSpeed(speed: 1 | 2): void;
   onReset(): void;
   onSelect(swarmId: string): void;
   onClearOrder(swarmId: string): void;
@@ -88,19 +104,22 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
   };
   const endTurn = button("End Turn", handlers.onEndTurn);
   const reset = button("Reset", handlers.onReset);
-  row.append(stats, endTurn, reset);
+  const replay = button("Replay last turn", handlers.onReplay);
+  const x1 = button("1x", () => handlers.onSpeed(1));
+  const x2 = button("2x", () => handlers.onSpeed(2));
+  const skip = button("Skip", handlers.onSkip);
+  skip.title = "Skip to the end of the turn (Enter or Space)";
+  const progress = document.createElement("div");
+  progress.style.cssText =
+    "position:absolute;left:0;bottom:0;height:3px;background:#9fd8f0;width:0;";
+  stats.style.position = "relative";
+  stats.style.overflow = "hidden";
+  stats.append(progress);
+  row.append(stats, endTurn, x1, x2, skip, replay, reset);
   bar.append(log, problems, odds, orders, row);
   root.appendChild(bar);
 
-  let canEnd = true;
-  window.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" || e.repeat || !canEnd) return;
-    // Focused controls already turn Enter into a click.
-    const t = e.target as HTMLElement | null;
-    if (t && ["BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(t.tagName))
-      return;
-    handlers.onEndTurn();
-  });
+  let shownTissue = -1;
 
   const orderChip = (o: HudOrder) => {
     const chip = document.createElement("div");
@@ -178,12 +197,37 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
           return d;
         }),
       );
-      canEnd = m.canEndTurn;
-      turn.textContent = m.canEndTurn
-        ? `Turn ${m.turn} / ${m.maxTurns}`
-        : "Battle over (T8 pending)";
-      health.textContent = `Tissue ${m.tissueHealth}`;
+      const pb = m.playback;
+      if (pb.playing) {
+        turn.textContent = `Playing turn ${pb.turn}`;
+        turn.style.color = "#9fd8f0";
+      } else {
+        turn.textContent =
+          m.turn <= m.maxTurns
+            ? `Turn ${m.turn} / ${m.maxTurns}`
+            : "Battle over (T8 pending)";
+        turn.style.color = "";
+        progress.style.width = "0";
+      }
+      if (!pb.playing) {
+        shownTissue = m.tissueHealth;
+        health.textContent = `Tissue ${m.tissueHealth}`;
+      }
       endTurn.disabled = !m.canEndTurn;
+      endTurn.style.display = pb.playing ? "none" : "";
+      for (const [b, s] of [
+        [x1, 1],
+        [x2, 2],
+      ] as const) {
+        b.style.display = pb.playing ? "" : "none";
+        b.setAttribute("aria-pressed", String(pb.speed === s));
+        b.style.fontWeight = pb.speed === s ? "700" : "";
+        b.style.outline = pb.speed === s ? "2px solid #9fd8f0" : "";
+      }
+      skip.style.display = pb.playing ? "" : "none";
+      replay.style.display = pb.playing ? "none" : "";
+      replay.disabled = !pb.canReplay;
+      reset.disabled = pb.playing;
       log.style.display = m.log.length > 0 ? "block" : "none";
       log.replaceChildren(
         ...m.log.map((line) => {
@@ -191,6 +235,22 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
           d.textContent = line;
           return d;
         }),
+      );
+    },
+    setLive(tissue, p) {
+      if (tissue !== shownTissue) {
+        shownTissue = tissue;
+        health.textContent = `Tissue ${tissue}`;
+      }
+      progress.style.width = `${Math.round(p * 100)}%`;
+    },
+    pulse() {
+      log.animate(
+        [
+          { boxShadow: "0 0 0 2px #ff8a5c", background: "rgba(80,48,40,0.9)" },
+          { boxShadow: "0 0 0 0 transparent" },
+        ],
+        { duration: 900, easing: "ease-out" },
       );
     },
   };

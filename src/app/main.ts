@@ -1,6 +1,9 @@
 import { createBoardView } from "../render/boardView";
+import { createFxView } from "../render/fxView";
 import { createOrderView } from "../render/orderView";
 import { createPathogenView } from "../render/pathogenView";
+import type { Playback } from "../render/playback";
+import { createPlaybackView } from "../render/playbackView";
 import { createScene } from "../render/scene";
 import { createSwarmView } from "../render/swarmView";
 import { createTelegraphView } from "../render/telegraphView";
@@ -38,7 +41,13 @@ const load = () => {
   return s;
 };
 
-const controller = createController(load, (c) => refresh(c.state()));
+const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+const controller = createController(load, () => refresh(), {
+  reducedMotion: motionQuery.matches,
+});
+motionQuery.addEventListener("change", (e) =>
+  controller.setReducedMotion(e.matches),
+);
 const state = controller.state();
 
 const { board } = state;
@@ -51,8 +60,19 @@ const pathogenView = createPathogenView(scene, view.tilePosition);
 const swarmView = createSwarmView(scene, view.tilePosition);
 const telegraphView = createTelegraphView(scene, view.tilePosition);
 const orderView = createOrderView(scene, view.tilePosition);
+const fxView = createFxView(scene);
+const playbackView = createPlaybackView({
+  board: view,
+  swarms: swarmView,
+  pathogens: pathogenView,
+  fx: fxView,
+  tilePosition: view.tilePosition,
+});
 const hud = createHud(ui, {
   onEndTurn: () => controller.endTurn(),
+  onSkip: () => controller.skip(),
+  onReplay: () => controller.replay(),
+  onSpeed: (speed) => controller.setSpeed(speed),
   onReset: () => controller.reset(),
   onSelect: (id) => controller.select(id),
   onClearOrder: (id) => controller.clearOrder(id),
@@ -68,11 +88,45 @@ const updateReadout = () => {
   readout.textContent = `hover ${fmt(hovered)}  selected ${fmt(selected)}`;
 };
 updateReadout();
-function refresh(s: typeof state) {
-  view.update(s);
-  pathogenView.update(s);
-  swarmView.update(s);
-  telegraphView.update(s, controller.marks());
+// The playback the scene is animating, and the last one seen (to spot a new or finished one).
+let playing: Playback | null = null;
+let seen: Playback | null = null;
+let shown: typeof state | null = null;
+function refresh() {
+  const pb = controller.playback();
+  let snap = false;
+  let began = false;
+  if (playing && (playing.done || playing !== pb)) {
+    snap = playing.skipped || playing !== pb;
+    playing = null;
+    playbackView.end();
+    shown = null;
+  }
+  if (pb !== seen) {
+    seen = pb;
+    if (pb && !pb.done) {
+      began = true;
+      playing = pb;
+      playbackView.begin(pb);
+      shown = pb.before;
+    } else if (pb) {
+      // Reduced motion: the turn was skipped at once.
+      snap = true;
+      playbackView.summary(pb);
+      hud.pulse();
+    }
+  }
+  const s = controller.displayState();
+  // During playback the playback view owns the board, tokens and swarms.
+  if (!playing && s !== shown) {
+    view.update(s);
+    pathogenView.update(s);
+    swarmView.update(s, snap);
+    shown = s;
+  }
+  // The pre-turn telegraph stays up (dimmed) while the turn plays out over it.
+  if (!playing || began) telegraphView.update(s, controller.marks());
+  telegraphView.setDim(playing !== null);
   orderView.update(s, controller.orders(), controller.targets());
   const sel = s.swarms.find((w) => w.id === controller.selected());
   view.setSelected(sel?.at ?? null);
@@ -88,12 +142,20 @@ function refresh(s: typeof state) {
     orders: controller.pending(),
     odds: controller.odds(),
     problems: controller.problems(),
+    playback: {
+      playing: playing !== null,
+      speed: controller.speed(),
+      canReplay: controller.canReplay(),
+      turn: playing?.before.turn ?? s.turn,
+    },
   });
 }
-refresh(state);
-createDebugPanel(ui, {
+refresh();
+const debug = createDebugPanel(ui, {
   scenario: state.scenario,
   seed: validSeed ?? PARAMS.defaultSeed,
+  skipPlayback: controller.reducedMotion(),
+  onSkipPlayback: (on) => controller.setReducedMotion(on),
 });
 
 // Pointer events (not mouse) so touch works; the canvas must not pan or zoom on touch.
@@ -123,7 +185,14 @@ canvas.addEventListener("pointerdown", (e) => {
 window.addEventListener("keydown", (e) => {
   const t = e.target as HTMLElement | null;
   if (t && ["INPUT", "SELECT", "TEXTAREA"].includes(t.tagName)) return;
-  if (e.key === "Tab") {
+  // A focused, enabled button already turns Enter and Space into a click.
+  const onButton =
+    t?.tagName === "BUTTON" && !(t as HTMLButtonElement).disabled;
+  if ((e.key === "Enter" || e.key === " ") && !e.repeat && !onButton) {
+    e.preventDefault();
+    if (controller.mode() === "playback") controller.skip();
+    else if (e.key === "Enter") controller.endTurn();
+  } else if (e.key === "Tab") {
     e.preventDefault();
     controller.cycle(e.shiftKey ? -1 : 1);
   } else if (e.key === "Escape") {
@@ -138,9 +207,37 @@ canvas.addEventListener("pointerleave", () => {
 });
 
 let last = performance.now();
+let statFrames = 0;
+let statTime = 0;
+let statMax = 0;
 function frame(now: number = performance.now()) {
-  const dt = Math.min((now - last) / 1000, 0.1);
+  const raw = now - last;
+  const dt = Math.min(raw / 1000, 0.1);
   last = now;
+  statFrames++;
+  statTime += raw;
+  statMax = Math.max(statMax, raw);
+  if (statTime >= 500) {
+    const ms = statTime / statFrames;
+    debug.setStats(
+      `${Math.round(1000 / ms)} fps  ${ms.toFixed(1)} ms (max ${statMax.toFixed(1)})`,
+    );
+    statFrames = 0;
+    statTime = 0;
+    statMax = 0;
+  }
+  controller.tick(dt);
+  if (playing) {
+    playbackView.frame(playing.time);
+    const tissue = playbackView.tissue();
+    hud.setLive(
+      tissue ?? playing.before.tissueHealth,
+      playing.timeline.duration > 0
+        ? playing.time / playing.timeline.duration
+        : 1,
+    );
+  }
+  playbackView.tick(dt);
   pathogenView.tick(dt);
   swarmView.tick(dt);
   render();

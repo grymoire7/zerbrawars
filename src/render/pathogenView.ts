@@ -1,18 +1,34 @@
 import * as THREE from "three";
 import { PATHOGEN_KINDS, type PathogenForm } from "../sim/pathogens";
-import type { BattleState, Coord, Pathogen } from "../sim/types";
+import type { BattleState, Coord, Pathogen, PathogenId } from "../sim/types";
 
 export interface PathogenView {
   readonly group: THREE.Group;
-  /** Rebuilds tokens from state. Reads only; never mutates it. */
-  update(state: BattleState): void;
+  /**
+   * Rebuilds tokens from the pathogens given (state's by default). Reads only; never mutates it.
+   * Playback passes extra not-yet-born pathogens so it can grow them in.
+   */
+  update(state: BattleState, pathogens?: readonly Pathogen[]): void;
+  /** Playback pose: uniform scale, vertical squash and a world offset from the tile. */
+  setPose(
+    id: PathogenId,
+    scale: number,
+    squash: number,
+    dx: number,
+    dy: number,
+    dz: number,
+  ): void;
+  /** Shows a different size (body scale and pips) without rebuilding everything. */
+  setSize(id: PathogenId, size: number): void;
+  /** Resets every pose to rest. */
+  clearPoses(): void;
   /** Gentle idle bob so tokens read as alive. */
   tick(dtSeconds: number): void;
 }
 
 // Shape carries the growth form; the rim carries sealed vs leaky. Colors are secondary and chosen
 // to differ in lightness as well as hue (orange vs violet), so red/green confusion does not matter.
-const FORM_COLOR: Record<PathogenForm, number> = {
+export const FORM_COLOR: Record<PathogenForm, number> = {
   bacterium: 0xe8a33d,
   mold: 0x6f4fb8,
 };
@@ -64,6 +80,14 @@ export function createPathogenView(
   });
   const pipMat = new THREE.MeshBasicMaterial({ color: PIP_COLOR });
 
+  interface Token {
+    readonly root: THREE.Group;
+    readonly body: THREE.Group;
+    readonly pips: THREE.Mesh[];
+    readonly home: THREE.Vector3;
+    size: number;
+  }
+  const tokens = new Map<PathogenId, Token>();
   const bodies: THREE.Object3D[] = [];
   let clock = 0;
 
@@ -104,41 +128,77 @@ export function createPathogenView(
     return body;
   };
 
-  const buildToken = (p: Pathogen): THREE.Group => {
+  const sizeToken = (t: Token, size: number) => {
+    t.size = size;
+    t.body.scale.setScalar(0.7 + 0.2 * Math.min(size, 3));
+    // Size pips: a row on the near edge of the tile.
+    const n = Math.min(Math.max(size, 1), MAX_PIPS);
+    t.pips.forEach((pip, i) => {
+      pip.visible = i < n;
+      pip.position.set((i - (n - 1) / 2) * 0.16, 0.03, 0.44);
+    });
+  };
+
+  const buildToken = (p: Pathogen): Token => {
     const def = PATHOGEN_KINDS[p.kind];
-    const token = new THREE.Group();
+    const root = new THREE.Group();
     const body = buildBody(def.form);
-    const s = 0.7 + 0.2 * Math.min(p.size, 3);
-    body.scale.setScalar(s);
-    token.add(body);
+    root.add(body);
     bodies.push(body);
     if (def.wall === "sealed") {
       const rim = new THREE.Mesh(rimGeo, rimMat);
       rim.position.y = 0.05;
-      token.add(rim);
+      root.add(rim);
     }
-    // Size pips: a row on the near edge of the tile.
-    const pips = Math.min(Math.max(p.size, 1), MAX_PIPS);
-    for (let i = 0; i < pips; i++) {
+    const pips = Array.from({ length: MAX_PIPS }, () => {
       const pip = new THREE.Mesh(pipGeo, pipMat);
-      pip.position.set((i - (pips - 1) / 2) * 0.16, 0.03, 0.44);
-      token.add(pip);
-    }
-    token.position.copy(tilePosition(p.at));
-    return token;
+      root.add(pip);
+      return pip;
+    });
+    const home = tilePosition(p.at);
+    root.position.copy(home);
+    const t: Token = { root, body, pips, home, size: p.size };
+    sizeToken(t, p.size);
+    return t;
   };
 
   const clear = () => {
     group.clear();
     bodies.length = 0;
+    tokens.clear();
   };
 
   return {
     group,
-    update(state) {
+    update(state, pathogens = state.pathogens) {
       clear();
-      for (const p of state.pathogens) {
-        if (!p.hidden) group.add(buildToken(p));
+      for (const p of pathogens) {
+        if (p.hidden) continue;
+        const t = buildToken(p);
+        tokens.set(p.id, t);
+        group.add(t.root);
+      }
+    },
+    setPose(id, scale, squash, dx, dy, dz) {
+      const t = tokens.get(id);
+      if (!t) return;
+      t.root.visible = scale > 0.001;
+      t.root.scale.set(
+        scale / Math.sqrt(squash),
+        scale * squash,
+        scale / Math.sqrt(squash),
+      );
+      t.root.position.set(t.home.x + dx, t.home.y + dy, t.home.z + dz);
+    },
+    setSize(id, size) {
+      const t = tokens.get(id);
+      if (t && t.size !== size) sizeToken(t, size);
+    },
+    clearPoses() {
+      for (const t of tokens.values()) {
+        t.root.visible = true;
+        t.root.scale.setScalar(1);
+        t.root.position.copy(t.home);
       }
     },
     tick(dt) {

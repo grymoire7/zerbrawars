@@ -6,6 +6,8 @@ export interface TelegraphView {
   readonly group: THREE.Group;
   /** Redraws the given marks (default: state.intents with no orders). Reads only. */
   update(state: BattleState, marks?: readonly TelegraphMark[]): void;
+  /** Fades the marks back (during playback) so the action reads over them. */
+  setDim(dim: boolean): void;
 }
 
 // Shape carries the meaning (solid straight arrow = spread, dotted arc = spore, X + bar = blocked);
@@ -48,6 +50,9 @@ export function createTelegraphView(
       opacity: 0.55,
     }),
   };
+  const baseOpacity = new Map(
+    Object.values(mats).map((m) => [m, m.opacity] as const),
+  );
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
   const coneGeo = new THREE.ConeGeometry(0.18, 0.34, 3);
   const diamondGeo = new THREE.OctahedronGeometry(0.17);
@@ -237,6 +242,9 @@ export function createTelegraphView(
         else if (m.type === "spread") drawSpread(m, m.to);
         else drawSpore(m, m.to);
       }
+    },
+    setDim(dim) {
+      for (const [m, o] of baseOpacity) m.opacity = dim ? o * 0.35 : o;
     },
   };
 }
