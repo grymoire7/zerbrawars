@@ -47,6 +47,13 @@ import {
   pct,
   placementCheck,
   slotName,
+  NO_PENDING,
+  clearPending,
+  selectActivity,
+  tapActivity,
+  tapSlot,
+  type Pending,
+  type PickEffect,
   weekSummary,
 } from "./lifeModel";
 import type { Screen, ScreenEnv } from "./screen";
@@ -60,7 +67,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   const ac = new AbortController();
   const { signal } = ac;
   let life: LifeState = run.campaign().life;
-  let sel: HandCardId | "rest" | null = null;
+  let pending: Pending = NO_PENDING;
   let hover: CardId | null = null;
   let message = "";
   const opening = weekOpening(run.lastEvents());
@@ -80,6 +87,9 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   const slab = battleFromLoadout(loadoutFromLife(life));
   const inset = createInsetView(root, slab);
 
+  // The activity currently picked, if any (the slot half of the pick lives in `pending.slot`).
+  const selOf = (): HandCardId | "rest" | null =>
+    pending.activity as HandCardId | "rest" | null;
   const placed = (base: HandCardId) => findPlaced(life, base);
   const versionOf = (base: HandCardId): CardId =>
     placed(base)?.placement.card ?? chosen.get(base) ?? base;
@@ -106,6 +116,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
 
   const previewCard = (): CardId | null => {
     if (hover) return hover;
+    const sel = selOf();
     return sel && sel !== "rest" ? versionOf(sel) : null;
   };
 
@@ -146,6 +157,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   };
 
   const model = (): LifePanelModel => {
+    const sel = selOf();
     const week = exposurePreview(life);
     const over = weekOver(life);
     const energyRows = energyPlan(life).flat();
@@ -192,6 +204,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
             : null,
           played,
           today: day === life.day,
+          pending: pending.slot?.day === day && pending.slot.slot === slot,
           target,
         };
       }),
@@ -248,12 +261,13 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         "Symptoms showed up this week, and you did not see the doctor.",
       );
     }
-    const hintBase =
-      sel === "rest"
-        ? "Tap a slot to clear it for a rest."
+    const hintBase = pending.slot
+      ? `${here(pending.slot.day, pending.slot.slot)} is chosen. Now pick an activity.`
+      : sel === "rest"
+        ? "Now tap a time slot to clear it for a rest."
         : sel
-          ? `Tap a slot for ${cardDef(versionOf(sel)).label}.`
-          : "Tap a card, then a slot. Tap a planned card to take it off.";
+          ? `Now tap a time slot for ${cardDef(versionOf(sel)).label}.`
+          : "Tap an activity, then a time slot. Or tap a time slot first. Tap a planned activity to take it off.";
     return {
       title: over
         ? `Week ${life.week} is done`
@@ -337,18 +351,61 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     };
   };
 
+  /** Carries out a place or remove from the pick logic; a refused placement keeps the activity picked. */
+  function runEffect(effect: PickEffect | null) {
+    if (!effect) return;
+    if (effect.type === "remove") {
+      apply(() => unplaceCard(life, effect.day, effect.slot));
+      return;
+    }
+    if (effect.activity === "rest") {
+      // Rest on a waiting slot just clears it.
+      if (life.plan[effect.day][effect.slot])
+        apply(() => unplaceCard(life, effect.day, effect.slot));
+      return;
+    }
+    const base = effect.activity as HandCardId;
+    if (effect.day < life.day) return;
+    const card = versionOf(base);
+    const check = placementCheck(
+      life,
+      effect.day,
+      effect.slot,
+      card,
+      packOf(base),
+    );
+    if (!check.ok) {
+      message = check.reasons[0];
+      pending = { activity: base, slot: null };
+      return;
+    }
+    const old = placed(base);
+    if (
+      old &&
+      old.day >= life.day &&
+      (old.day !== effect.day || old.slot !== effect.slot)
+    ) {
+      apply(() => unplaceCard(life, old.day, old.slot));
+    }
+    apply(() => placeCard(life, effect.day, effect.slot, card, packOf(base)));
+  }
+
   const panel = createLifePanel(panels, {
     onHelp: () => help.open(),
     onPickCard: (base) => {
-      sel = sel === base ? null : (base as HandCardId);
+      const r = tapActivity(pending, base);
+      pending = r.pending;
       message = "";
+      runEffect(r.effect);
       draw();
-      if (sel && window.matchMedia("(max-width: 899px)").matches)
+      if (selOf() && window.matchMedia("(max-width: 899px)").matches)
         panel.showCalendar();
     },
     onPickRest: () => {
-      sel = sel === "rest" ? null : "rest";
+      const r = tapActivity(pending, "rest");
+      pending = r.pending;
       message = "";
+      runEffect(r.effect);
       draw();
     },
     onSwap: (base) => {
@@ -362,6 +419,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
           placeCard(life, at.day, at.slot, next, at.placement.packPills),
         );
       }
+      pending = selectActivity(pending, b);
       draw();
     },
     onPills: (base, on) => {
@@ -370,41 +428,21 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       const at = placed(b);
       if (at && at.day >= life.day)
         apply(() => setPackPills(life, at.day, at.slot, on));
+      pending = selectActivity(pending, b);
       draw();
     },
     onSlot: (day, slot) => {
       if (day < life.day) return;
       const occupant = life.plan[day][slot];
-      if (!sel || sel === "rest") {
-        if (occupant) apply(() => unplaceCard(life, day, slot));
-        else if (!sel) message = "";
-        sel = null;
-        draw();
-        return;
-      }
-      const card = versionOf(sel);
-      if (occupant && cardDef(occupant.card).base === sel) {
-        apply(() => unplaceCard(life, day, slot));
-        sel = null;
-        draw();
-        return;
-      }
-      const check = placementCheck(life, day, slot, card, packOf(sel));
-      if (!check.ok) {
-        message = check.reasons[0];
-        draw();
-        return;
-      }
-      const old = placed(sel);
-      if (
-        old &&
-        old.day >= life.day &&
-        (old.day !== day || old.slot !== slot)
-      ) {
-        apply(() => unplaceCard(life, old.day, old.slot));
-      }
-      apply(() => placeCard(life, day, slot, card, packOf(sel as HandCardId)));
-      sel = null;
+      const r = tapSlot(
+        pending,
+        day,
+        slot,
+        occupant ? cardDef(occupant.card).base : null,
+      );
+      pending = r.pending;
+      message = "";
+      runEffect(r.effect);
       draw();
     },
     onTakeMeds: () => {
@@ -422,7 +460,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         { day: `Day ${day + 1}`, lines: lifeBeats(events) },
         ...beats,
       ].slice(0, 3);
-      sel = null;
+      pending = NO_PENDING;
       draw();
     },
     onStartBattle: () => {
@@ -466,8 +504,12 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   window.addEventListener(
     "keydown",
     (e) => {
-      if (e.key === "Escape" && !help.isOpen() && sel) {
-        sel = null;
+      if (
+        e.key === "Escape" &&
+        !help.isOpen() &&
+        (pending.activity || pending.slot)
+      ) {
+        pending = clearPending();
         draw();
       }
     },

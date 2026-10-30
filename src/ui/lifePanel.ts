@@ -40,7 +40,9 @@ export interface LifeSlotModel {
   } | null;
   readonly played: boolean;
   readonly today: boolean;
-  /** While a card is picked: can it go here, and why not. */
+  /** Chosen first, waiting for an activity. */
+  readonly pending: boolean;
+  /** While an activity is picked: can it go here, and why not. */
   readonly target: { readonly ok: boolean; readonly reason: string } | null;
 }
 
@@ -112,13 +114,13 @@ export interface LifePanelHandlers {
   onPlay(): void;
   onStartBattle(): void;
   onAgain(): void;
-  /** A card is hovered or focused (null: left). Preview only; no re-render. */
+  /** An activity is hovered or focused (null: left). Preview only; no re-render. */
   onPreview(version: string | null): void;
 }
 
 export interface LifePanel {
   update(model: LifePanelModel): void;
-  /** Scrolls the calendar to the top of the panel (a card was just picked on a phone). */
+  /** Scrolls the calendar to the top of the panel (an activity was just picked on a phone). */
   showCalendar(): void;
 }
 
@@ -415,30 +417,57 @@ export function createLifePanel(
     hint.setAttribute("aria-live", "polite");
     calBox.append(hint);
     const grid = el(
-      "div",
-      "display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;",
+      "table",
+      "width:100%;table-layout:fixed;border-collapse:separate;border-spacing:6px;margin:-6px;width:calc(100% + 12px);",
     );
-    // Columns are days; rows are slots.
+    grid.setAttribute(
+      "aria-label",
+      "Your week: three days, daytime and evening",
+    );
+    const headRow = el("tr");
+    headRow.append(el("td", "width:62px;"));
+    m.grid.forEach((_, i) => {
+      const th = el(
+        "th",
+        "font-size:13px;font-weight:700;text-align:center;padding:2px 0;",
+        `Day ${i + 1}`,
+      );
+      th.setAttribute("scope", "col");
+      headRow.append(th);
+    });
+    const thead = el("thead");
+    thead.append(headRow);
+    const tbody = el("tbody");
+    // Columns are days; rows are time slots.
     const rows = m.grid[0].length;
     for (let slot = 0; slot < rows; slot++) {
+      const tr = el("tr");
+      const rowHead = el(
+        "th",
+        "font-size:12px;font-weight:600;text-align:left;vertical-align:middle;padding:0;",
+        m.grid[0][slot].name,
+      );
+      rowHead.setAttribute("scope", "row");
+      tr.append(rowHead);
       for (const day of m.grid) {
         const s = day[slot];
         const blocked = s.target !== null && !s.target.ok;
         const live = s.target?.ok === true;
+        const td = el("td", "padding:0;vertical-align:top;");
         const b = button(
           "",
           () => h.onSlot(s.day, s.slot),
           "display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:flex-start;" +
-            "text-align:left;padding:6px 7px;min-height:76px;font-size:12px;line-height:1.25;overflow:hidden;" +
+            "text-align:left;padding:6px 7px;min-height:76px;width:100%;box-sizing:border-box;font-size:12px;line-height:1.25;overflow:hidden;overflow-wrap:anywhere;" +
             (live ? `border-color:${MINT};box-shadow:0 0 0 1px ${MINT};` : "") +
+            (s.pending
+              ? `border:2px solid ${MINT};box-shadow:0 0 0 2px ${MINT};background:rgba(91,227,198,0.16);`
+              : "") +
             (blocked ? "opacity:0.5;border-style:dashed;" : "") +
-            (s.today ? "background:#303744;" : ""),
+            (s.today && !s.pending ? "background:#303744;" : ""),
           `slot-${s.day}-${s.slot}`,
         );
         const name = `Day ${s.day + 1} ${s.name.toLowerCase()}`;
-        b.append(
-          el("span", "opacity:0.7;font-size:11px;", `${s.day + 1} · ${s.name}`),
-        );
         if (s.card) {
           b.append(
             el("span", "font-weight:600;", s.card.label),
@@ -455,6 +484,8 @@ export function createLifePanel(
               ),
             );
           }
+        } else if (s.pending) {
+          b.append(el("span", "font-weight:700;", "Chosen"));
         } else {
           b.append(el("span", "opacity:0.7;", "Rest (+1 energy)"));
         }
@@ -462,17 +493,22 @@ export function createLifePanel(
           b.append(el("span", "color:#e8c68f;", s.target.reason));
         }
         b.disabled = s.played || blocked;
+        b.setAttribute("aria-pressed", String(s.pending));
         b.setAttribute(
           "aria-label",
           `${name}: ${s.card ? s.card.label : "rest"}` +
+            (s.pending ? ", chosen, now pick an activity" : "") +
             (s.played ? ", played" : "") +
             (blocked && s.target ? `, ${s.target.reason}` : "") +
             (s.card && !s.played ? ", tap to remove" : ""),
         );
         if (s.played) b.style.opacity = "0.6";
-        grid.append(b);
+        td.append(b);
+        tr.append(td);
       }
+      tbody.append(tr);
     }
+    grid.append(thead, tbody);
     calBox.append(
       grid,
       el("div", "font-size:12px;opacity:0.85;line-height:1.3;", m.odds),
@@ -584,7 +620,7 @@ export function createLifePanel(
       el(
         "span",
         "font-size:13px;opacity:0.8;line-height:1.3;",
-        "Take a slot off: +1 energy, no exposure. Tap a slot to clear it.",
+        "Take a time slot off: +1 energy, no exposure. Tap a time slot to clear it.",
       ),
     );
     handBox.append(rest);

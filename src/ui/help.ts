@@ -62,19 +62,19 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
 export const LIFE_LINES: readonly (readonly [string, string])[] = [
   [
     "Your week",
-    "Plan three days, two slots each: daytime and evening. Hit the goal by saying yes to the people who ask. A slot with nothing in it is a rest.",
+    "Plan three days, with two time slots each: daytime and evening. Hit the goal by saying yes to the people who ask. A time slot with nothing in it is a rest.",
   ],
   [
-    "Placing a card",
-    "Tap a card, then tap a slot. Tap a card on your calendar to take it back off. Each card can be used once. Slots that cannot take it are dimmed and say why.",
+    "Placing an activity",
+    "Tap an activity, then tap a time slot. It works the other way round too: tap a time slot, then pick an activity. Tap an activity on your calendar to take it back off, or press Escape to cancel your pick. Each activity can be used once. Time slots that cannot take it are dimmed and say why.",
   ],
   [
     "The odds are real",
-    "Every card shows its chance of an exposure. When a day is played, each card rolls once. Look at the body view: more drifting dots means better odds.",
+    "Every activity shows its chance of an exposure. When a day is played, each activity rolls once. Look at the body view: more drifting dots means better odds.",
   ],
   [
     "Easier versions",
-    "Most cards have an alternative that keeps the plan and the people, but brings fewer germs. Tap it on the card to swap. It often scores a bit less.",
+    "Most activities have an alternative that keeps the plan and the people, but brings fewer germs. Tap it under the activity to swap. It often scores a bit less.",
   ],
   [
     "Medication",
@@ -86,7 +86,7 @@ export const LIFE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Energy",
-    "Energy is just a game resource for planning, not a measure of your health. Cards spend it, rests give a little back, and a plan can never go below zero.",
+    "Energy is just a game resource for planning, not a measure of your health. Activities spend it, rests give a little back, and a plan can never go below zero.",
   ],
   [
     "After the week",

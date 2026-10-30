@@ -225,3 +225,83 @@ export function weekSummary(life: LifeState): WeekSummary {
     metGoal: life.goal.points >= life.goal.target,
   };
 }
+
+// ---- Pending pick: an activity and a time slot, chosen in either order. ----
+
+export type PickedActivity = string; // an activity's base id, or "rest"
+
+export interface Pending {
+  readonly activity: PickedActivity | null;
+  readonly slot: { readonly day: number; readonly slot: number } | null;
+}
+
+export type PickEffect =
+  | {
+      readonly type: "place";
+      readonly activity: PickedActivity;
+      readonly day: number;
+      readonly slot: number;
+    }
+  | { readonly type: "remove"; readonly day: number; readonly slot: number };
+
+export interface PickResult {
+  readonly pending: Pending;
+  readonly effect: PickEffect | null;
+}
+
+export const NO_PENDING: Pending = { activity: null, slot: null };
+
+/** Tapping an activity: places it in a waiting slot, else selects it (tap again to unselect). */
+export function tapActivity(p: Pending, activity: PickedActivity): PickResult {
+  if (p.slot) {
+    return {
+      pending: NO_PENDING,
+      effect: { type: "place", activity, day: p.slot.day, slot: p.slot.slot },
+    };
+  }
+  return {
+    pending: p.activity === activity ? NO_PENDING : { activity, slot: null },
+    effect: null,
+  };
+}
+
+/**
+ * Tapping a time slot. `occupant` is the base id of the activity already there (or null).
+ * With an activity picked it places it (tapping its own spot takes it off); with none, a
+ * filled slot is emptied and an empty one is highlighted to wait for an activity.
+ */
+export function tapSlot(
+  p: Pending,
+  day: number,
+  slot: number,
+  occupant: string | null,
+): PickResult {
+  if (p.activity) {
+    if (p.activity === "rest" || occupant === p.activity) {
+      return {
+        pending: NO_PENDING,
+        effect: occupant ? { type: "remove", day, slot } : null,
+      };
+    }
+    return {
+      pending: NO_PENDING,
+      effect: { type: "place", activity: p.activity, day, slot },
+    };
+  }
+  if (occupant) {
+    return { pending: NO_PENDING, effect: { type: "remove", day, slot } };
+  }
+  const same = p.slot?.day === day && p.slot.slot === slot;
+  return {
+    pending: same ? NO_PENDING : { activity: null, slot: { day, slot } },
+    effect: null,
+  };
+}
+
+/** Changing an activity's version or pills option also makes it the pending pick. */
+export function selectActivity(_p: Pending, activity: PickedActivity): Pending {
+  return { activity, slot: null };
+}
+
+/** Escape: drop whatever is pending. */
+export const clearPending = (): Pending => NO_PENDING;
