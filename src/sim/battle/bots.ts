@@ -8,12 +8,14 @@ import type {
   Coord,
   Order,
   Pathogen,
+  SupportOrder,
   Swarm,
 } from "../types";
 import { telegraph } from "./intents";
 import { engulfTargets, moveOptions, orderProblems } from "./orders";
 import { battleStatus, gradeOutcome } from "./outcome";
-import { resolveTurn } from "./resolve";
+import { resolveTurn, turnProblems } from "./resolve";
+import { availableCharges, chargeCovers, supportTargets } from "./support";
 
 // Headless players for balance checks. Each one picks one order per swarm, in swarm order,
 // seeing the orders already picked this turn. They are deliberately simple.
@@ -95,17 +97,48 @@ const full = (s: Swarm) => s.load.length >= PARAMS.loadCap;
 const canTake = (s: Swarm) => (p: Pathogen) =>
   wallOf(p) === "leaky" || !full(s);
 
-/** Telegraphed spread or spore targets that will land with the orders picked so far. */
-function landingTargets(t: BotTurn): Coord[] {
-  return telegraph(t.battle, t.orders).flatMap((m) =>
-    m.to && !m.blockedBy && !m.cancelledBy ? [m.to] : [],
-  );
+/**
+ * Telegraphed spread or spore targets that will land with the orders picked so far, except from
+ * pathogens `skip` accepts.
+ */
+function landingTargets(
+  t: BotTurn,
+  skip: (p: Pathogen) => boolean = () => false,
+): Coord[] {
+  return telegraph(t.battle, t.orders).flatMap((m) => {
+    const p = t.battle.pathogens.find((q) => q.id === m.pathogenId);
+    return m.to && !m.blockedBy && !m.cancelledBy && p && !skip(p)
+      ? [m.to]
+      : [];
+  });
 }
 
 const wallOff = (t: BotTurn): Order => ({
   type: "wallOff",
   swarmId: t.swarm.id,
 });
+
+function carefulPlay(
+  t: BotTurn,
+  leave: (p: Pathogen) => boolean,
+): Order | null {
+  if (t.swarm.busyTurns > 0) return null;
+  const leaky = engulfIf(t, (p) => wallOf(p) === "leaky");
+  if (leaky) return leaky;
+  const reach = moveOptions(t.battle, t.swarm.id, t.orders);
+  const block = landingTargets(t, leave).find((to) =>
+    reach.some((r) => sameCoord(r.at, to)),
+  );
+  if (block) return { type: "move", swarmId: t.swarm.id, to: block };
+  if (full(t.swarm)) return wallOff(t);
+  const sealed = engulfIf(t, (p) => t.swarm.load.length === 0 && !leave(p));
+  if (sealed) return sealed;
+  const goal = nearest(
+    t.swarm.at,
+    visible(t.battle).filter((p) => canTake(t.swarm)(p) && !leave(p)),
+  );
+  return goal ? (toward(t, goal.at, true) ?? toward(t, goal.at)) : null;
+}
 
 export const BOTS: Record<string, Bot> = {
   /** Never orders anything. */
@@ -168,24 +201,19 @@ export const BOTS: Record<string, Bot> = {
    * A careful player: kill leaky, stand on any spread or spore about to land, take a sealed one
    * only with an empty swarm, wall off a full swarm, and keep swarms apart when just walking.
    */
-  careful: (t) => {
-    if (t.swarm.busyTurns > 0) return null;
-    const leaky = engulfIf(t, (p) => wallOf(p) === "leaky");
-    if (leaky) return leaky;
-    const reach = moveOptions(t.battle, t.swarm.id, t.orders);
-    const block = landingTargets(t).find((to) =>
-      reach.some((r) => sameCoord(r.at, to)),
-    );
-    if (block) return { type: "move", swarmId: t.swarm.id, to: block };
-    if (full(t.swarm)) return wallOff(t);
-    const sealed = engulfIf(t, () => t.swarm.load.length === 0);
-    if (sealed) return sealed;
-    const goal = nearest(
-      t.swarm.at,
-      visible(t.battle).filter(canTake(t.swarm)),
-    );
-    return goal ? (toward(t, goal.at, true) ?? toward(t, goal.at)) : null;
-  },
+  careful: (t) => carefulPlay(t, () => false),
+
+  /**
+   * careful, but leaves a sealed pathogen to the charges while one that works on it is left
+   * ("wait and kill it with the charge"). Pair it with a support bot that spends them.
+   */
+  saveForCharge: (t) =>
+    carefulPlay(
+      t,
+      (p) =>
+        wallOf(p) === "sealed" &&
+        availableCharges(t.battle).some((c) => chargeCovers(c, p.kind)),
+    ),
 
   /** A random legal order (or nothing) per swarm. */
   random: (t) => {
@@ -209,11 +237,61 @@ export const BOTS: Record<string, Bot> = {
   },
 };
 
-/** Plays a battle to the end with `bot` and grades it. `seed` drives the random bot only. */
+/** Picks the turn's support charge (or none) once the swarm orders are chosen. */
+export type SupportBot = (
+  battle: BattleState,
+  orders: readonly Order[],
+) => SupportOrder | null;
+
+/**
+ * The legal charge use that removes the biggest threat: size, plus 2 if sealed, plus 2 if its
+ * spread or spore is about to land; a carried load scores 1 + the swarm's load. Strong charges
+ * prefer sealed targets. Ties keep supportTargets order.
+ */
+function bestSupport(
+  battle: BattleState,
+  orders: readonly Order[],
+): SupportOrder | null {
+  const marks = telegraph(battle, orders);
+  const score = (order: SupportOrder): number => {
+    if (order.target === "load") {
+      const s = battle.swarms.find((q) => q.id === order.swarmId) as Swarm;
+      return 1 + s.load.length;
+    }
+    const p = battle.pathogens.find(
+      (q) => q.id === order.pathogenId,
+    ) as Pathogen;
+    const m = marks.find((q) => q.pathogenId === p.id);
+    const landing = m?.to && !m.blockedBy && !m.cancelledBy ? 2 : 0;
+    const sealed = wallOf(p) === "sealed" ? 2 : 0;
+    const waste = order.charge === "strong" && !sealed ? -1 : 0;
+    return p.size + sealed + landing + waste;
+  };
+  let best: SupportOrder | null = null;
+  for (const charge of availableCharges(battle)) {
+    for (const { order } of supportTargets(battle, orders, charge)) {
+      if (!best || score(order) > score(best)) best = order;
+    }
+  }
+  return best;
+}
+
+export const SUPPORT_BOTS: Record<string, SupportBot> = {
+  /** Never spends a charge. */
+  none: () => null,
+  /** Spends a charge every turn it can, on the biggest threat. */
+  eager: bestSupport,
+};
+
+/**
+ * Plays a battle to the end with `bot` for the swarms and `support` for the charges, and grades
+ * it. `seed` drives the random bot only.
+ */
 export function playBattle(
   bot: Bot,
   start: BattleState,
   seed: number,
+  support: SupportBot = SUPPORT_BOTS.none,
 ): { outcome: BattleOutcome; final: BattleState } {
   let battle = start;
   const rng = { state: rngFromSeed(seed * 7919 + 1) };
@@ -225,7 +303,12 @@ export function playBattle(
       const next = [...orders, order];
       if (orderProblems(battle, next).length === 0) orders = next;
     }
-    battle = resolveTurn(battle, orders).state;
+    const charge = support(battle, orders);
+    const used =
+      charge && turnProblems(battle, orders, charge).length === 0
+        ? charge
+        : null;
+    battle = resolveTurn(battle, orders, used).state;
   }
   return { outcome: gradeOutcome(battle), final: battle };
 }

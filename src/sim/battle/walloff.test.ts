@@ -168,7 +168,8 @@ describe("wall off resolution", () => {
         rng: { ...battle.rng, intents: rngFromSeed(seed) },
       });
       for (const i of b.intents) {
-        if (i.type !== "grow") expect(sameCoord(i.to, g.at)).toBe(false);
+        if (i.type === "spread" || i.type === "spore")
+          expect(sameCoord(i.to, g.at)).toBe(false);
       }
     }
   });

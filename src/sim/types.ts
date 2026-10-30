@@ -53,7 +53,10 @@ export interface Pathogen {
   readonly kind: PathogenKindId;
   readonly size: number;
   readonly at: Coord;
-  /** A carried-over reservoir not yet revealed (T9/T13). */
+  /**
+   * A carried-over reservoir not yet revealed. It never acts, inflames or blocks movement checks;
+   * a swarm that steps next to it reveals it and stops (see applyMoves).
+   */
   readonly hidden: boolean;
 }
 
@@ -88,6 +91,11 @@ export type Intent =
       readonly to: Coord;
       readonly size: number;
       readonly cost: number;
+    }
+  | {
+      /** Held back by the medication aura: it does nothing this turn (and emits no event). */
+      readonly type: "stall";
+      readonly pathogenId: PathogenId;
     };
 
 /** At most one order per swarm per turn; a swarm with no order holds. */
@@ -103,6 +111,30 @@ export type Order =
     }
   | { readonly type: "wallOff"; readonly swarmId: SwarmId };
 
+export type ChargeKind = "antibacterial" | "antifungal" | "strong";
+
+/**
+ * Spending one support charge. Not tied to a swarm, and at most one per turn, so it is passed to
+ * resolveTurn beside the swarm orders rather than inside them.
+ * - pathogen: kills a visible pathogen anywhere. Antibacterial takes leaky ones, antifungal sealed
+ *   ones, strong either.
+ * - load: kills the oldest pathogen a swarm carries (antifungal or strong; only sealed ones are
+ *   ever carried).
+ */
+export type SupportOrder =
+  | {
+      readonly type: "support";
+      readonly charge: ChargeKind;
+      readonly target: "pathogen";
+      readonly pathogenId: PathogenId;
+    }
+  | {
+      readonly type: "support";
+      readonly charge: ChargeKind;
+      readonly target: "load";
+      readonly swarmId: SwarmId;
+    };
+
 export interface MedCharges {
   readonly antibacterial: number;
   readonly antifungal: number;
@@ -113,7 +145,11 @@ export interface MedCharges {
 export interface MedState {
   /** 0..1, from adherence in the life phase. */
   readonly level: number;
-  /** 0..1 growth slowdown, set from level at battle setup (T10). */
+  /**
+   * 0..1 aura strength, equal to the level at setup. Each turn every visible pathogen stalls with
+   * chance aura * PARAMS.meds.auraStallChance (rolled with its intent), so even a full aura only
+   * slows pathogens and never stops them.
+   */
   readonly aura: number;
   readonly charges: MedCharges;
 }
@@ -271,4 +307,29 @@ export type SimEvent =
       readonly type: "TissueDamaged";
       readonly amount: number;
       readonly tissueHealth: number;
+    }
+  | {
+      /**
+       * A moving swarm stepped next to a hidden token: the token turns visible and the swarm
+       * stops there (its SwarmMoved path ends on that tile). A doctor visit reveals tokens at
+       * setup instead, with no event.
+       */
+      readonly type: "Revealed";
+      readonly pathogenId: PathogenId;
+      readonly at: Coord;
+      readonly kind: PathogenKindId;
+      readonly size: number;
+      readonly swarmId: SwarmId;
+    }
+  | {
+      /**
+       * A support charge was spent. Followed by Killed (cause "charge") for a pathogen target, or
+       * Loaded with what is left for a load target.
+       */
+      readonly type: "SupportUsed";
+      readonly charge: ChargeKind;
+      readonly target: "pathogen" | "load";
+      readonly at: Coord;
+      readonly pathogenId: PathogenId | null;
+      readonly swarmId: SwarmId | null;
     };

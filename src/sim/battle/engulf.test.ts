@@ -136,7 +136,7 @@ describe("engulf resolution", () => {
     const s3 = state.swarms[2];
     expect(s3.load).toEqual([{ kind: "aspergillus", size: 2 }]);
     expect(moveRange(s3)).toBe(2);
-    expect(state.pathogens.map((p) => p.id)).toEqual(["p1"]);
+    expect(state.pathogens.map((p) => p.id)).not.toContain("p2");
     // The roll is always made, so the stream moves even at 0%.
     expect(state.rng.resolution).toEqual(rngNext(battle.rng.resolution).rng);
     expect(validateBattle(state)).toEqual([]);

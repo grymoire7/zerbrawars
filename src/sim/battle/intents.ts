@@ -12,15 +12,18 @@ import { pathogenKind } from "../pathogens";
 import { rngInt, rngNext, type RngState } from "../rng";
 import type {
   BattleState,
+  ChargeKind,
   Coord,
   Intent,
   Order,
   Pathogen,
   PathogenId,
+  SupportOrder,
   SwarmId,
   TileId,
 } from "../types";
 import { applyMoves, validEngulfs } from "./orders";
+import { supportProblem } from "./support";
 
 /**
  * Tiles a spread or spore may target right now: in bounds and holding no pathogen (hidden ones
@@ -53,12 +56,26 @@ function targetsFor(
     .sort(compareCoords);
 }
 
+/** The chance a visible pathogen stalls each turn under `aura` (0..1). Always under 1. */
+export function stallChance(aura: number): number {
+  return Math.min(1, Math.max(0, aura)) * PARAMS.meds.auraStallChance;
+}
+
+/**
+ * The stall roll comes first and is always made, so the same seed lines up across med levels: a
+ * pathogen that stalls at a weaker aura also stalls at a stronger one on that roll.
+ */
 function rollIntent(
   battle: BattleState,
   p: Pathogen,
   taken: ReadonlySet<TileId>,
   rng: RngState,
 ): { intent: Intent | null; rng: RngState } {
+  const stall = rngNext(rng);
+  rng = stall.rng;
+  if (stall.value < stallChance(battle.meds.aura)) {
+    return { intent: { type: "stall", pathogenId: p.id }, rng };
+  }
   const b = PARAMS.intents[p.kind];
   const canGrow = p.size < PARAMS.maxPathogenSize;
   const targets =
@@ -97,7 +114,7 @@ function rollIntent(
 
 /**
  * Rolls the telegraph for the coming resolve from `rng.intents` only: at most one intent per
- * visible pathogen, in pathogen (id) order. Each new target is taken, so no two intents share a
+ * visible pathogen, in pathogen (id) order. Under the med aura a pathogen may stall instead. Each new target is taken, so no two intents share a
  * tile. A pathogen at max size with nowhere to go gets no intent.
  */
 export function generateIntents(battle: BattleState): BattleState {
@@ -110,7 +127,8 @@ export function generateIntents(battle: BattleState): BattleState {
     rng = r.rng;
     if (!r.intent) continue;
     intents.push(r.intent);
-    if (r.intent.type !== "grow") taken.add(tileId(battle.board, r.intent.to));
+    if (r.intent.type === "spread" || r.intent.type === "spore")
+      taken.add(tileId(battle.board, r.intent.to));
   }
   return { ...battle, intents, rng: { ...battle.rng, intents: rng } };
 }
@@ -125,11 +143,11 @@ export interface TelegraphMark {
   readonly pathogenId: PathogenId;
   readonly type: Intent["type"];
   readonly from: Coord;
-  /** Target tile for spread/spore, null for grow. */
+  /** Target tile for spread/spore, null for grow and stall. */
   readonly to: Coord | null;
   /** The pathogen's size after the intent lands. */
   readonly sizeAfter: number;
-  /** Size of the new pathogen for spread/spore, 0 for grow. */
+  /** Size of the new pathogen for spread/spore, 0 for grow and stall. */
   readonly childSize: number;
   /** The swarm that will stand on the target once `orders` move, which blocks it. */
   readonly blockedBy: SwarmId | null;
@@ -138,36 +156,48 @@ export interface TelegraphMark {
    * The other fields still describe the intent as telegraphed.
    */
   readonly cancelledBy: SwarmId | null;
+  /** The charge whose pending support kills this pathogen first, so the intent will not happen. */
+  readonly cancelledByCharge: ChargeKind | null;
 }
 
 /**
- * The marks to draw, as they will resolve if the turn ends with `orders`. Uses the same move
- * and engulf validation as resolveTurn, so a preview block or cancel is real. Invalid orders are
- * ignored here.
+ * The marks to draw, as they will resolve if the turn ends with `orders` and `support`. Uses the
+ * same move, engulf and support validation as resolveTurn, so a preview block or cancel is real.
+ * Invalid orders are ignored here. The one gap: a move that will be cut short by a hidden token is
+ * previewed in full, since showing the stop would reveal the token.
  */
 export function telegraph(
   current: BattleState,
   orders: readonly Order[] = [],
+  support: SupportOrder | null = null,
 ): TelegraphMark[] {
-  const battle = applyMoves(current, orders).state;
+  const battle = applyMoves(current, orders, false).state;
   const engulfedBy = new Map(
     validEngulfs(current, orders).map((e) => [e.pathogen.id, e.order.swarmId]),
   );
+  const charged =
+    support?.target === "pathogen" &&
+    supportProblem(current, orders, support) === null
+      ? support
+      : null;
   return battle.intents.flatMap((i): TelegraphMark[] => {
     const p = battle.pathogens.find((q) => q.id === i.pathogenId);
     if (!p) return [];
     const cancelledBy = engulfedBy.get(p.id) ?? null;
-    if (i.type === "grow") {
+    const cancelledByCharge =
+      charged?.pathogenId === p.id ? charged.charge : null;
+    if (i.type === "grow" || i.type === "stall") {
       return [
         {
           pathogenId: p.id,
           type: i.type,
           from: p.at,
           to: null,
-          sizeAfter: p.size + i.amount,
+          sizeAfter: p.size + (i.type === "grow" ? i.amount : 0),
           childSize: 0,
           blockedBy: null,
           cancelledBy,
+          cancelledByCharge,
         },
       ];
     }
@@ -182,6 +212,7 @@ export function telegraph(
         childSize: i.size,
         blockedBy: swarm?.id ?? null,
         cancelledBy,
+        cancelledByCharge,
       },
     ];
   });

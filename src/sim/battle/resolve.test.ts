@@ -25,6 +25,7 @@ function promise(battle: BattleState): {
   let nextId = battle.nextId;
   for (const i of battle.intents) {
     const p = pathogens.find((q) => q.id === i.pathogenId) as Pathogen;
+    if (i.type === "stall") continue;
     if (i.type === "grow") {
       Object.assign(p, { size: p.size + i.amount });
       events.push("Grew");
@@ -75,9 +76,10 @@ describe.each(["duel", "first-board"])(
             events.filter((e) => TICK.includes(e.type)).map((e) => e.type),
           );
           expect(acts.map((e) => e.type)).toEqual(expected.events);
+          const acting = battle.intents.filter((i) => i.type !== "stall");
           acts.forEach((e, k) => {
             expect("pathogenId" in e && e.pathogenId).toBe(
-              battle.intents[k].pathogenId,
+              acting[k].pathogenId,
             );
           });
           for (const e of acts) seen.add(e.type);
@@ -118,6 +120,7 @@ describe("intents", () => {
           const p = battle.pathogens.find((q) => q.id === i.pathogenId);
           expect(p).toBeDefined();
           if (!p) continue;
+          if (i.type === "stall") continue;
           if (i.type === "grow") {
             expect(i.amount).toBeGreaterThan(0);
             expect(p.size + i.amount).toBeLessThanOrEqual(

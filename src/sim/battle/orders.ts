@@ -243,27 +243,84 @@ export function movePath(
   return moveProblem(battle, swarm, to, new Map()).path;
 }
 
+const touches = (a: Coord, b: Coord) => sameCoord(a, b) || isAdjacent(a, b);
+
 /**
  * Applies the valid moves among `orders` (engulf `from` moves included) in swarm order and returns
- * the new state and a SwarmMoved event per move. Invalid orders are skipped: resolveTurn rejects them beforehand,
- * and the telegraph preview simply ignores them.
+ * the new state and a SwarmMoved event per move. Invalid orders are skipped: resolveTurn rejects
+ * them beforehand, and the telegraph preview simply ignores them.
+ *
+ * Hidden tokens (with `reveal`, as in resolveTurn): validation and pathing ignore them, so an order
+ * never leaks one. While a swarm walks its path, the first step that ends next to a token hidden
+ * at the start of the turn reveals every such token it touches (Revealed, after its SwarmMoved)
+ * and the swarm stops there. Because every tile next to a token is reached before the token's own
+ * tile, a swarm never ends on or passes through a token. If that stop tile is another swarm's
+ * start or destination, it backs up along its path (at worst to where it started). Previews pass
+ * `reveal` false, so they never show a stop the player cannot see coming.
  */
 export function applyMoves(
   battle: BattleState,
   orders: readonly Order[],
+  reveal = true,
 ): { state: BattleState; events: SimEvent[] } {
   const paths = new Map<SwarmId, readonly Coord[]>();
   for (const c of validateOrders(battle, orders)) {
     if (c.path) paths.set(c.order.swarmId, c.path);
   }
+  const hidden = reveal ? battle.pathogens.filter((p) => p.hidden) : [];
+  const found = new Set<PathogenId>();
+  const ends = new Map<SwarmId, Coord>();
   const events: SimEvent[] = [];
   const swarms = battle.swarms.map((s) => {
-    const path = paths.get(s.id);
-    if (!path) return s;
-    events.push({ type: "SwarmMoved", swarmId: s.id, path });
-    return { ...s, at: path[path.length - 1] };
+    const planned = paths.get(s.id);
+    if (!planned) return s;
+    let path = planned;
+    const met: Pathogen[] = [];
+    if (hidden.length > 0) {
+      for (let k = 1; k < planned.length; k++) {
+        const step = planned[k];
+        const near = hidden.filter((h) => touches(step, h.at));
+        if (near.length === 0) continue;
+        met.push(...near.filter((h) => !found.has(h.id)));
+        const onToken = near.some((h) => sameCoord(step, h.at));
+        path = planned.slice(0, onToken ? k : k + 1);
+        break;
+      }
+      const taken = (c: Coord) =>
+        battle.swarms.some(
+          (o) =>
+            o.id !== s.id &&
+            (sameCoord(o.at, c) ||
+              sameCoord(ends.get(o.id) ?? paths.get(o.id)?.at(-1) ?? o.at, c)),
+        );
+      while (path.length > 1 && taken(path[path.length - 1])) {
+        path = path.slice(0, -1);
+      }
+    }
+    const end = path[path.length - 1];
+    ends.set(s.id, end);
+    if (path.length > 1)
+      events.push({ type: "SwarmMoved", swarmId: s.id, path });
+    for (const h of met) {
+      found.add(h.id);
+      events.push({
+        type: "Revealed",
+        pathogenId: h.id,
+        at: h.at,
+        kind: h.kind,
+        size: h.size,
+        swarmId: s.id,
+      });
+    }
+    return path.length > 1 ? { ...s, at: end } : s;
   });
-  return { state: { ...battle, swarms }, events };
+  const pathogens =
+    found.size === 0
+      ? battle.pathogens
+      : battle.pathogens.map((p) =>
+          found.has(p.id) ? { ...p, hidden: false } : p,
+        );
+  return { state: { ...battle, swarms, pathogens }, events };
 }
 
 /** Valid engulf orders among `orders`, in swarm (list) order, with each target pathogen. */
@@ -307,6 +364,9 @@ export function applyEngulfs(
   const loads = new Map<SwarmId, readonly Contained[]>();
   let rng = after.rng.resolution;
   for (const { order, pathogen: p } of engulfs) {
+    // A move cut short by a revealed token can leave the swarm out of reach: the engulf fizzles.
+    const swarmNow = after.swarms.find((s) => s.id === order.swarmId);
+    if (!swarmNow || !isAdjacent(swarmNow.at, p.at)) continue;
     const wall = wallOf(p);
     events.push({
       type: "Engulfed",
@@ -426,26 +486,6 @@ export function applyCarriedKills(
   return {
     state: { ...after, swarms, rng: { ...after.rng, resolution: rng } },
     events,
-  };
-}
-
-/** Moves (engulf `from` moves included), engulfs, wall-offs, then carried-load kill rolls. */
-export function applyOrders(
-  battle: BattleState,
-  orders: readonly Order[],
-): { state: BattleState; events: SimEvent[] } {
-  const moved = applyMoves(battle, orders);
-  const engulfed = applyEngulfs(battle, moved.state, orders);
-  const walled = applyWallOffs(battle, engulfed.state, orders);
-  const carried = applyCarriedKills(battle, walled.state);
-  return {
-    state: carried.state,
-    events: [
-      ...moved.events,
-      ...engulfed.events,
-      ...walled.events,
-      ...carried.events,
-    ],
   };
 }
 

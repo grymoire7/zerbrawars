@@ -104,7 +104,7 @@ export function validateBattle(battle: BattleState): string[] {
     if (intended.has(p.id)) problems.push(`${p.id} has more than one intent`);
     intended.add(p.id);
     if (p.hidden) problems.push(`hidden ${p.id} has an intent`);
-    if (i.type === "grow") continue;
+    if (i.type === "grow" || i.type === "stall") continue;
     if (
       i.type === "spore" &&
       isPathogenKindId(p.kind) &&

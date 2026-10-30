@@ -96,6 +96,60 @@ export const PARAMS = {
    * chance to clear for a free swarm. 1 = the same per-character chance; 0 turns it off.
    */
   carriedKillScale: 1,
+  /**
+   * Medication in battle (T10). Med level is 0..1 from adherence; the aura equals it.
+   * - auraStallChance: the stall chance per visible pathogen per turn at a full aura. It scales
+   *   linearly with the aura and is under 1, so meds slow pathogens but never stop them.
+   * - chargeTiers: charges for a level, the first tier whose minLevel the level reaches. A full
+   *   week of doses buys two antifungal charges (enough to finish a mold and its spore without
+   *   dice) and an antibacterial; a few missed doses leave one antifungal, which only buys time;
+   *   under 0.4, none. Tuned in battle/balance.test.ts.
+   * - doctorStrongCharges: strong charges a doctor visit adds (it also reveals hidden tokens).
+   * - chargeMaxSize: the biggest pathogen (on the board or carried) an antibacterial or antifungal
+   *   charge kills. A mold at spore size is too big until it spores (and shrinks), so "wait and
+   *   charge it" competes with "engulf it now". strongMaxSize is the same for the doctor's charge.
+   */
+  meds: {
+    auraStallChance: 0.3,
+    chargeMaxSize: 2,
+    strongMaxSize: 4,
+    chargeTiers: [
+      { minLevel: 0.8, antibacterial: 1, antifungal: 2 },
+      { minLevel: 0.4, antibacterial: 0, antifungal: 1 },
+      { minLevel: 0, antibacterial: 0, antifungal: 0 },
+    ],
+    doctorStrongCharges: 1,
+  },
+  /**
+   * Battle setup from a Loadout (T9). Exposures and reservoirs without a tile take the first free
+   * tile of their list. Exposures arrive from the far half; reservoirs sit mid-board, two rows
+   * from the swarms' start line so no token starts next to a swarm. At most `maxReservoirs`
+   * carried reservoirs start a battle (the plan's snowball cap).
+   */
+  setup: {
+    swarmStarts: [
+      { x: 1, y: 6 },
+      { x: 3, y: 6 },
+      { x: 5, y: 6 },
+    ],
+    exposureTiles: [
+      { x: 1, y: 2 },
+      { x: 5, y: 2 },
+      { x: 3, y: 0 },
+      { x: 6, y: 4 },
+      { x: 0, y: 4 },
+      { x: 3, y: 2 },
+      { x: 1, y: 0 },
+      { x: 5, y: 0 },
+    ],
+    reservoirTiles: [
+      { x: 2, y: 4 },
+      { x: 4, y: 3 },
+      { x: 0, y: 3 },
+      { x: 6, y: 2 },
+    ],
+    maxReservoirs: 2,
+  },
   maxTissueHealth: 20,
   /** The battle ends after this many turns, or sooner once no visible pathogen is left. */
   maxTurns: 6,

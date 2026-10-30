@@ -6,6 +6,7 @@ import type {
   Order,
   Pathogen,
   SimEvent,
+  SupportOrder,
   SwarmId,
 } from "../types";
 import {
@@ -15,8 +16,16 @@ import {
   type TileHeat,
 } from "./inflammation";
 import { generateIntents, landingBlockers } from "./intents";
-import { applyOrders, orderProblems, validateOrders } from "./orders";
+import {
+  applyCarriedKills,
+  applyEngulfs,
+  applyMoves,
+  applyWallOffs,
+  orderProblems,
+  validateOrders,
+} from "./orders";
 import { battleStatus } from "./outcome";
+import { applySupport, supportProblem, withoutClearedLoad } from "./support";
 
 export interface TurnResult {
   readonly state: BattleState;
@@ -31,8 +40,39 @@ type Phase = (battle: BattleState) => {
 };
 
 /**
+ * Moves (engulf `from` moves included, revealing hidden tokens unless `reveal` is false), the
+ * support charge, engulfs, wall-offs, then carried-load kill rolls. Invalid orders are skipped.
+ */
+export function applyOrders(
+  battle: BattleState,
+  orders: readonly Order[],
+  support: SupportOrder | null = null,
+  reveal = true,
+): { state: BattleState; events: SimEvent[] } {
+  const moved = applyMoves(battle, orders, reveal);
+  const supported = applySupport(battle, moved.state, orders, support);
+  const engulfed = applyEngulfs(battle, supported.state, orders);
+  const walled = applyWallOffs(battle, engulfed.state, orders);
+  const carried = applyCarriedKills(
+    withoutClearedLoad(battle, support),
+    walled.state,
+  );
+  return {
+    state: carried.state,
+    events: [
+      ...moved.events,
+      ...supported.events,
+      ...engulfed.events,
+      ...walled.events,
+      ...carried.events,
+    ],
+  };
+}
+
+/**
  * Surviving pathogens run their telegraphed intents in telegraph (pathogen id) order.
- * - An intent whose pathogen is gone (engulfed) is cancelled; applyEngulfs also drops it.
+ * - An intent whose pathogen is gone (engulfed or charged) is cancelled; both also drop it.
+ * - A stall does nothing and emits nothing.
  * - A spread or spore onto a swarm emits Blocked; the parent pays no cost.
  * - A target holding a pathogen or granuloma does nothing and emits nothing. The first intent
  *   in order wins a shared tile; generateIntents never produces one, so this is a safety net.
@@ -49,6 +89,7 @@ const runIntents: Phase = (battle) => {
     if (index < 0) continue;
     const p = pathogens[index];
 
+    if (intent.type === "stall") continue;
     if (intent.type === "grow") {
       const size = Math.min(PARAMS.maxPathogenSize, p.size + intent.amount);
       if (size === p.size) continue;
@@ -100,11 +141,12 @@ const runIntents: Phase = (battle) => {
 function runPhases(
   battle: BattleState,
   orders: readonly Order[],
+  support: SupportOrder | null,
 ): { state: BattleState; events: SimEvent[] } {
   const events: SimEvent[] = [];
   let state = battle;
   const phases: Phase[] = [
-    (s) => applyOrders(s, orders),
+    (s) => applyOrders(s, orders, support),
     runIntents,
     (s) => applyInflammation(s, battle),
   ];
@@ -116,22 +158,35 @@ function runPhases(
   return { state, events };
 }
 
+/** Every reason resolveTurn would reject these orders and support for; empty means accepted. */
+export function turnProblems(
+  battle: BattleState,
+  orders: readonly Order[],
+  support: SupportOrder | null = null,
+): string[] {
+  const problems = orderProblems(battle, orders);
+  const s = support && supportProblem(battle, orders, support);
+  return s ? [...problems, s] : problems;
+}
+
 /**
- * One turn, in the plan's order: player orders (moves, engulfs, wall-offs, carried-load kill rolls;
- * holds do nothing), pathogen intents, inflammation and damage, then turn + 1 and the next
- * telegraph (none once the battle is over). Throws, before changing anything, if the battle is
- * already over or validateOrders rejects any order; the error lists every reason.
+ * One turn, in the plan's order: player orders (moves, the support charge, engulfs, wall-offs,
+ * carried-load kill rolls; holds do nothing), pathogen intents, inflammation and damage, then
+ * turn + 1 and the next telegraph (none once the battle is over). Throws, before changing
+ * anything, if the battle is already over or any order or the support is invalid; the error
+ * lists every reason.
  */
 export function resolveTurn(
   battle: BattleState,
   orders: readonly Order[] = [],
+  support: SupportOrder | null = null,
 ): TurnResult {
   if (battleStatus(battle).over) throw new Error("the battle is over");
-  const problems = orderProblems(battle, orders);
+  const problems = turnProblems(battle, orders, support);
   if (problems.length > 0) {
     throw new Error(`invalid orders: ${problems.join("; ")}`);
   }
-  const r = runPhases(battle, orders);
+  const r = runPhases(battle, orders, support);
   const next = { ...r.state, turn: r.state.turn + 1 };
   const status = battleStatus(next);
   const state = status.over ? next : generateIntents(next);
@@ -153,17 +208,19 @@ export interface InflammationPreview {
 }
 
 /**
- * Where inflammation will rise or fall if the turn ends with `orders` (invalid ones ignored),
- * and what it costs. Uses the same phases as resolveTurn; inflammation never depends on a roll.
+ * Where inflammation will rise or fall if the turn ends with `orders` and `support` (invalid ones
+ * ignored), and what it costs. Uses the same phases as resolveTurn, except that hidden tokens are
+ * not revealed (so the preview never leaks one); inflammation never depends on a roll.
  */
 export function inflammationPreview(
   battle: BattleState,
   orders: readonly Order[] = [],
+  support: SupportOrder | null = null,
 ): InflammationPreview {
   const valid = validateOrders(battle, orders).flatMap((c) =>
     c.reason === null ? [c.order] : [],
   );
-  const moved = applyOrders(battle, valid).state;
+  const moved = applyOrders(battle, valid, support, false).state;
   const before = runIntents(moved).state;
   const changes = inflammationChanges(before, battle);
   const tiles = [...before.board.tiles];
