@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { coordOf, inBounds, sameCoord, tileId } from "../sim/board";
 import { PARAMS } from "../sim/params";
+import type { TileHeat } from "../sim/battle/inflammation";
 import type { BattleState, Coord } from "../sim/types";
 
 const TILE = 1;
@@ -17,6 +18,47 @@ const SLAB = 0x3a2f31;
 // a thick solid frame for the selection, filled discs with a ring for destinations.
 export const ORDER_COLOR = 0xd05cff;
 
+/**
+ * Inflammation is tint plus a pattern, so it reads without color: 1 dots, 2 diagonal hatch,
+ * 3 cross-hatch. Dark lines keep contrast against the warm tint at every level.
+ */
+function heatTexture(level: number): THREE.CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const g = canvas.getContext("2d");
+  if (g) {
+    g.fillStyle = "#4a130e";
+    g.strokeStyle = "#4a130e";
+    g.lineWidth = level === 3 ? 6 : 7;
+    if (level === 1) {
+      for (let y = 20; y < size; y += 44) {
+        for (let x = 20 + ((y / 44) % 2) * 22; x < size; x += 44) {
+          g.beginPath();
+          g.arc(x, y, 8, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+    } else {
+      const step = level === 2 ? 36 : 26;
+      g.beginPath();
+      for (let k = -size; k < size * 2; k += step) {
+        g.moveTo(k, 0);
+        g.lineTo(k + size, size);
+        if (level === 3) {
+          g.moveTo(k + size, 0);
+          g.lineTo(k, size);
+        }
+      }
+      g.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 export interface BoardView {
   readonly group: THREE.Group;
   /** Recolors tiles from state. Reads only; never mutates it. */
@@ -27,6 +69,8 @@ export interface BoardView {
   setSelected(coord: Coord | null): void;
   /** Marks legal destination tiles for the selected swarm. */
   setOptions(coords: readonly Coord[]): void;
+  /** Up-arrow chips on tiles that will heat up if the turn ends now (empty clears them). */
+  setForecast(rising: readonly TileHeat[]): void;
   /** Playback: 0..1 warm tint on a tile (inflammation change or summary pulse). */
   setPulse(coord: Coord, amount: number): void;
   clearPulses(): void;
@@ -70,6 +114,43 @@ export function createBoardView(
     group.add(mesh);
     return mesh;
   });
+
+  // One flat pattern plane per tile, swapped by level (maxInflammation is 3).
+  const heatMats = [1, 2, 3].map(
+    (level) =>
+      new THREE.MeshBasicMaterial({
+        map: heatTexture(level),
+        transparent: true,
+        opacity: 0.5 + 0.1 * level,
+        depthWrite: false,
+      }),
+  );
+  const heatGeo = new THREE.PlaneGeometry(TILE - GAP - 0.04, TILE - GAP - 0.04);
+  heatGeo.rotateX(-Math.PI / 2);
+  const heat: THREE.Mesh[] = meshes.map((m) => {
+    const h = new THREE.Mesh(heatGeo, heatMats[0]);
+    h.position.set(m.position.x, 0.004, m.position.z);
+    h.visible = false;
+    group.add(h);
+    return h;
+  });
+
+  const arrowChips: THREE.Group[] = [];
+  const chipGeo = new THREE.BoxGeometry(0.3, 0.05, 0.3);
+  const chipMat = new THREE.MeshBasicMaterial({ color: 0x2a1410 });
+  const arrowGeo = new THREE.ConeGeometry(0.07, 0.14, 4);
+  const arrowMat = new THREE.MeshBasicMaterial({ color: 0xffb347 });
+  const makeChip = () => {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(chipGeo, chipMat));
+    for (const dx of [-0.06, 0.06]) {
+      const a = new THREE.Mesh(arrowGeo, arrowMat);
+      a.position.set(dx, 0.1, 0);
+      g.add(a);
+    }
+    group.add(g);
+    return g;
+  };
 
   const outline = (color: number, inner: number) => {
     const half = (TILE - GAP) / 2;
@@ -139,6 +220,12 @@ export function createBoardView(
         (s.board.tiles[id]?.inflammation ?? 0) / PARAMS.maxInflammation,
       ),
     );
+    const level = Math.round(s.board.tiles[id]?.inflammation ?? 0);
+    const h = heat[id]!;
+    h.visible = level > 0;
+    if (level > 0) {
+      h.material = heatMats[Math.min(level, heatMats.length) - 1]!;
+    }
     const mat = meshes[id]!.material as THREE.MeshStandardMaterial;
     mat.color.copy(base).lerp(INFLAMED, t * 0.7);
     if (pulses[id]! > 0) mat.color.lerp(PULSE_TINT, pulses[id]! * 0.8);
@@ -197,6 +284,19 @@ export function createBoardView(
           const p = toWorld(c);
           g.position.set(p.x, 0.01, p.z);
         }
+      });
+    },
+    setForecast(rising) {
+      while (arrowChips.length < rising.length) arrowChips.push(makeChip());
+      arrowChips.forEach((g, i) => {
+        const r = rising[i];
+        g.visible = r !== undefined;
+        if (!r) return;
+        const p = toWorld(r.at);
+        g.position.set(p.x + 0.28, 0.12, p.z + 0.28);
+        // Two arrows when it climbs two levels or more.
+        g.children[2]!.visible = r.after - r.before >= 2;
+        g.children[1]!.position.x = r.after - r.before >= 2 ? -0.06 : 0;
       });
     },
     setPulse(coord, amount) {

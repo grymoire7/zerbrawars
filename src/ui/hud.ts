@@ -22,8 +22,24 @@ export interface HudPlayback {
   readonly turn: number;
 }
 
+export interface HudWall {
+  readonly swarmId: string;
+  readonly queued: boolean;
+  /** Why it cannot be done, or null. */
+  readonly reason: string | null;
+  readonly lines: readonly string[];
+}
+
+export interface HudForecast {
+  /** Tissue health the turn's inflammation tick will cost. */
+  readonly tissueDamage: number;
+  readonly rising: number;
+  readonly slowed: readonly string[];
+}
+
 export interface HudModel {
   readonly turn: number;
+  readonly over: boolean;
   readonly maxTurns: number;
   readonly tissueHealth: number;
   readonly canEndTurn: boolean;
@@ -31,6 +47,8 @@ export interface HudModel {
   readonly orders: readonly HudOrder[];
   readonly odds: readonly HudOdds[];
   readonly problems: readonly string[];
+  readonly wall: HudWall | null;
+  readonly forecast: HudForecast | null;
   readonly playback: HudPlayback;
 }
 
@@ -50,6 +68,7 @@ export interface HudHandlers {
   onReset(): void;
   onSelect(swarmId: string): void;
   onClearOrder(swarmId: string): void;
+  onWallOff(): void;
 }
 
 export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
@@ -78,6 +97,17 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
     "display:flex;flex-direction:column;gap:6px;align-items:stretch;pointer-events:auto;" +
     "max-width:min(92vw,520px);box-sizing:border-box;";
 
+  const forecast = document.createElement("div");
+  forecast.style.cssText =
+    panel +
+    "padding:4px 8px;font:12px sans-serif;max-width:min(92vw,520px);box-sizing:border-box;";
+
+  const wallCard = document.createElement("div");
+  wallCard.style.cssText =
+    panel +
+    "padding:8px 10px;box-sizing:border-box;font:13px sans-serif;max-width:min(92vw,520px);" +
+    "pointer-events:auto;";
+
   const orders = document.createElement("div");
   orders.style.cssText =
     "display:flex;gap:6px;flex-wrap:wrap;justify-content:center;pointer-events:auto;font:12px monospace;";
@@ -102,6 +132,7 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
     b.addEventListener("click", onClick);
     return b;
   };
+  const wallOff = button("Wall off (W)", handlers.onWallOff);
   const endTurn = button("End Turn", handlers.onEndTurn);
   const reset = button("Reset", handlers.onReset);
   const replay = button("Replay last turn", handlers.onReplay);
@@ -115,9 +146,42 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
   stats.style.position = "relative";
   stats.style.overflow = "hidden";
   stats.append(progress);
-  row.append(stats, endTurn, x1, x2, skip, replay, reset);
-  bar.append(log, problems, odds, orders, row);
+  row.append(stats, wallOff, endTurn, x1, x2, skip, replay, reset);
+  bar.append(log, problems, forecast, wallCard, odds, orders, row);
   root.appendChild(bar);
+
+  // Key for the heat patterns on the board; the pattern carries the level, not just the color.
+  const legend = document.createElement("div");
+  legend.style.cssText =
+    panel +
+    "position:absolute;left:8px;top:32px;padding:4px 8px;font:12px sans-serif;color:#c8ccd4;" +
+    "display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:min(60vw,360px);";
+  const dark = "#4a130e";
+  const swatch = (bg: string, text: string) => {
+    const w = document.createElement("span");
+    w.style.cssText = "display:inline-flex;align-items:center;gap:4px;";
+    const sw = document.createElement("span");
+    sw.setAttribute("aria-hidden", "true");
+    sw.style.cssText = `width:16px;height:16px;border-radius:2px;background-color:#c4554a;${bg}`;
+    w.append(sw, text);
+    return w;
+  };
+  legend.append(
+    "Heat:",
+    swatch(
+      `background-image:radial-gradient(${dark} 28%,transparent 32%);background-size:8px 8px;`,
+      "warm",
+    ),
+    swatch(
+      `background-image:repeating-linear-gradient(45deg,${dark} 0 2px,transparent 2px 5px);`,
+      "hot: slows",
+    ),
+    swatch(
+      `background-image:repeating-linear-gradient(45deg,${dark} 0 2px,transparent 2px 5px),repeating-linear-gradient(-45deg,${dark} 0 2px,transparent 2px 5px);`,
+      "inflamed",
+    ),
+  );
+  root.appendChild(legend);
 
   let shownTissue = -1;
 
@@ -183,8 +247,50 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
     return card;
   };
 
+  const line = (text: string, style = "") => {
+    const d = document.createElement("div");
+    d.textContent = text;
+    d.style.cssText = style;
+    return d;
+  };
+
   return {
     update(m) {
+      const f = m.forecast;
+      forecast.style.display = f ? "block" : "none";
+      if (f) {
+        const parts = [
+          f.tissueDamage > 0
+            ? `Heat will cost ${f.tissueDamage} tissue this turn.`
+            : "No tissue lost to heat this turn.",
+          f.rising > 0
+            ? `${f.rising} ${f.rising === 1 ? "tile" : "tiles"} heating up (arrows).`
+            : "",
+          f.slowed.length > 0
+            ? `Slowed next turn: ${f.slowed.join(", ")}.`
+            : "",
+        ].filter(Boolean);
+        forecast.textContent = parts.join(" ");
+      }
+      const w = m.wall;
+      wallCard.style.display = w ? "block" : "none";
+      wallCard.style.border = w?.queued
+        ? "2px solid #d05cff"
+        : "1px dashed #3a3f4a";
+      wallCard.replaceChildren(
+        ...(w
+          ? [
+              line(`Wall off ${w.swarmId}`, "font-weight:600;"),
+              ...w.lines.map((t) => line(t)),
+              ...(w.reason
+                ? [line(`Cannot: ${w.reason}.`, "color:#ffb4aa;")]
+                : []),
+            ]
+          : []),
+      );
+      wallOff.style.display = w && !m.playback.playing ? "" : "none";
+      wallOff.textContent = w?.queued ? "Cancel wall off (W)" : "Wall off (W)";
+      wallOff.disabled = !w || (!w.queued && w.reason !== null);
       odds.style.display = m.odds.length > 0 ? "flex" : "none";
       odds.replaceChildren(...m.odds.map(oddsCard));
       orders.style.display = m.orders.length > 0 ? "flex" : "none";
@@ -202,10 +308,9 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
         turn.textContent = `Playing turn ${pb.turn}`;
         turn.style.color = "#9fd8f0";
       } else {
-        turn.textContent =
-          m.turn <= m.maxTurns
-            ? `Turn ${m.turn} / ${m.maxTurns}`
-            : "Battle over (T8 pending)";
+        turn.textContent = m.over
+          ? `Battle finished after ${Math.min(m.turn - 1, m.maxTurns)} turns`
+          : `Turn ${m.turn} / ${m.maxTurns}`;
         turn.style.color = "";
         progress.style.width = "0";
       }

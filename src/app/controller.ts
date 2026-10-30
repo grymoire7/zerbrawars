@@ -4,16 +4,24 @@ import {
   engulfPreview,
   engulfTargets,
   moveOptions,
-  moveRange,
   orderProblems,
+  swarmMoveRange,
+  wallOffPreview,
   withOrder,
   type EngulfTarget,
+  type WallOffPreview,
 } from "../sim/battle/orders";
+import { battleStatus, gradeOutcome } from "../sim/battle/outcome";
 import { PARAMS } from "../sim/params";
-import { resolveTurn } from "../sim/battle/resolve";
+import {
+  inflammationPreview,
+  resolveTurn,
+  type InflammationPreview,
+} from "../sim/battle/resolve";
 import { pathogenKind } from "../sim/pathogens";
 import { createPlayback, type Playback, type Speed } from "../render/playback";
 import type {
+  BattleOutcome,
   BattleState,
   Coord,
   Order,
@@ -60,9 +68,29 @@ const targetAt = (
 const swarmAt = (battle: BattleState, at: Coord) =>
   battle.swarms.find((s) => sameCoord(s.at, at));
 
+const wallable = (battle: BattleState, id: SwarmId) =>
+  wallOffPreview(battle, id)?.reason === null;
+
+/** Queues wall off for `id`, or clears it if already queued. Does nothing if it cannot wall off. */
+export function toggleWallOff(
+  battle: BattleState,
+  ui: OrderUi,
+  id: SwarmId,
+): OrderUi {
+  if (ui.orders.find((o) => o.swarmId === id)?.type === "wallOff") {
+    return { ...ui, orders: clearOrder(ui.orders, id) };
+  }
+  if (!wallable(battle, id)) return ui;
+  return {
+    ...ui,
+    orders: withOrder(ui.orders, { type: "wallOff", swarmId: id }),
+  };
+}
+
 /**
  * What a tap on a tile (null = off the board) does:
- * - own tile of the selected swarm: queue hold (cancels a move);
+ * - own tile of the selected swarm: queue hold (cancels a move); a second tap on a loaded swarm
+ *   turns the hold into wall off, and a third clears it;
  * - an option tile: queue the move, or clear it if that move is already queued;
  * - an engulf target's tile: queue the engulf, or clear it if already queued;
  * - another swarm: select it; anything else: deselect.
@@ -76,6 +104,11 @@ export function tapTile(
   const here = swarmAt(battle, at);
   const sel = battle.swarms.find((s) => s.id === ui.selected);
   if (here && here.id === sel?.id) {
+    const cur = ui.orders.find((o) => o.swarmId === here.id);
+    if (cur?.type === "wallOff") return toggleWallOff(battle, ui, here.id);
+    if (cur?.type === "hold" && wallable(battle, here.id)) {
+      return toggleWallOff(battle, ui, here.id);
+    }
     return {
       ...ui,
       orders: withOrder(ui.orders, { type: "hold", swarmId: here.id }),
@@ -137,12 +170,12 @@ export function describeOrder(o: Order): string {
       return `${o.swarmId} -> ${xy(o.to)}`;
     case "hold":
       return `${o.swarmId} hold`;
+    case "wallOff":
+      return `${o.swarmId} wall off`;
     case "engulf":
       return o.from
         ? `${o.swarmId} -> ${xy(o.from)}, engulf ${o.pathogenId}`
         : `${o.swarmId} engulf ${o.pathogenId}`;
-    default:
-      return `${o.swarmId} ${o.type}`;
   }
 }
 
@@ -190,7 +223,7 @@ export function oddsFor(
   });
   if (!pv) return null;
   const kind = pathogenKind(p.kind);
-  const range = `Move range ${moveRange(swarm)} -> ${pv.moveRangeIfLoaded}.`;
+  const range = `Move range ${swarmMoveRange(battle, swarm)} -> ${pv.moveRangeIfLoaded}.`;
   let text: string;
   if (pv.reason !== null) text = `Cannot engulf: ${pv.reason}.`;
   else if (pv.outcome === "kills") text = "Kills it.";
@@ -208,6 +241,12 @@ export function oddsFor(
     pending,
     valid: pv.reason === null,
   };
+}
+
+/** The wall-off card for the selected swarm. */
+export interface WallCard extends WallOffPreview {
+  readonly swarmId: SwarmId;
+  readonly queued: boolean;
 }
 
 export type ControllerMode = "plan" | "playback";
@@ -234,6 +273,16 @@ export interface Controller {
   /** Events from the most recent resolve, as far as playback has revealed them; empty after a reset. */
   lastEvents(): readonly SimEvent[];
   canEndTurn(): boolean;
+  /** The battle has ended (status over); ordering is off. Playback may still be running. */
+  over(): boolean;
+  /** The grade, once over. */
+  outcome(): BattleOutcome | null;
+  /** Wall off preview for the selected swarm when it is loaded or has the order queued. */
+  wallCard(): WallCard | null;
+  /** Queues or clears wall off for the selected swarm. */
+  wallOff(): void;
+  /** What the pending orders do to inflammation; null with no orders or during playback. */
+  forecast(): InflammationPreview | null;
   orders(): readonly Order[];
   selected(): SwarmId | null;
   /** Legal destinations for the selected swarm. */
@@ -286,8 +335,9 @@ export function createController(
   const playing = () => pb !== null && !pb.done;
   const hoverTarget = () =>
     hovered ? targetAt(state, ui, hovered) : undefined;
+  const over = () => battleStatus(state).over;
   const set = (next: OrderUi) => {
-    if (playing()) return;
+    if (playing() || over()) return;
     ui = next;
     problems = [];
     onChange(c);
@@ -327,7 +377,27 @@ export function createController(
       onChange(c);
     },
     lastEvents: () => (pb && !pb.done ? pb.revealed() : events),
-    canEndTurn: () => !playing() && state.turn <= state.maxTurns,
+    canEndTurn: () => !playing() && !over(),
+    over,
+    outcome: () => (over() ? gradeOutcome(state) : null),
+    wallCard() {
+      const id = ui.selected;
+      const pv = id ? wallOffPreview(state, id) : null;
+      if (!id || !pv || over()) return null;
+      const queued = ui.orders.some(
+        (o) => o.swarmId === id && o.type === "wallOff",
+      );
+      return pv.contents.length > 0 || queued
+        ? { ...pv, swarmId: id, queued }
+        : null;
+    },
+    wallOff() {
+      if (ui.selected) set(toggleWallOff(state, ui, ui.selected));
+    },
+    forecast: () =>
+      playing() || over() || ui.orders.length === 0
+        ? null
+        : inflammationPreview(state, ui.orders),
     orders: () => ui.orders,
     selected: () => ui.selected,
     options: () => orderOptions(state, ui),
@@ -423,6 +493,13 @@ export function createController(
 
 const xy = (c: Coord) => `${c.x},${c.y}`;
 
+/** Log lines for a turn's events; per-tile inflammation changes are shown on the board instead. */
+export function logLines(events: readonly SimEvent[]): string[] {
+  return events
+    .filter((e) => e.type !== "InflammationChanged")
+    .map(describeEvent);
+}
+
 export function describeEvent(e: SimEvent): string {
   switch (e.type) {
     case "Grew":
@@ -443,6 +520,8 @@ export function describeEvent(e: SimEvent): string {
       return `${e.pathogenId} killed at ${xy(e.at)}`;
     case "ResidualKill":
       return `${e.swarmId} residual kill: ${e.success ? "succeeded" : "failed"} (${pct(e.chance)})`;
+    case "Walled":
+      return `${e.swarmId} walled off a granuloma at ${xy(e.at)}`;
     case "Loaded":
       return `${e.swarmId} loaded (${e.load.length}/${PARAMS.loadCap})`;
     default:

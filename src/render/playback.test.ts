@@ -140,6 +140,122 @@ describe("buildTimeline", () => {
   });
 });
 
+describe("buildTimeline: wall-off and carried loads", () => {
+  const loaded = (): BattleState => {
+    const b = load();
+    return {
+      ...b,
+      swarms: b.swarms.map((s) =>
+        s.id === "s3"
+          ? {
+              ...s,
+              load: [
+                { kind: "aspergillus", size: 2 },
+                { kind: "aspergillus", size: 1 },
+              ],
+            }
+          : s,
+      ),
+    };
+  };
+
+  it("gives Walled a beat that names the granuloma and clears the swarm's load", () => {
+    const before = loaded();
+    const events: SimEvent[] = [
+      { type: "Walled", swarmId: "s3", granulomaId: "g5", at: { x: 5, y: 6 } },
+      { type: "InflammationChanged", at: { x: 5, y: 6 }, inflammation: 1 },
+    ];
+    const t = buildTimeline(before, events);
+    const b = t.beats.find((x) => x.kind === "walled");
+    expect(b?.kind === "walled" && b.granulomaId).toBe("g5");
+    expect(b?.phase).toBe("engulf");
+    expect(t.beats.find((x) => x.kind === "inflame")?.phase).toBe("tick");
+    expect(t.beats.flatMap((x) => x.events).sort()).toEqual([0, 1]);
+  });
+
+  it("gives carried kill rolls their own beat, folding the Loaded that follows", () => {
+    const before = loaded();
+    const events: SimEvent[] = [
+      { type: "ResidualKill", swarmId: "s3", chance: 0.1, success: false },
+      { type: "ResidualKill", swarmId: "s3", chance: 0.1, success: true },
+      {
+        type: "Loaded",
+        swarmId: "s3",
+        load: [{ kind: "aspergillus", size: 2 }],
+      },
+    ];
+    const t = buildTimeline(before, events);
+    expect(t.beats).toHaveLength(1);
+    const b = t.beats[0]!;
+    expect(b.kind).toBe("carried");
+    if (b.kind !== "carried") return;
+    expect(b.rolls).toBe(2);
+    expect(b.success).toBe(true);
+    expect(b.load).toBe(1);
+    expect(b.at).toEqual({ x: 5, y: 6 });
+    expect(b.events).toEqual([0, 1, 2]);
+  });
+
+  it("reports a failed carried roll with the load unchanged", () => {
+    const before = loaded();
+    const t = buildTimeline(before, [
+      { type: "ResidualKill", swarmId: "s3", chance: 0.1, success: false },
+      { type: "ResidualKill", swarmId: "s3", chance: 0.1, success: false },
+    ]);
+    const b = t.beats[0]!;
+    expect(b.kind === "carried" && b.success).toBe(false);
+    expect(b.kind === "carried" && b.load).toBe(2);
+  });
+
+  it("keeps an engulf's own roll inside the engulf beat", () => {
+    const before = load();
+    const t = buildTimeline(before, [
+      { type: "Engulfed", swarmId: "s3", pathogenId: "p2", wall: "sealed" },
+      { type: "ResidualKill", swarmId: "s3", chance: 0.1, success: true },
+      { type: "Killed", pathogenId: "p2", at: { x: 5, y: 2 }, cause: "engulf" },
+    ]);
+    expect(t.beats.map((b) => b.kind)).toEqual(["engulf"]);
+  });
+
+  it("covers every event of real turns that wall off and carry loads", () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      let before = load(seed);
+      const turns: Order[][] = [
+        [
+          {
+            type: "engulf",
+            swarmId: "s3",
+            pathogenId: "p2",
+            from: { x: 5, y: 3 },
+          },
+        ],
+        [],
+        [{ type: "wallOff", swarmId: "s3" }],
+        [],
+      ];
+      for (const orders of turns) {
+        const valid = orders.filter(
+          (o) => o.type !== "wallOff" || before.swarms[2]!.load.length > 0,
+        );
+        let r;
+        try {
+          r = resolveTurn(before, valid);
+        } catch {
+          break;
+        }
+        const t = buildTimeline(before, r.events);
+        const covered = t.beats.flatMap((b) => b.events).sort((a, b) => a - b);
+        const loose = r.events
+          .map((e, i) => (e.type === "Loaded" ? -1 : i))
+          .filter((i) => i >= 0 && !covered.includes(i));
+        expect(loose).toEqual([]);
+        before = r.state;
+        if (r.status.over) break;
+      }
+    }
+  });
+});
+
 describe("createPlayback", () => {
   it("shows the pre-turn state while playing and the new state at the end", () => {
     const before = load();

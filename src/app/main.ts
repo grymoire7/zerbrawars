@@ -1,5 +1,6 @@
 import { createBoardView } from "../render/boardView";
 import { createFxView } from "../render/fxView";
+import { createGranulomaView } from "../render/granulomaView";
 import { createOrderView } from "../render/orderView";
 import { createPathogenView } from "../render/pathogenView";
 import type { Playback } from "../render/playback";
@@ -12,12 +13,15 @@ import {
   isScenarioName,
   loadScenario,
 } from "../sim/scenarios";
+import { battleStatus } from "../sim/battle/outcome";
 import { PARAMS } from "../sim/params";
+import { pathogenKind } from "../sim/pathogens";
 import type { Coord } from "../sim/types";
 import { getUiRoot } from "../ui";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createHud } from "../ui/hud";
-import { createController, describeEvent } from "./controller";
+import { createOutcomeOverlay } from "../ui/outcome";
+import { createController, logLines } from "./controller";
 
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
@@ -33,8 +37,7 @@ if (seed !== undefined && !Number.isFinite(seed)) {
   console.warn(`Invalid seed "${seedParam}", using the default`);
 }
 const scenarioName = isScenarioName(requested) ? requested : DEFAULT_SCENARIO;
-const validSeed =
-  seed !== undefined && Number.isFinite(seed) ? seed : undefined;
+let validSeed = seed !== undefined && Number.isFinite(seed) ? seed : undefined;
 const load = () => {
   const s = loadScenario(scenarioName, validSeed);
   if (!s) throw new Error("default scenario failed to load");
@@ -57,6 +60,7 @@ const { render, camera, scene } = createScene(canvas, {
 });
 const view = createBoardView(scene, state);
 const pathogenView = createPathogenView(scene, view.tilePosition);
+const granulomaView = createGranulomaView(scene, view.tilePosition);
 const swarmView = createSwarmView(scene, view.tilePosition);
 const telegraphView = createTelegraphView(scene, view.tilePosition);
 const orderView = createOrderView(scene, view.tilePosition);
@@ -65,6 +69,7 @@ const playbackView = createPlaybackView({
   board: view,
   swarms: swarmView,
   pathogens: pathogenView,
+  granulomas: granulomaView,
   fx: fxView,
   tilePosition: view.tilePosition,
 });
@@ -76,7 +81,20 @@ const hud = createHud(ui, {
   onReset: () => controller.reset(),
   onSelect: (id) => controller.select(id),
   onClearOrder: (id) => controller.clearOrder(id),
+  onWallOff: () => controller.wallOff(),
 });
+const outcomeOverlay = createOutcomeOverlay(ui, {
+  onPlayAgain: () => controller.reset(),
+  onNewSeed: () => {
+    validSeed = Math.floor(Math.random() * 1_000_000);
+    const url = new URL(window.location.href);
+    url.searchParams.set("seed", String(validSeed));
+    window.history.replaceState(null, "", url);
+    controller.reset();
+  },
+  onReplay: () => controller.replay(),
+});
+let outcomeShown = false;
 const readout = document.createElement("div");
 readout.style.cssText =
   "position:absolute;left:8px;top:8px;font:12px monospace;color:#c8ccd4;opacity:0.7";
@@ -92,6 +110,18 @@ updateReadout();
 let playing: Playback | null = null;
 let seen: Playback | null = null;
 let shown: typeof state | null = null;
+const wallLines = (w: NonNullable<ReturnType<typeof controller.wallCard>>) => {
+  const n = w.contents.length;
+  const what = w.contents.map((c) => pathogenKind(c.kind).label).join(", ");
+  return [
+    n > 0
+      ? `Seals what ${w.swarmId} carries (${what}) into a granuloma on this tile.`
+      : `${w.swarmId} carries nothing to seal.`,
+    `The tile is blocked for good and heats up to at least ${w.inflammation}` +
+      (w.tissuePerTurn > 0 ? ` (-${w.tissuePerTurn} tissue a turn).` : "."),
+    `${w.swarmId} is busy for ${w.busyTurns} more turn after this one.`,
+  ];
+};
 function refresh() {
   const pb = controller.playback();
   let snap = false;
@@ -121,6 +151,7 @@ function refresh() {
   if (!playing && s !== shown) {
     view.update(s);
     pathogenView.update(s);
+    granulomaView.update(s);
     swarmView.update(s, snap);
     shown = s;
   }
@@ -131,17 +162,42 @@ function refresh() {
   const sel = s.swarms.find((w) => w.id === controller.selected());
   view.setSelected(sel?.at ?? null);
   view.setOptions(controller.options());
+  const forecast = controller.forecast();
+  view.setForecast(forecast?.rising ?? []);
   selected = sel?.at ?? null;
   updateReadout();
+  const wall = controller.wallCard();
+  const outcome = controller.outcome();
+  if (outcome && !playing) {
+    if (!outcomeShown) {
+      outcomeShown = true;
+      outcomeOverlay.show(outcome, battleStatus(controller.state()));
+    }
+  } else if (outcomeShown) {
+    outcomeShown = false;
+    outcomeOverlay.hide();
+  }
   hud.update({
+    over: controller.over(),
     turn: s.turn,
     maxTurns: s.maxTurns,
     tissueHealth: s.tissueHealth,
     canEndTurn: controller.canEndTurn(),
-    log: controller.lastEvents().map(describeEvent),
+    log: logLines(controller.lastEvents()),
     orders: controller.pending(),
     odds: controller.odds(),
     problems: controller.problems(),
+    wall: wall && {
+      swarmId: wall.swarmId,
+      queued: wall.queued,
+      reason: wall.reason,
+      lines: wallLines(wall),
+    },
+    forecast: forecast && {
+      tissueDamage: forecast.tissueDamage,
+      rising: forecast.rising.length,
+      slowed: forecast.slowed,
+    },
     playback: {
       playing: playing !== null,
       speed: controller.speed(),
@@ -195,6 +251,8 @@ window.addEventListener("keydown", (e) => {
   } else if (e.key === "Tab") {
     e.preventDefault();
     controller.cycle(e.shiftKey ? -1 : 1);
+  } else if (e.key === "w" || e.key === "W") {
+    controller.wallOff();
   } else if (e.key === "Escape") {
     controller.select(null);
   }

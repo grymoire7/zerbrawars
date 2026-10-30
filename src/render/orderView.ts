@@ -113,6 +113,39 @@ export function createOrderView(
     }
   };
 
+  // A queued wall-off: a heavy square frame of blocks around the tile (a fence, unlike hold's bars
+  // or the round move marks) with ghost lumps where the granuloma will sit.
+  const drawWall = (c: Coord) => {
+    const o = at(c, 0.08);
+    for (const [dx, dz, w, d] of [
+      [-0.38, -0.38, 0.14, 0.14],
+      [0.38, -0.38, 0.14, 0.14],
+      [-0.38, 0.38, 0.14, 0.14],
+      [0.38, 0.38, 0.14, 0.14],
+      [0, -0.4, 0.3, 0.1],
+      [0, 0.4, 0.3, 0.1],
+      [-0.4, 0, 0.1, 0.3],
+      [0.4, 0, 0.1, 0.3],
+    ] as const) {
+      const m = place(new THREE.Mesh(boxGeo, solid), o);
+      m.position.x += dx;
+      m.position.z += dz;
+      m.scale.set(w, 0.14, d);
+    }
+    for (const [dx, dz, w] of [
+      [0, 0, 0.42],
+      [0.2, 0.1, 0.26],
+      [-0.2, 0.12, 0.26],
+      [0.06, -0.22, 0.28],
+    ] as const) {
+      const m = place(new THREE.Mesh(boxGeo, ghost), at(c, 0.1), 9);
+      m.position.x += dx;
+      m.position.z += dz;
+      m.scale.set(w, 0.2, w);
+      m.rotation.y = 0.4 + dx;
+    }
+  };
+
   // Crosshair: a thin circle with four ticks crossing it, unlike the telegraph's squares and the
   // move discs. The queued target also gets a heavier inner ring.
   const drawReticle = (c: Coord, queued: boolean) => {
@@ -168,6 +201,7 @@ export function createOrderView(
         const swarm = state.swarms.find((s) => s.id === o.swarmId);
         if (!swarm) continue;
         if (o.type === "hold") drawHold(swarm.at);
+        else if (o.type === "wallOff") drawWall(swarm.at);
         else if (o.type === "move") {
           const path = movePath(state, swarm.id, o.to);
           if (path) drawMove(path);

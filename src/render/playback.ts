@@ -3,6 +3,7 @@
 import type {
   BattleState,
   Coord,
+  GranulomaId,
   PathogenId,
   SimEvent,
   SwarmId,
@@ -51,7 +52,19 @@ export type Beat = BeatBase &
     | {
         readonly kind: "walled";
         readonly swarmId: SwarmId;
+        readonly granulomaId: GranulomaId;
         readonly at: Coord;
+      }
+    | {
+        /** Carried-load kill rolls: a ResidualKill run with no Engulfed before it. */
+        readonly kind: "carried";
+        readonly swarmId: SwarmId;
+        readonly at: Coord;
+        readonly rolls: number;
+        /** At least one roll killed its pathogen. */
+        readonly success: boolean;
+        /** Load count after the beat. */
+        readonly load: number;
       }
     | {
         readonly kind: "grow";
@@ -119,6 +132,8 @@ export const TIMING = {
   engulfRoll: 1.3,
   engulfStagger: 0.28,
   grow: 0.5,
+  wall: 0.7,
+  carried: 0.8,
   spread: 0.65,
   spore: 0.85,
   blocked: 0.75,
@@ -240,12 +255,48 @@ export function buildTimeline(
           kind: "walled",
           phase: "engulf",
           swarmId: e.swarmId,
+          granulomaId: e.granulomaId,
           at: e.at,
           events: [i],
-          duration: TIMING.grow,
+          duration: TIMING.wall,
           revealAt: 0.5,
         });
+        loads.set(e.swarmId, 0);
         break;
+      case "ResidualKill": {
+        // A roll not folded into an Engulfed is a carried load's: the run for one swarm, then
+        // the Loaded that follows if any load died.
+        const idx = [i];
+        let success = e.success;
+        let j = i + 1;
+        for (
+          let r = events[j];
+          r?.type === "ResidualKill" && r.swarmId === e.swarmId;
+          r = events[++j]
+        ) {
+          success ||= r.success;
+          idx.push(j);
+        }
+        const end = events[j];
+        if (end?.type === "Loaded" && end.swarmId === e.swarmId) {
+          loads.set(e.swarmId, end.load.length);
+          idx.push(j++);
+        }
+        drafts.engulf.push({
+          kind: "carried",
+          phase: "engulf",
+          swarmId: e.swarmId,
+          at: swarmAt.get(e.swarmId) ?? { x: 0, y: 0 },
+          rolls: idx.filter((n) => events[n]!.type === "ResidualKill").length,
+          success,
+          load: loads.get(e.swarmId) ?? 0,
+          events: idx,
+          duration: TIMING.carried,
+          revealAt: 0.5,
+        });
+        i = j - 1;
+        break;
+      }
       case "Grew":
         drafts.pathogen.push({
           kind: "grow",
@@ -329,8 +380,7 @@ export function buildTimeline(
         tissue = e.tissueHealth;
         break;
       default:
-      // A stray Loaded or ResidualKill (not after an Engulfed) has no beat and is revealed at the
-      // end with any other unmatched event.
+      // A stray Loaded has no beat and is revealed at the end with any other unmatched event.
     }
   }
   drafts.tick.unshift(...inflamed.values());

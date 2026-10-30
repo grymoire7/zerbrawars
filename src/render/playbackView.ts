@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { PARAMS } from "../sim/params";
 import { PATHOGEN_KINDS } from "../sim/pathogens";
-import type { BattleState, Coord, PathogenId } from "../sim/types";
+import type { BattleState, Coord, GranulomaId, PathogenId } from "../sim/types";
 import type { BoardView } from "./boardView";
 import type { FxView } from "./fxView";
+import type { GranulomaView } from "./granulomaView";
 import { FORM_COLOR, type PathogenView } from "./pathogenView";
 import { beatProgress, type Beat, type Playback } from "./playback";
 import type { SwarmView } from "./swarmView";
@@ -29,6 +30,7 @@ interface Views {
   board: BoardView;
   swarms: SwarmView;
   pathogens: PathogenView;
+  granulomas: GranulomaView;
   fx: FxView;
   tilePosition: (c: Coord) => THREE.Vector3;
 }
@@ -43,6 +45,7 @@ const LOAD = 0x7d94a3;
 const BLOCK = 0xff5a46;
 const SPORE = 0x6fb8ff;
 const GROW = 0xf2f2f2;
+const WALL = 0xb08a5a;
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const seg = (p: number, a: number, b: number) => clamp01((p - a) / (b - a));
@@ -51,6 +54,13 @@ const easeIn = (x: number) => x * x * x;
 const easeInOut = (x: number) =>
   x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
 const back = (x: number) => 1 + 2.70158 * (x - 1) ** 3 + 1.70158 * (x - 1) ** 2;
+/** Drops in from above, overshoots small and settles: a thud. */
+const thud = (x: number) =>
+  x <= 0
+    ? 0
+    : x < 0.6
+      ? easeIn(x / 0.6) * 1.15
+      : 1.15 - 0.15 * easeOut((x - 0.6) / 0.4);
 const bump = (x: number) => Math.sin(Math.PI * clamp01(x));
 
 /** World positions a beat needs, worked out once at begin(). */
@@ -70,6 +80,7 @@ export function createPlaybackView(v: Views): PlaybackView {
   let pb: Playback | null = null;
   let caches: Cache[] = [];
   let children: PathogenId[] = [];
+  let formed: GranulomaId[] = [];
   let tissueShown: number | null = null;
   let summaryTiles: Coord[] = [];
   let summaryT = -1;
@@ -111,6 +122,7 @@ export function createPlaybackView(v: Views): PlaybackView {
       case "grow":
       case "killed":
       case "walled":
+      case "carried":
       case "inflame":
         a = pos(beat.at);
         b = a.clone();
@@ -302,9 +314,67 @@ export function createPlaybackView(v: Views): PlaybackView {
         return;
       }
       case "walled": {
-        const q = seg(p, 0, 1);
-        v.fx.ring(c.a.x, c.a.y + 0.05, c.a.z, 0.5 - 0.15 * q, bump(q), LOAD);
-        label(t, time(0.3), "WALLED OFF", "#b8cfdc", c.a, 0.85);
+        // The load packs down into a block that thuds onto the tile; the swarm lets go.
+        const pose = v.swarms.pose(beat.swarmId);
+        if (pose) {
+          pose.swell = 1 - easeIn(seg(p, 0.3, 0.6));
+          pose.load = p >= 0.5 ? 0 : -1;
+          pose.jolt = 0.6 * bump(seg(p, 0.45, 0.7));
+        }
+        v.granulomas.setPose(beat.granulomaId, thud(seg(p, 0.3, 0.75)));
+        const q = seg(p, 0.4, 1);
+        v.fx.ring(
+          c.a.x,
+          c.a.y + 0.05,
+          c.a.z,
+          0.3 + 0.45 * easeOut(q),
+          0.85 * (1 - q) * (p >= 0.4 ? 1 : 0),
+          WALL,
+        );
+        v.fx.burst(c.seed, c.a.x, c.a.y + 0.1, c.a.z, q, 12, 0.9, WALL);
+        v.board.setPulse(beat.at, 0.6 * bump(seg(p, 0.4, 1)));
+        label(t, time(0.45), "WALLED OFF", "#e2c9a8", c.a, 0.95);
+        return;
+      }
+      case "carried": {
+        const pose = v.swarms.pose(beat.swarmId);
+        if (pose) {
+          pose.flash = beat.success ? 0.5 * bump(seg(p, 0.35, 0.8)) : 0;
+          if (p >= 0.5) {
+            pose.load = beat.load;
+            if (beat.load === 0) pose.swell = 0;
+          }
+        }
+        const q = seg(p, 0.2, 0.9);
+        v.fx.ring(
+          c.a.x,
+          c.a.y + 0.05,
+          c.a.z,
+          0.55 - 0.25 * q,
+          0.6 * bump(q),
+          beat.success ? GOLD : LOAD,
+        );
+        if (beat.success) {
+          v.fx.burst(
+            c.seed,
+            c.a.x,
+            c.a.y + 0.3,
+            c.a.z,
+            seg(p, 0.5, 1),
+            10,
+            0.8,
+            GOLD,
+          );
+        }
+        label(
+          t,
+          time(0.4),
+          beat.success ? "carried kill: success" : "carried kill: failed",
+          beat.success ? "#ffd84a" : "#aab0ba",
+          c.a,
+          0.85,
+          0.8,
+        );
         return;
       }
       case "grow": {
@@ -534,11 +604,18 @@ export function createPlaybackView(v: Views): PlaybackView {
         b.kind === "spread" || b.kind === "spore" ? [b.newPathogenId] : [],
       );
       const born = new Set(children);
+      formed = next.timeline.beats.flatMap((b) =>
+        b.kind === "walled" ? [b.granulomaId] : [],
+      );
       v.board.update(before);
       v.swarms.update(before, true);
       v.pathogens.update(before, [
         ...before.pathogens,
         ...next.after.pathogens.filter((p) => born.has(p.id)),
+      ]);
+      v.granulomas.update(before, [
+        ...before.granulomas,
+        ...next.after.granulomas.filter((g) => formed.includes(g.id)),
       ]);
       tissueShown = before.tissueHealth;
       summaryT = -1;
@@ -547,9 +624,11 @@ export function createPlaybackView(v: Views): PlaybackView {
       if (!pb) return;
       v.swarms.clearPoses();
       v.pathogens.clearPoses();
+      v.granulomas.clearPoses();
       v.board.clearPulses();
       v.fx.reset();
       for (const id of children) v.pathogens.setPose(id, 0, 1, 0, 0, 0);
+      for (const id of formed) v.granulomas.setPose(id, 0);
       tissueShown = pb.before.tissueHealth;
       for (const c of caches) {
         if (t >= c.beat.start) apply(c, t);
@@ -560,9 +639,11 @@ export function createPlaybackView(v: Views): PlaybackView {
       pb = null;
       caches = [];
       children = [];
+      formed = [];
       tissueShown = null;
       v.swarms.clearPoses();
       v.pathogens.clearPoses();
+      v.granulomas.clearPoses();
       v.board.clearPulses();
       v.fx.reset();
       v.fx.commit();
