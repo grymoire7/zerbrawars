@@ -1,17 +1,31 @@
 import { SCENARIO_NAMES } from "../sim/scenarios";
 
+/** The loadout levers (see app/loadoutOptions). */
+export interface DebugLoadout {
+  /** 0..1. */
+  readonly med: number;
+  readonly doctor: boolean;
+  /** 0..1. */
+  readonly residual: number;
+}
+
 export interface DebugPanelOptions {
   readonly scenario: string;
   readonly seed: number;
   /** Skip turn playback (starts from prefers-reduced-motion). */
   readonly skipPlayback: boolean;
   onSkipPlayback(on: boolean): void;
+  readonly loadout: DebugLoadout;
+  /** Restart the battle with these levers (the caller also updates the URL). */
+  onRestart(loadout: DebugLoadout): void;
 }
 
 export interface DebugPanel {
   readonly element: HTMLElement;
   /** Frame stats line, e.g. "60 fps  16.6 ms (max 18.0)". */
   setStats(text: string): void;
+  /** Keeps the seed field in step when the seed changes elsewhere (New seed). */
+  setSeed(seed: number): void;
 }
 
 /** Small collapsible panel. Changing scenario or seed reloads with matching URL parameters. */
@@ -76,10 +90,64 @@ export function createDebugPanel(
     "display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;";
   skipRow.append(skip, "Skip playback (reduced motion)");
 
+  const slider = (value: number) => {
+    const r = document.createElement("input");
+    r.type = "range";
+    r.min = "0";
+    r.max = "100";
+    r.step = "1";
+    r.value = String(Math.round(value * 100));
+    r.style.cssText = "min-height:44px;width:100%;margin:0;";
+    return r;
+  };
+  const sliderRow = (text: string, r: HTMLInputElement) => {
+    const out = document.createElement("span");
+    const show = () => (out.textContent = `${r.value}%`);
+    show();
+    r.addEventListener("input", show);
+    const l = document.createElement("label");
+    l.style.cssText =
+      "display:flex;flex-direction:column;gap:2px;font-size:12px;";
+    const head = document.createElement("span");
+    head.style.cssText = "display:flex;justify-content:space-between;";
+    head.append(text, out);
+    l.append(head, r);
+    return l;
+  };
+  const med = slider(opts.loadout.med);
+  const residual = slider(opts.loadout.residual);
+  const doctor = document.createElement("input");
+  doctor.type = "checkbox";
+  doctor.checked = opts.loadout.doctor;
+  doctor.style.cssText = "width:20px;height:20px;margin:0;";
+  const doctorRow = document.createElement("label");
+  doctorRow.style.cssText =
+    "display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;";
+  doctorRow.append(doctor, "Doctor visit (strong charge, reveals hidden)");
+  const restart = document.createElement("button");
+  restart.type = "button";
+  restart.textContent = "Restart battle with this loadout";
+  restart.style.cssText = control;
+  restart.addEventListener("click", () =>
+    opts.onRestart({
+      med: Number(med.value) / 100,
+      doctor: doctor.checked,
+      residual: Number(residual.value) / 100,
+    }),
+  );
+
   const stats = document.createElement("div");
   stats.style.cssText = "font:11px monospace;opacity:0.8;padding:0 4px;";
 
-  body.append(label("Scenario", select), label("Seed", seed), skipRow);
+  body.append(
+    label("Scenario", select),
+    label("Seed", seed),
+    sliderRow("Medication level", med),
+    doctorRow,
+    sliderRow("Residual kill chance", residual),
+    restart,
+    skipRow,
+  );
 
   let open = false;
   const sync = () => {
@@ -100,6 +168,9 @@ export function createDebugPanel(
     element: panel,
     setStats(text) {
       stats.textContent = text;
+    },
+    setSeed(n) {
+      seed.value = String(n);
     },
   };
 }

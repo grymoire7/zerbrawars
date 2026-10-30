@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { resolveTurn } from "../sim/battle/resolve";
 import { loadScenario } from "../sim/scenarios";
-import type { BattleState, Order, SimEvent } from "../sim/types";
+import type { BattleState, Order, SimEvent, SupportOrder } from "../sim/types";
 import {
   beatProgress,
   buildTimeline,
@@ -316,5 +316,115 @@ describe("createPlayback", () => {
     const pb = createPlayback(before, [], before);
     expect(pb.done).toBe(true);
     expect(pb.timeline.duration).toBe(0);
+  });
+});
+
+describe("buildTimeline: reveals and doses", () => {
+  it("gives Revealed a reveal beat in the engulf phase", () => {
+    const before = load();
+    const events: SimEvent[] = [
+      {
+        type: "SwarmMoved",
+        swarmId: "s1",
+        path: [
+          { x: 1, y: 6 },
+          { x: 1, y: 5 },
+        ],
+      },
+      {
+        type: "Revealed",
+        pathogenId: "p5",
+        at: { x: 1, y: 4 },
+        kind: "strep",
+        size: 2,
+        swarmId: "s1",
+      },
+    ];
+    const t = buildTimeline(before, events);
+    const b = t.beats.find((x) => x.kind === "reveal");
+    expect(b?.phase).toBe("engulf");
+    expect(b?.kind === "reveal" && b.pathogenId).toBe("p5");
+    expect(b?.events).toEqual([1]);
+    const move = t.beats.find((x) => x.kind === "move")!;
+    expect(b!.start).toBeGreaterThan(move.start);
+  });
+
+  it("folds SupportUsed and the Killed after it into one dose beat", () => {
+    const before = load();
+    const at = before.pathogens[1]!.at;
+    const events: SimEvent[] = [
+      {
+        type: "SupportUsed",
+        charge: "antifungal",
+        target: "pathogen",
+        at,
+        pathogenId: "p2",
+        swarmId: null,
+      },
+      { type: "Killed", pathogenId: "p2", at, cause: "charge" },
+    ];
+    const t = buildTimeline(before, events);
+    expect(t.beats).toHaveLength(1);
+    const b = t.beats[0]!;
+    expect(b.kind).toBe("dose");
+    expect(b.kind === "dose" && b.charge).toBe("antifungal");
+    expect(b.events).toEqual([0, 1]);
+    expect(b.reveal).toBeGreaterThan(b.start);
+  });
+
+  it("folds a load clear with the Loaded that follows and tracks the load count", () => {
+    const base = load();
+    const before: BattleState = {
+      ...base,
+      swarms: base.swarms.map((s) =>
+        s.id === "s3"
+          ? {
+              ...s,
+              load: [
+                { kind: "aspergillus", size: 2 },
+                { kind: "aspergillus", size: 1 },
+              ],
+            }
+          : s,
+      ),
+    };
+    const events: SimEvent[] = [
+      {
+        type: "SupportUsed",
+        charge: "antifungal",
+        target: "load",
+        at: before.swarms[2]!.at,
+        pathogenId: null,
+        swarmId: "s3",
+      },
+      {
+        type: "Loaded",
+        swarmId: "s3",
+        load: [{ kind: "aspergillus", size: 1 }],
+      },
+    ];
+    const t = buildTimeline(before, events);
+    expect(t.beats).toHaveLength(1);
+    const b = t.beats[0]!;
+    expect(b.kind === "dose" && [b.loadBefore, b.load]).toEqual([2, 1]);
+    expect(b.events).toEqual([0, 1]);
+  });
+
+  it("covers every event of real turns that use a charge", () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      const before = load(seed);
+      const support: SupportOrder = {
+        type: "support",
+        charge: "antibacterial",
+        target: "pathogen",
+        pathogenId: "p1",
+      };
+      const r = resolveTurn(before, [], support);
+      const t = buildTimeline(before, r.events);
+      const covered = t.beats.flatMap((b) => b.events).sort((a, b) => a - b);
+      expect(covered).toEqual(r.events.map((_, i) => i));
+      expect(t.beats.some((b) => b.kind === "dose")).toBe(true);
+      expect(t.beats.some((b) => b.kind === "killed")).toBe(false);
+    }
   });
 });

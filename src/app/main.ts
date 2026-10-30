@@ -8,22 +8,32 @@ import { createPlaybackView } from "../render/playbackView";
 import { createScene } from "../render/scene";
 import { createSwarmView } from "../render/swarmView";
 import { createTelegraphView } from "../render/telegraphView";
-import {
-  DEFAULT_SCENARIO,
-  isScenarioName,
-  loadScenario,
-} from "../sim/scenarios";
+import { createAuraView } from "../render/auraView";
+import { battleFromLoadout } from "../sim/battle/setup";
+import { DEFAULT_SCENARIO, isScenarioName } from "../sim/scenarios";
+import { stallChance } from "../sim/battle/intents";
 import { battleStatus } from "../sim/battle/outcome";
 import { PARAMS } from "../sim/params";
 import { pathogenKind } from "../sim/pathogens";
-import type { Coord } from "../sim/types";
+import type { ChargeKind, Coord } from "../sim/types";
 import { getPanels, getUiRoot } from "../ui";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { createOutcomeOverlay } from "../ui/outcome";
-import { createController, describeOrder, logLines } from "./controller";
+import {
+  createController,
+  describeOrder,
+  describeSupport,
+  logLines,
+} from "./controller";
 import { endTurnHint, heatKey, orderCount } from "./info";
+import {
+  loadoutFor,
+  parseLoadoutParams,
+  writeLoadoutParams,
+  type LoadoutOptions,
+} from "./loadoutOptions";
 
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
@@ -41,11 +51,11 @@ if (seed !== undefined && !Number.isFinite(seed)) {
 }
 const scenarioName = isScenarioName(requested) ? requested : DEFAULT_SCENARIO;
 let validSeed = seed !== undefined && Number.isFinite(seed) ? seed : undefined;
-const load = () => {
-  const s = loadScenario(scenarioName, validSeed);
-  if (!s) throw new Error("default scenario failed to load");
-  return s;
-};
+let loadoutOptions: LoadoutOptions = parseLoadoutParams(params);
+const load = () =>
+  battleFromLoadout(
+    loadoutFor(scenarioName, validSeed ?? PARAMS.defaultSeed, loadoutOptions),
+  );
 
 const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 const controller = createController(load, () => refresh(), {
@@ -62,6 +72,10 @@ const { render, camera, scene } = createScene(canvas, {
   depth: board.height,
 });
 const view = createBoardView(scene, state);
+const auraView = createAuraView(scene, {
+  width: board.width,
+  depth: board.height,
+});
 const pathogenView = createPathogenView(scene, view.tilePosition);
 const granulomaView = createGranulomaView(scene, view.tilePosition);
 const swarmView = createSwarmView(scene, view.tilePosition);
@@ -87,6 +101,8 @@ const hud = createHud(panels, {
   onSelect: (id) => controller.select(id),
   onClearOrder: (id) => controller.clearOrder(id),
   onWallOff: () => controller.wallOff(),
+  onPickCharge: (charge) => controller.pickCharge(charge as ChargeKind),
+  onClearSupport: () => controller.clearSupport(),
 });
 const outcomeOverlay = createOutcomeOverlay(ui, {
   onPlayAgain: () => controller.reset(),
@@ -95,6 +111,7 @@ const outcomeOverlay = createOutcomeOverlay(ui, {
     const url = new URL(window.location.href);
     url.searchParams.set("seed", String(validSeed));
     window.history.replaceState(null, "", url);
+    debug.setSeed(validSeed);
     controller.reset();
   },
   onReplay: () => controller.replay(),
@@ -166,7 +183,13 @@ function refresh() {
       ? []
       : controller
           .marks()
-          .filter((m) => !m.cancelledBy && (m.type === "grow" || !m.to))
+          .filter(
+            (m) =>
+              !m.cancelledBy &&
+              !m.cancelledByCharge &&
+              m.type !== "stall" &&
+              (m.type === "grow" || !m.to),
+          )
           .map((m) => m.pathogenId),
   );
   const statuses = controller.statuses();
@@ -174,7 +197,14 @@ function refresh() {
     playing || controller.over()
       ? []
       : statuses.filter((w) => w.status === "none").map((w) => w.swarmId);
-  orderView.update(s, controller.orders(), controller.targets(), idle);
+  orderView.update(
+    s,
+    controller.orders(),
+    controller.targets(),
+    idle,
+    controller.dose(),
+  );
+  auraView.setAura(s.meds.aura);
   const sel = s.swarms.find((w) => w.id === controller.selected());
   view.setSelected(sel?.at ?? null);
   view.setOptions(controller.options());
@@ -183,6 +213,8 @@ function refresh() {
   selected = sel?.at ?? null;
   updateReadout();
   const wall = controller.wallCard();
+  const supportOrder = playing ? null : controller.supportOrder();
+  const supportCard = controller.supportCard();
   const outcome = controller.outcome();
   if (outcome && !playing) {
     if (!outcomeShown) {
@@ -214,7 +246,21 @@ function refresh() {
     holding: orderCount(statuses).holding,
     hint: playing ? "" : endTurnHint(orderCount(statuses).holding),
     info: controller.info(),
+    medication: {
+      level: s.meds.level,
+      stallChance: stallChance(s.meds.aura),
+    },
+    charges: playing ? [] : controller.charges(),
+    noTargets: controller.noTargets(),
+    support: supportOrder && {
+      charge: supportOrder.charge,
+      detail: describeSupport(supportOrder).replace(/^\w+ /, ""),
+      problem: supportCard?.valid === false ? supportCard.text : null,
+    },
+    supportCard,
     key: {
+      aura: s.meds.aura > 0,
+      charges: controller.charges().length > 0,
       heatLevels: heatKey(s, forecast?.rising.length ?? 0).levels,
       forecast: (forecast?.rising.length ?? 0) > 0,
     },
@@ -243,6 +289,14 @@ refresh();
 const debug = createDebugPanel(panels.scroll, {
   scenario: state.scenario,
   seed: validSeed ?? PARAMS.defaultSeed,
+  loadout: loadoutOptions,
+  onRestart: (o) => {
+    loadoutOptions = o;
+    const url = new URL(window.location.href);
+    writeLoadoutParams(url, o);
+    window.history.replaceState(null, "", url);
+    controller.reset();
+  },
   skipPlayback: controller.reducedMotion(),
   onSkipPlayback: (on) => controller.setReducedMotion(on),
 });
@@ -335,6 +389,7 @@ function frame(now: number = performance.now()) {
   pathogenView.tick(dt);
   swarmView.tick(dt);
   orderView.tick(dt);
+  auraView.tick(dt);
   render();
   requestAnimationFrame(frame);
 }

@@ -20,7 +20,19 @@ const LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Arrows show what germs do next turn",
-    "Yellow arrow: spread to the next tile. Blue dotted arc: a spore lands further away. A germ that slowly swells, with a faint larger outline: it grows (grow 3 to 4). Red cross: blocked by your swarm. If you engulf a germ first, its arrow disappears.",
+    "Yellow arrow: spread to the next tile. Blue dotted arc: a spore lands further away. A germ that slowly swells, with a faint larger outline: it grows (grow 3 to 4). Red cross: blocked by your swarm. If you engulf a germ first, or hit it with a charge, its arrow disappears. A green pause sign and the word stalled: medication is holding that germ back, so it does nothing this turn.",
+  ],
+  [
+    "Medication",
+    "The green glow around the board is your medication. The stronger it is, the more likely each germ is held back (stalled) on any given turn. It slows germs down but never stops them.",
+  ],
+  [
+    "Charges",
+    "Medication also gives you charges: antibacterial kills a round bacterium, antifungal kills a shelled fungus, and a strong charge (from a doctor visit) kills either. A charge only works on small germs (size 2 or less, strong up to 4). Once a turn, pick a charge in the side panel, then tap a green diamond: a germ, or a loaded swarm (which clears one carried germ). No dice are rolled, and a hit germ does nothing that turn. Tap the diamond again, or press Clear, to take it back.",
+  ],
+  [
+    "Hidden germs",
+    "Some germs hide until a swarm steps next to them. The swarm stops there and the germ pops into view.",
   ],
   [
     "Sizes",

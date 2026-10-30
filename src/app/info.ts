@@ -91,6 +91,10 @@ export function endTurnHint(holding: number): string {
 const nextTurn = (m: TelegraphMark | undefined, size: number): string => {
   if (!m) return "nothing planned";
   if (m.cancelledBy) return `nothing, ${m.cancelledBy} engulfs it first`;
+  if (m.cancelledByCharge) {
+    return `nothing, the ${m.cancelledByCharge} dose kills it first (its arrow disappears)`;
+  }
+  if (m.type === "stall") return "nothing, held back by medication";
   if (m.type === "grow" || !m.to) return `grow from ${size} to ${m.sizeAfter}`;
   const dest = xy(m.to);
   if (m.blockedBy) {
@@ -119,7 +123,9 @@ export function infoFor(
       sub: kind.organism,
       lines: [
         `Size ${p.size}`,
-        `Next turn: ${nextTurn(mark, p.size)}.`,
+        mark?.type === "stall" && !mark.cancelledBy && !mark.cancelledByCharge
+          ? "Held back by medication: it skips its action this turn."
+          : `Next turn: ${nextTurn(mark, p.size)}.`,
         kind.wall === "leaky"
           ? "Engulfing it kills it."
           : "Sealed shell: engulfing it loads a swarm, but does not kill it.",

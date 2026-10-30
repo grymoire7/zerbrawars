@@ -87,3 +87,45 @@ describe("heatKey", () => {
     expect(heatKey(battle, 2).forecast).toBe(true);
   });
 });
+
+describe("infoFor with medication", () => {
+  const strep = battle.pathogens.find((p) => p.kind === "strep")!;
+  const mark = (over: object) => [
+    {
+      pathogenId: strep.id,
+      type: "grow" as const,
+      from: strep.at,
+      to: null,
+      sizeAfter: strep.size,
+      childSize: 0,
+      blockedBy: null,
+      cancelledBy: null,
+      cancelledByCharge: null,
+      ...over,
+    },
+  ];
+
+  it("says a stalled germ is held back by medication", () => {
+    const card = infoFor(battle, mark({ type: "stall" }), {
+      kind: "pathogen",
+      id: strep.id,
+    });
+    expect(card?.lines.join(" ")).toContain("Held back by medication");
+    expect(card?.lines.join(" ")).not.toContain("grow");
+  });
+
+  it("says a charge cancels the arrow", () => {
+    const card = infoFor(
+      battle,
+      mark({
+        type: "spread",
+        to: { x: 0, y: 0 },
+        cancelledByCharge: "antibacterial",
+      }),
+      { kind: "pathogen", id: strep.id },
+    );
+    expect(card?.lines.join(" ")).toContain(
+      "antibacterial dose kills it first",
+    );
+  });
+});

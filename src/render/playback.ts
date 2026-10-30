@@ -2,6 +2,7 @@
 // only presentation reads it; the sim never sees playback.
 import type {
   BattleState,
+  ChargeKind,
   Coord,
   GranulomaId,
   PathogenId,
@@ -48,6 +49,25 @@ export type Beat = BeatBase &
         readonly kind: "killed";
         readonly pathogenId: PathogenId;
         readonly at: Coord;
+      }
+    | {
+        /** A swarm stepped next to a hidden token: it turns visible. */
+        readonly kind: "reveal";
+        readonly pathogenId: PathogenId;
+        readonly at: Coord;
+        readonly swarmId: SwarmId;
+      }
+    | {
+        /** A support charge: a dose from above onto a pathogen, or onto a swarm's carried load. */
+        readonly kind: "dose";
+        readonly charge: ChargeKind;
+        readonly target: "pathogen" | "load";
+        readonly at: Coord;
+        readonly pathogenId: PathogenId | null;
+        readonly swarmId: SwarmId | null;
+        /** Load count before and after (0 and 0 for a pathogen target). */
+        readonly loadBefore: number;
+        readonly load: number;
       }
     | {
         readonly kind: "walled";
@@ -132,6 +152,8 @@ export const TIMING = {
   engulfRoll: 1.3,
   engulfStagger: 0.28,
   grow: 0.5,
+  reveal: 0.6,
+  dose: 1.0,
   wall: 0.7,
   carried: 0.8,
   spread: 0.65,
@@ -237,6 +259,56 @@ export function buildTimeline(
           revealAt: 0.6,
         });
         i = j - 1;
+        break;
+      }
+      case "Revealed":
+        drafts.engulf.push({
+          kind: "reveal",
+          phase: "engulf",
+          pathogenId: e.pathogenId,
+          at: e.at,
+          swarmId: e.swarmId,
+          events: [i],
+          duration: TIMING.reveal,
+          revealAt: 0.35,
+        });
+        break;
+      case "SupportUsed": {
+        // Followed by Killed (pathogen target) or Loaded (load target).
+        const idx = [i];
+        const next = events[i + 1];
+        const loadBefore = e.swarmId ? (loads.get(e.swarmId) ?? 0) : 0;
+        let load = loadBefore;
+        if (
+          e.target === "pathogen" &&
+          next?.type === "Killed" &&
+          next.pathogenId === e.pathogenId
+        ) {
+          idx.push(i + 1);
+        } else if (
+          e.target === "load" &&
+          next?.type === "Loaded" &&
+          next.swarmId === e.swarmId
+        ) {
+          load = next.load.length;
+          loads.set(next.swarmId, load);
+          idx.push(i + 1);
+        }
+        drafts.engulf.push({
+          kind: "dose",
+          phase: "engulf",
+          charge: e.charge,
+          target: e.target,
+          at: e.at,
+          pathogenId: e.pathogenId,
+          swarmId: e.swarmId,
+          loadBefore,
+          load,
+          events: idx,
+          duration: TIMING.dose,
+          revealAt: 0.55,
+        });
+        i += idx.length - 1;
         break;
       }
       case "Killed":

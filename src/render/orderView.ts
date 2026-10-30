@@ -1,7 +1,15 @@
 import * as THREE from "three";
+import { sameCoord } from "../sim/board";
 import { movePath, type EngulfTarget } from "../sim/battle/orders";
 import type { BattleState, Coord, Order } from "../sim/types";
 import { ORDER_COLOR } from "./boardView";
+import { labelSprite } from "./labels";
+
+/** Support charge marks: every legal target while a charge is picked, and the queued one. */
+export interface DoseMarks {
+  readonly targets: readonly Coord[];
+  readonly queued: Coord | null;
+}
 
 export interface OrderView {
   readonly group: THREE.Group;
@@ -15,6 +23,7 @@ export interface OrderView {
     targets?: readonly EngulfTarget[],
     /** Swarms with no order yet, which get a soft pulsing ring. */
     idle?: readonly string[],
+    dose?: DoseMarks,
   ): void;
   /** Pulses the idle rings. */
   tick(dtSeconds: number): void;
@@ -51,6 +60,13 @@ export function createOrderView(
     depthTest: false,
     transparent: true,
     opacity: 0.4,
+    side: THREE.DoubleSide,
+  });
+  const doseMat = new THREE.MeshBasicMaterial({
+    color: 0x5be3c6,
+    depthTest: false,
+    transparent: true,
+    opacity: 0.95,
     side: THREE.DoubleSide,
   });
   let clock = 0;
@@ -199,6 +215,42 @@ export function createOrderView(
     head.quaternion.setFromUnitVectors(UP, dir);
   };
 
+  // A charge target: a tilted square (diamond) with a drop dot at its centre, unlike the engulf
+  // crosshair's circle and ticks. A queued dose is filled solid.
+  const drawDose = (c: Coord, queued: boolean) => {
+    const o = at(c, 0.045);
+    const h = 0.46;
+    const pts = [
+      [0, -h],
+      [h, 0],
+      [0, h],
+      [-h, 0],
+    ] as const;
+    pts.forEach(([x, z], i) => {
+      const [nx, nz] = pts[(i + 1) % 4]!;
+      const a = o.clone().add(new THREE.Vector3(x, 0, z));
+      const b = o.clone().add(new THREE.Vector3(nx, 0, nz));
+      const len = a.distanceTo(b);
+      const m = place(
+        new THREE.Mesh(boxGeo, doseMat),
+        a.clone().add(b).multiplyScalar(0.5),
+      );
+      m.scale.set(len, 0.05, 0.07);
+      m.quaternion.setFromUnitVectors(X_AXIS, b.clone().sub(a).normalize());
+    });
+    const dot = new THREE.Mesh(dotGeo, doseMat);
+    dot.rotation.x = -Math.PI / 2;
+    dot.position.copy(o);
+    dot.renderOrder = 11;
+    dot.scale.setScalar(queued ? 2.2 : 1);
+    group.add(dot);
+    if (queued) {
+      const tag = labelSprite("dose", 0.2, { color: "#5be3c6" });
+      tag.position.copy(at(c, 1.1));
+      group.add(tag);
+    }
+  };
+
   const flatIdle = (c: Coord) => {
     const m = new THREE.Mesh(idleGeo, idleMat);
     m.rotation.x = -Math.PI / 2;
@@ -213,7 +265,7 @@ export function createOrderView(
       clock += dt;
       idleMat.opacity = 0.4 + 0.3 * Math.sin(clock * 3);
     },
-    update(state, orders, targets = [], idle = []) {
+    update(state, orders, targets = [], idle = [], dose) {
       group.clear();
       for (const id of idle) {
         const swarm = state.swarms.find((s) => s.id === id);
@@ -226,6 +278,10 @@ export function createOrderView(
         const p = state.pathogens.find((q) => q.id === t.pathogenId);
         if (p) drawReticle(p.at, queued.has(p.id));
       }
+      for (const c of dose?.targets ?? []) {
+        if (!dose?.queued || !sameCoord(dose.queued, c)) drawDose(c, false);
+      }
+      if (dose?.queued) drawDose(dose.queued, true);
       for (const o of orders) {
         const swarm = state.swarms.find((s) => s.id === o.swarmId);
         if (!swarm) continue;

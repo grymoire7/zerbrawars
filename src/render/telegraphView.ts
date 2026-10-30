@@ -17,6 +17,7 @@ const SPREAD_COLOR = 0xffd23f;
 const SPORE_COLOR = 0x6fb8ff;
 const GROW_COLOR = 0xf2f2f2;
 const BLOCKED_COLOR = 0xff5040;
+const STALL_COLOR = 0x7fe0c8;
 
 const LIFT = 0.5;
 const LABEL_HEIGHT = 0.26;
@@ -58,6 +59,7 @@ export function createTelegraphView(
       side: THREE.DoubleSide,
     }),
     blocked: mat(BLOCKED_COLOR),
+    stall: mat(STALL_COLOR),
   };
   const baseOpacity = new Map<THREE.Material, number>(
     Object.values(mats).map((m) => [m, m.opacity] as const),
@@ -183,6 +185,16 @@ export function createTelegraphView(
     );
   };
 
+  // Held back by medication: a calm pause sign and a label, nothing that reads as an action.
+  const drawStall = (m: TelegraphMark) => {
+    for (const dx of [-0.07, 0.07]) {
+      const bar = add(boxGeo, mats.stall, tileY(m.from, 0.78));
+      bar.position.x += dx;
+      bar.scale.set(0.06, 0.2, 0.06);
+    }
+    label("stalled", tileY(m.from, 1.02), STALL_COLOR, 0.2);
+  };
+
   const drawSpread = (m: TelegraphMark, to: Coord) => {
     const a = tileY(m.from, LIFT);
     const b = tileY(to, LIFT);
@@ -249,8 +261,9 @@ export function createTelegraphView(
     update(state, marks = telegraph(state)) {
       group.clear();
       for (const m of marks) {
-        if (m.cancelledBy) continue;
-        if (m.type === "grow" || !m.to) {
+        if (m.cancelledBy || m.cancelledByCharge) continue;
+        if (m.type === "stall") drawStall(m);
+        else if (m.type === "grow" || !m.to) {
           const size = state.pathogens.find((p) => p.id === m.pathogenId)?.size;
           drawGrow(m, size ?? m.sizeAfter);
         } else if (m.type === "spread") drawSpread(m, m.to);

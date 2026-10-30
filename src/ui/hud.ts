@@ -9,6 +9,36 @@ export interface HudOrder {
   readonly selected: boolean;
 }
 
+export interface HudMedication {
+  /** 0..1 medication level (equal to the aura at setup). */
+  readonly level: number;
+  /** Chance each germ is held back each turn, 0..1. */
+  readonly stallChance: number;
+}
+
+export interface HudCharge {
+  readonly charge: string;
+  readonly label: string;
+  readonly count: number;
+  readonly selected: boolean;
+}
+
+/** The queued support order, shown beside the swarm orders. */
+export interface HudSupport {
+  readonly charge: string;
+  /** e.g. "-> p2". */
+  readonly detail: string;
+  /** Why it would be refused, or null. */
+  readonly problem: string | null;
+}
+
+export interface HudSupportCard {
+  readonly title: string;
+  readonly text: string;
+  readonly pending: boolean;
+  readonly valid: boolean;
+}
+
 export interface HudInfo {
   readonly title: string;
   readonly sub: string;
@@ -20,6 +50,10 @@ export interface HudKey {
   readonly heatLevels: readonly number[];
   /** Some tile will heat up next turn (the flame glow). */
   readonly forecast: boolean;
+  /** Medication aura above zero: germs can be held back. */
+  readonly aura: boolean;
+  /** At least one charge is left. */
+  readonly charges: boolean;
 }
 
 export interface HudOdds {
@@ -62,6 +96,12 @@ export interface HudModel {
   readonly canEndTurn: boolean;
   readonly log: readonly string[];
   readonly orders: readonly HudOrder[];
+  readonly medication: HudMedication;
+  readonly charges: readonly HudCharge[];
+  /** The picked charge has nothing to hit right now. */
+  readonly noTargets: boolean;
+  readonly support: HudSupport | null;
+  readonly supportCard: HudSupportCard | null;
   /** Swarms that will hold because they have no order. */
   readonly holding: number;
   readonly hint: string;
@@ -91,6 +131,8 @@ export interface HudHandlers {
   onSelect(swarmId: string): void;
   onClearOrder(swarmId: string): void;
   onWallOff(): void;
+  onPickCharge(charge: string): void;
+  onClearSupport(): void;
   onHelp(): void;
 }
 
@@ -147,6 +189,30 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   );
   stats.append(turn, health, help, progress);
 
+  // Medication: the level meter (the aura on the board edge) and the charge chips.
+  const medBox = el("div", PANEL + "padding:8px 10px;");
+  const medHead = el(
+    "div",
+    "display:flex;justify-content:space-between;font-weight:600;",
+  );
+  const medLabel = el("span", "", "Medication");
+  const medValue = el("span", "font:12px monospace;");
+  medHead.append(medLabel, medValue);
+  const medTrack = el(
+    "div",
+    "height:8px;border-radius:4px;background:#3a3f4a;overflow:hidden;margin:4px 0;",
+  );
+  medTrack.setAttribute("role", "img");
+  const medFill = el("div", "height:100%;background:#5be3c6;");
+  medTrack.append(medFill);
+  const medNote = el("div", "font-size:12px;opacity:0.7;line-height:1.3;");
+  const chipRow = el(
+    "div",
+    "display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;",
+  );
+  const chipHint = el("div", "font-size:12px;margin-top:4px;line-height:1.3;");
+  medBox.append(medHead, medTrack, medNote, chipRow, chipHint);
+
   // Orders: how many swarms have one, and a status chip per swarm.
   const ordersBox = el("div", PANEL + "padding:8px 10px;");
   const ordersHead = el("div", "font-weight:600;margin-bottom:4px;");
@@ -198,7 +264,16 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   log.setAttribute("aria-label", "What happened last turn");
   logBox.append(logSummary, log);
 
-  scroll.append(stats, ordersBox, problems, infoBox, preview, key, logBox);
+  scroll.append(
+    stats,
+    medBox,
+    ordersBox,
+    problems,
+    infoBox,
+    preview,
+    key,
+    logBox,
+  );
 
   // Pinned controls.
   const endTurn = button(
@@ -284,7 +359,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   };
   let keyText = "";
   const updateKey = (k: HudKey) => {
-    const sig = `${k.heatLevels.join()}|${k.forecast}`;
+    const sig = `${k.heatLevels.join()}|${k.forecast}|${k.aura}|${k.charges}`;
     if (sig === keyText) return;
     keyText = sig;
     const heat = [
@@ -307,7 +382,36 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
         "Swelling germ with faint outline: grows (grow 3→4)",
       ),
       keyRow(glyph("✕", "#ff5040"), "Red: blocked by your swarm"),
+      ...(k.aura
+        ? [
+            keyRow(
+              glyph("❚❚", "#7fe0c8"),
+              "Green pause sign: held back by medication, it does nothing this turn",
+            ),
+          ]
+        : []),
       keyRow(glyph("3", "#ffffff"), "Number on a germ: its size"),
+      ...(k.aura || k.charges
+        ? [
+            line("Medication", "font-weight:600;margin-top:4px;"),
+            ...(k.aura
+              ? [
+                  keyRow(
+                    glyph("~", "#5be3c6"),
+                    "Green glow on the board edge: the medication aura. Stronger glow, more germs held back",
+                  ),
+                ]
+              : []),
+            ...(k.charges
+              ? [
+                  keyRow(
+                    glyph("◇", "#5be3c6"),
+                    "Green diamond: a germ or a swarm's load a charge can hit. A charge kills it outright, no dice",
+                  ),
+                ]
+              : []),
+          ]
+        : []),
       ...(heat.length > 0
         ? [line("Heat", "font-weight:600;margin-top:4px;"), ...heat]
         : []),
@@ -349,6 +453,44 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       r.append(clear);
     }
     return r;
+  };
+
+  const supportRow = (sp: HudSupport) => {
+    const r = el(
+      "div",
+      "display:flex;align-items:stretch;gap:4px;border-radius:6px;",
+    );
+    const info = el(
+      "div",
+      "flex:1 1 auto;min-height:44px;padding:0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;",
+    );
+    info.append(
+      el("strong", "", "Dose"),
+      el(
+        "span",
+        "display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;" +
+          `border:1px solid ${sp.problem ? "#ff5040" : "#5be3c6"};background:#173a33;color:#bff5e8;`,
+        sp.charge,
+      ),
+      el("span", "font:12px monospace;opacity:0.75;", sp.detail),
+    );
+    const clear = button("Clear", handlers.onClearSupport);
+    clear.setAttribute("aria-label", "Clear the dose");
+    r.append(info, clear);
+    return r;
+  };
+
+  const supportCardEl = (c: HudSupportCard) => {
+    const card = el(
+      "div",
+      PANEL +
+        "padding:8px 10px;font-size:13px;" +
+        (c.pending ? "border:2px solid #5be3c6;" : "border-style:dashed;"),
+    );
+    const text = line(c.text);
+    if (!c.valid) text.style.color = "#ffb4aa";
+    card.append(line(c.title, "font-weight:600;"), text);
+    return card;
   };
 
   const oddsCard = (o: HudOdds) => {
@@ -402,7 +544,43 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       ordersBox.style.display = pb.playing ? "none" : "";
       const ordered = m.orders.filter((o) => o.hasOrder).length;
       ordersHead.textContent = `Orders: ${ordered} of ${m.orders.length} swarms`;
-      ordersList.replaceChildren(...m.orders.map(orderRow));
+      ordersList.replaceChildren(
+        ...m.orders.map(orderRow),
+        ...(m.support ? [supportRow(m.support)] : []),
+      );
+
+      medBox.style.display = pb.playing ? "none" : "";
+      const lvl = Math.round(m.medication.level * 100);
+      medValue.textContent = `${lvl}%`;
+      medFill.style.width = `${lvl}%`;
+      medTrack.setAttribute("aria-label", `Medication level ${lvl}%`);
+      medNote.textContent =
+        m.medication.level > 0
+          ? `Each germ has a ${Math.round(m.medication.stallChance * 100)}% chance of being held back each turn.`
+          : "No medication: nothing holds the germs back.";
+      chipRow.style.display = m.charges.length > 0 ? "flex" : "none";
+      chipRow.replaceChildren(
+        ...m.charges.map((c) => {
+          const b = button(
+            `${c.label} x${c.count}`,
+            () => handlers.onPickCharge(c.charge),
+            "flex:1 1 auto;" +
+              (c.selected ? "outline:2px solid #5be3c6;font-weight:700;" : ""),
+          );
+          b.setAttribute("aria-pressed", String(c.selected));
+          b.title = "Use this charge on a germ or a carried load";
+          return b;
+        }),
+      );
+      const picked = m.charges.some((c) => c.selected);
+      chipHint.textContent = picked
+        ? m.noTargets
+          ? "Nothing this charge can hit right now."
+          : "Tap a green diamond on the board. It kills outright."
+        : m.charges.length > 0
+          ? "Pick a charge to use one this turn (one per turn)."
+          : "";
+      chipHint.style.color = picked && m.noTargets ? "#ffb4aa" : "";
       problems.style.display = m.problems.length > 0 ? "block" : "none";
       problems.replaceChildren(...m.problems.map((t) => line(t)));
 
@@ -420,7 +598,10 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
 
       const w = m.wall;
       const f = m.forecast;
-      const cards: HTMLElement[] = m.odds.map(oddsCard);
+      const cards: HTMLElement[] = [
+        ...(m.supportCard ? [supportCardEl(m.supportCard)] : []),
+        ...m.odds.map(oddsCard),
+      ];
       if (w) {
         const c = el(
           "div",

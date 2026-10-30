@@ -1,10 +1,15 @@
 import { sameCoord } from "../sim/board";
 import { telegraph, type TelegraphMark } from "../sim/battle/intents";
 import {
+  availableCharges,
+  supportPreview,
+  supportTargets,
+  type SupportPreview,
+} from "../sim/battle/support";
+import {
   engulfPreview,
   engulfTargets,
   moveOptions,
-  orderProblems,
   swarmMoveRange,
   wallOffPreview,
   withOrder,
@@ -16,6 +21,7 @@ import { PARAMS } from "../sim/params";
 import {
   inflammationPreview,
   resolveTurn,
+  turnProblems,
   type InflammationPreview,
 } from "../sim/battle/resolve";
 import { pathogenKind } from "../sim/pathogens";
@@ -32,18 +38,113 @@ import { createPlayback, type Playback, type Speed } from "../render/playback";
 import type {
   BattleOutcome,
   BattleState,
+  ChargeKind,
   Coord,
   Order,
   SimEvent,
+  SupportOrder,
   SwarmId,
 } from "../sim/types";
 
 export interface OrderUi {
   readonly orders: readonly Order[];
   readonly selected: SwarmId | null;
+  /** The charge picked in the side panel, waiting for a target tap. */
+  readonly charge: ChargeKind | null;
+  /** The queued support order (at most one per turn). */
+  readonly support: SupportOrder | null;
 }
 
-const NONE: OrderUi = { orders: [], selected: null };
+const NONE: OrderUi = {
+  orders: [],
+  selected: null,
+  charge: null,
+  support: null,
+};
+
+export const CHARGE_LABEL: Record<ChargeKind, string> = {
+  antibacterial: "Antibacterial",
+  antifungal: "Antifungal",
+  strong: "Strong",
+};
+
+/** Legal targets of the picked charge, given the pending swarm orders. */
+export function orderSupportTargets(battle: BattleState, ui: OrderUi) {
+  return ui.charge ? supportTargets(battle, ui.orders, ui.charge) : [];
+}
+
+/** Where a support order lands (its pathogen or swarm), or null if that is gone or hidden. */
+export function supportAt(
+  battle: BattleState,
+  support: SupportOrder,
+): Coord | null {
+  if (support.target === "pathogen") {
+    const p = battle.pathogens.find((q) => q.id === support.pathogenId);
+    return p && !p.hidden ? p.at : null;
+  }
+  return battle.swarms.find((s) => s.id === support.swarmId)?.at ?? null;
+}
+
+export function describeSupport(o: SupportOrder): string {
+  return o.target === "pathogen"
+    ? `${o.charge} -> ${o.pathogenId}`
+    : `${o.charge} -> ${o.swarmId} load`;
+}
+
+/** A support preview, ready for the HUD. */
+export interface SupportCard {
+  readonly title: string;
+  readonly text: string;
+  /** A queued order (otherwise a hover preview). */
+  readonly pending: boolean;
+  readonly valid: boolean;
+}
+
+const INTENT_WORD = {
+  grow: "growth",
+  spread: "spread",
+  spore: "spore",
+  stall: "stall",
+} as const;
+
+/** What `support` does, in plain words; null if its target does not exist. */
+export function supportCardFor(
+  battle: BattleState,
+  orders: readonly Order[],
+  support: SupportOrder,
+  pending: boolean,
+): SupportCard | null {
+  const pv: SupportPreview | null = supportPreview(battle, orders, support);
+  if (!pv) return null;
+  const kind = pathogenKind(pv.kills.kind);
+  const left = `${pv.chargesLeft} ${pv.charge} left after this.`;
+  let text: string;
+  if (pv.reason !== null) text = `Cannot use: ${pv.reason}.`;
+  else if (support.target === "pathogen") {
+    const cancel =
+      pv.cancels && pv.cancels.type !== "stall"
+        ? ` Its planned ${INTENT_WORD[pv.cancels.type]} does not happen.`
+        : "";
+    text = `Kills it, no dice.${cancel} ${left}`;
+  } else {
+    const after = pv.loadAfter?.length ?? 0;
+    text =
+      `Clears ${kind.label} from ${support.swarmId}'s load, no dice. Load ${after}/${PARAMS.loadCap}. ` +
+      `Move range ${swarmMoveRange(
+        battle,
+        battle.swarms.find((s) => s.id === support.swarmId)!,
+      )} -> ${pv.moveRangeAfter}. ${left}`;
+  }
+  return {
+    title:
+      support.target === "pathogen"
+        ? `${CHARGE_LABEL[pv.charge]} dose on ${kind.label} ${support.pathogenId}`
+        : `${CHARGE_LABEL[pv.charge]} dose on ${support.swarmId}'s load`,
+    text,
+    pending,
+    valid: pv.reason === null,
+  };
+}
 
 /** Tiles the selected swarm may be ordered to: legal moves that are not another swarm's tile. */
 export function orderOptions(
@@ -64,6 +165,9 @@ export function orderTargets(
   if (!ui.selected) return [];
   return engulfTargets(battle, ui.selected, ui.orders);
 }
+
+const supportTargetAt = (battle: BattleState, ui: OrderUi, at: Coord) =>
+  orderSupportTargets(battle, ui).find((t) => sameCoord(t.at, at));
 
 const targetAt = (
   battle: BattleState,
@@ -98,6 +202,8 @@ export function toggleWallOff(
 
 /**
  * What a tap on a tile (null = off the board) does:
+ * - with a charge picked: a legal target queues the support order (or clears it if already
+ *   queued); any other tap puts the charge back and acts as below;
  * - own tile of the selected swarm: queue hold (cancels a move); a second tap on a loaded swarm
  *   turns the hold into wall off, and a third clears it;
  * - an option tile: queue the move, or clear it if that move is already queued;
@@ -109,7 +215,15 @@ export function tapTile(
   ui: OrderUi,
   at: Coord | null,
 ): OrderUi {
-  if (!at) return { ...ui, selected: null };
+  if (!at) return { ...ui, selected: null, charge: null };
+  if (ui.charge) {
+    const t = supportTargetAt(battle, ui, at);
+    if (t) {
+      const same = JSON.stringify(ui.support) === JSON.stringify(t.order);
+      return { ...ui, charge: null, support: same ? null : t.order };
+    }
+    return tapTile(battle, { ...ui, charge: null }, at);
+  }
   const here = swarmAt(battle, at);
   const sel = battle.swarms.find((s) => s.id === ui.selected);
   if (here && here.id === sel?.id) {
@@ -260,6 +374,13 @@ export interface WallCard extends WallOffPreview {
 
 export type ControllerMode = "plan" | "playback";
 
+export interface ChargeChip {
+  readonly charge: ChargeKind;
+  readonly label: string;
+  readonly count: number;
+  readonly selected: boolean;
+}
+
 export interface Controller {
   /** The sim state (already the post-turn state during playback). */
   state(): BattleState;
@@ -306,6 +427,18 @@ export interface Controller {
   info(): InfoCard | null;
   /** Pointer tile (null = off the board); only changes the odds and info panels. */
   hover(at: Coord | null): void;
+  /** Charges with uses left, as chips; the picked one is marked. */
+  charges(): ChargeChip[];
+  /** Picks a charge to target (again to put it back). */
+  pickCharge(charge: ChargeKind | null): void;
+  /** The picked charge has no legal target right now. */
+  noTargets(): boolean;
+  supportOrder(): SupportOrder | null;
+  clearSupport(): void;
+  /** Hover preview of a charge target, else the queued support order's preview. */
+  supportCard(): SupportCard | null;
+  /** Board marks for the picked charge's targets and the queued dose. */
+  dose(): { targets: Coord[]; queued: Coord | null };
   /** Telegraph marks as they will resolve with the pending orders. */
   marks(): TelegraphMark[];
   /** Order list plus the selected swarm if it has no order yet. */
@@ -327,6 +460,7 @@ export interface Controller {
 interface PlayedTurn {
   readonly before: BattleState;
   readonly orders: readonly Order[];
+  readonly support: SupportOrder | null;
   readonly events: readonly SimEvent[];
   readonly after: BattleState;
 }
@@ -349,6 +483,8 @@ export function createController(
   const playing = () => pb !== null && !pb.done;
   const hoverTarget = () =>
     hovered ? targetAt(state, ui, hovered) : undefined;
+  const hoverSupport = () =>
+    hovered ? supportTargetAt(state, ui, hovered) : undefined;
   const hoverRef = () => (hovered ? entityAt(state, hovered) : null);
   const over = () => battleStatus(state).over;
   const set = (next: OrderUi) => {
@@ -410,9 +546,9 @@ export function createController(
       if (ui.selected) set(toggleWallOff(state, ui, ui.selected));
     },
     forecast: () =>
-      playing() || over() || ui.orders.length === 0
+      playing() || over() || (ui.orders.length === 0 && !ui.support)
         ? null
-        : inflammationPreview(state, ui.orders),
+        : inflammationPreview(state, ui.orders, ui.support),
     orders: () => ui.orders,
     selected: () => ui.selected,
     options: () => orderOptions(state, ui),
@@ -442,6 +578,36 @@ export function createController(
         return e ? [e] : [];
       });
     },
+    charges: () =>
+      availableCharges(state).map((charge) => ({
+        charge,
+        label: CHARGE_LABEL[charge],
+        count: state.meds.charges[charge],
+        selected: ui.charge === charge,
+      })),
+    pickCharge(charge) {
+      const ok = charge === null || availableCharges(state).includes(charge);
+      if (ok) set({ ...ui, charge: ui.charge === charge ? null : charge });
+    },
+    noTargets: () =>
+      ui.charge !== null && orderSupportTargets(state, ui).length === 0,
+    supportOrder: () => ui.support,
+    clearSupport: () => set({ ...ui, support: null, charge: null }),
+    supportCard() {
+      if (playing() || over()) return null;
+      const ht = hoverSupport();
+      if (ht) return supportCardFor(state, ui.orders, ht.order, false);
+      return ui.support
+        ? supportCardFor(state, ui.orders, ui.support, true)
+        : null;
+    },
+    dose() {
+      if (playing() || over()) return { targets: [], queued: null };
+      return {
+        targets: orderSupportTargets(state, ui).map((t) => t.at),
+        queued: ui.support ? supportAt(state, ui.support) : null,
+      };
+    },
     statuses: () => swarmStatuses(state, ui.orders, ui.selected),
     info() {
       if (playing()) return null;
@@ -455,8 +621,12 @@ export function createController(
       if (playing()) return;
       const before = hoverTarget()?.pathogenId;
       const beforeRef = hoverRef();
+      const beforeSupport = hoverSupport()?.at;
       hovered = at;
+      const nowSupport = hoverSupport()?.at;
       if (
+        nowSupport?.x !== beforeSupport?.x ||
+        nowSupport?.y !== beforeSupport?.y ||
         hoverTarget()?.pathogenId !== before ||
         !sameRef(hoverRef(), beforeRef)
       ) {
@@ -465,8 +635,8 @@ export function createController(
     },
     marks: () =>
       playing() && last
-        ? telegraph(last.before, last.orders)
-        : telegraph(state, ui.orders),
+        ? telegraph(last.before, last.orders, last.support)
+        : telegraph(state, ui.orders, ui.support),
     pending() {
       const list = ui.orders.map((o) => ({
         swarmId: o.swarmId,
@@ -485,9 +655,13 @@ export function createController(
       return list;
     },
     problems: () => problems,
-    select: (id) => set({ ...ui, selected: id }),
+    select: (id) => set({ ...ui, selected: id, charge: null }),
     cycle: (dir = 1) =>
-      set({ ...ui, selected: cycleSelection(state, ui.selected, dir) }),
+      set({
+        ...ui,
+        selected: cycleSelection(state, ui.selected, dir),
+        charge: null,
+      }),
     tap(at) {
       if (!playing()) inspected = at ? entityAt(state, at) : null;
       set(tapTile(state, ui, at));
@@ -495,15 +669,21 @@ export function createController(
     clearOrder: (id) => set({ ...ui, orders: clearOrder(ui.orders, id) }),
     endTurn() {
       if (!c.canEndTurn()) return;
-      const found = orderProblems(state, ui.orders);
+      const found = turnProblems(state, ui.orders, ui.support);
       if (found.length > 0) {
         problems = found;
         onChange(c);
         return;
       }
       const before = state;
-      const r = resolveTurn(state, ui.orders);
-      last = { before, orders: ui.orders, events: r.events, after: r.state };
+      const r = resolveTurn(state, ui.orders, ui.support);
+      last = {
+        before,
+        orders: ui.orders,
+        support: ui.support,
+        events: r.events,
+        after: r.state,
+      };
       state = r.state;
       events = r.events;
       ui = NONE;
@@ -552,7 +732,15 @@ export function describeEvent(e: SimEvent): string {
     case "Engulfed":
       return `${e.swarmId} engulfed ${e.pathogenId} (${e.wall})`;
     case "Killed":
-      return `${e.pathogenId} killed at ${xy(e.at)}`;
+      return e.cause === "charge"
+        ? `${e.pathogenId} killed by a charge at ${xy(e.at)}`
+        : `${e.pathogenId} killed at ${xy(e.at)}`;
+    case "SupportUsed":
+      return e.target === "pathogen"
+        ? `${e.charge} charge used on ${e.pathogenId}`
+        : `${e.charge} charge used on ${e.swarmId}'s load`;
+    case "Revealed":
+      return `${e.swarmId} revealed a hidden ${pathogenKind(e.kind).label} ${e.pathogenId} (size ${e.size}) at ${xy(e.at)}`;
     case "ResidualKill":
       return `${e.swarmId} residual kill: ${e.success ? "succeeded" : "failed"} (${pct(e.chance)})`;
     case "Walled":

@@ -46,6 +46,9 @@ const BLOCK = 0xff5a46;
 const SPORE = 0x6fb8ff;
 const GROW = 0xf2f2f2;
 const WALL = 0xb08a5a;
+const DOSE = 0x5be3c6;
+const PING = 0xcfe8ff;
+const DOSE_HEIGHT = 4.2;
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const seg = (p: number, a: number, b: number) => clamp01((p - a) / (b - a));
@@ -81,6 +84,7 @@ export function createPlaybackView(v: Views): PlaybackView {
   let caches: Cache[] = [];
   let children: PathogenId[] = [];
   let formed: GranulomaId[] = [];
+  let revealed: PathogenId[] = [];
   let tissueShown: number | null = null;
   let summaryTiles: Coord[] = [];
   let summaryT = -1;
@@ -121,6 +125,8 @@ export function createPlaybackView(v: Views): PlaybackView {
         break;
       case "grow":
       case "killed":
+      case "reveal":
+      case "dose":
       case "walled":
       case "carried":
       case "inflame":
@@ -275,6 +281,86 @@ export function createPlaybackView(v: Views): PlaybackView {
     }
   };
 
+  /** A dose falls from above the board onto the target; a pathogen dies, a carried load is cleared. */
+  const dose = (c: Cache, t: number, p: number) => {
+    const beat = c.beat;
+    if (beat.kind !== "dose") return;
+    const time = (x: number) => beat.start + beat.duration * x;
+    const hit = 0.5;
+    const fall = easeIn(seg(p, 0.05, hit));
+    const top = c.a.y + DOSE_HEIGHT;
+    const killed = beat.target === "pathogen";
+    if (p < hit) {
+      // A drop with a short streak behind it, plus a faint column down to the target.
+      for (let k = 0; k < 5; k++) {
+        const fk = Math.max(0, fall - k * 0.06);
+        if (fall <= 0) break;
+        v.fx.blob(
+          c.a.x,
+          top - (top - c.a.y - TOKEN_Y) * fk,
+          c.a.z,
+          0.16 * (1 - k * 0.15),
+          DOSE,
+          1 - k * 0.2,
+        );
+      }
+      v.fx.ring(
+        c.a.x,
+        c.a.y + 0.04,
+        c.a.z,
+        0.5,
+        0.35 * seg(p, 0.05, hit),
+        DOSE,
+      );
+    }
+    if (killed && beat.pathogenId) {
+      v.pathogens.setPose(
+        beat.pathogenId,
+        1 - easeIn(seg(p, hit, hit + 0.12)),
+        1,
+        0,
+        0,
+        0,
+      );
+    }
+    const pose = beat.swarmId ? v.swarms.pose(beat.swarmId) : null;
+    if (pose && !killed) {
+      pose.flash = 0.5 * bump(seg(p, hit, 0.9));
+      pose.load = p >= hit ? beat.load : beat.loadBefore;
+      if (p >= hit && beat.load === 0) pose.swell = 0;
+    }
+    if (p >= hit) {
+      const q = seg(p, hit, 0.95);
+      v.fx.ring(
+        c.a.x,
+        c.a.y + 0.05,
+        c.a.z,
+        0.2 + 0.9 * easeOut(q),
+        1 - q,
+        killed ? KILL : DOSE,
+      );
+      v.fx.ring(
+        c.a.x,
+        c.a.y + 0.05,
+        c.a.z,
+        0.1 + 0.5 * easeOut(seg(p, hit + 0.05, 1)),
+        0.8 * (1 - seg(p, hit + 0.05, 1)),
+        0xffffff,
+      );
+      v.fx.burst(c.seed, c.a.x, c.a.y + TOKEN_Y, c.a.z, q, 22, 1.4, DOSE);
+      label(
+        t,
+        time(hit),
+        killed ? `${beat.charge} dose` : `${beat.charge}: load cleared`,
+        "#8ff0d8",
+        c.a,
+        0.8,
+        0.9,
+      );
+      if (killed) label(t, time(hit + 0.1), "KILLED", "#fff3c4", c.a, 1.1);
+    }
+  };
+
   const apply = (c: Cache, t: number) => {
     const beat = c.beat;
     const p = beatProgress(beat, t);
@@ -313,6 +399,32 @@ export function createPlaybackView(v: Views): PlaybackView {
         label(t, time(0.2), "KILLED", "#fff3c4", c.a, 0.75);
         return;
       }
+      case "reveal": {
+        // The token pops out of hiding with a small ping.
+        const pop = back(seg(p, 0.1, 0.55));
+        v.pathogens.setPose(beat.pathogenId, Math.max(0, pop), 1, 0, 0, 0);
+        const q = seg(p, 0.15, 1);
+        v.fx.ring(
+          c.a.x,
+          c.a.y + 0.04,
+          c.a.z,
+          0.25 + 0.55 * easeOut(q),
+          0.8 * (1 - q),
+          PING,
+        );
+        v.fx.ring(
+          c.a.x,
+          c.a.y + 0.04,
+          c.a.z,
+          0.15 + 0.35 * easeOut(seg(p, 0.3, 1)),
+          0.6 * (1 - seg(p, 0.3, 1)),
+          0xffffff,
+        );
+        label(t, time(0.25), "revealed", "#cfe8ff", c.a, 0.85);
+        return;
+      }
+      case "dose":
+        return dose(c, t, p);
       case "walled": {
         // The load packs down into a block that thuds onto the tile; the swarm lets go.
         const pose = v.swarms.pose(beat.swarmId);
@@ -607,10 +719,15 @@ export function createPlaybackView(v: Views): PlaybackView {
       formed = next.timeline.beats.flatMap((b) =>
         b.kind === "walled" ? [b.granulomaId] : [],
       );
+      revealed = next.timeline.beats.flatMap((b) =>
+        b.kind === "reveal" ? [b.pathogenId] : [],
+      );
       v.board.update(before);
       v.swarms.update(before, true);
       v.pathogens.update(before, [
-        ...before.pathogens,
+        ...before.pathogens.map((p) =>
+          revealed.includes(p.id) ? { ...p, hidden: false } : p,
+        ),
         ...next.after.pathogens.filter((p) => born.has(p.id)),
       ]);
       v.granulomas.update(before, [
@@ -628,6 +745,7 @@ export function createPlaybackView(v: Views): PlaybackView {
       v.board.clearPulses();
       v.fx.reset();
       for (const id of children) v.pathogens.setPose(id, 0, 1, 0, 0, 0);
+      for (const id of revealed) v.pathogens.setPose(id, 0, 1, 0, 0, 0);
       for (const id of formed) v.granulomas.setPose(id, 0);
       tissueShown = pb.before.tissueHealth;
       for (const c of caches) {
@@ -640,6 +758,7 @@ export function createPlaybackView(v: Views): PlaybackView {
       caches = [];
       children = [];
       formed = [];
+      revealed = [];
       tissueShown = null;
       v.swarms.clearPoses();
       v.pathogens.clearPoses();

@@ -120,7 +120,10 @@ export function createFxView(scene: THREE.Scene): FxView {
     canvas.height = 64;
     const g = canvas.getContext("2d");
     if (g) {
+      // Long text shrinks to fit the texture.
       g.font = "bold 34px sans-serif";
+      const fit = Math.min(1, 236 / g.measureText(text).width);
+      g.font = `bold ${Math.floor(34 * fit)}px sans-serif`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.lineWidth = 7;
