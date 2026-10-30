@@ -2,6 +2,7 @@ import { createBoardView } from "../render/boardView";
 import { createPathogenView } from "../render/pathogenView";
 import { createScene } from "../render/scene";
 import { createSwarmView } from "../render/swarmView";
+import { createTelegraphView } from "../render/telegraphView";
 import {
   DEFAULT_SCENARIO,
   isScenarioName,
@@ -11,6 +12,8 @@ import { PARAMS } from "../sim/params";
 import type { Coord } from "../sim/types";
 import { getUiRoot } from "../ui";
 import { createDebugPanel } from "../ui/debugPanel";
+import { createHud } from "../ui/hud";
+import { createController, describeEvent } from "./controller";
 
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
@@ -25,11 +28,17 @@ const seed = seedParam === null ? undefined : Number(seedParam);
 if (seed !== undefined && !Number.isFinite(seed)) {
   console.warn(`Invalid seed "${seedParam}", using the default`);
 }
-const state = loadScenario(
-  isScenarioName(requested) ? requested : DEFAULT_SCENARIO,
-  seed !== undefined && Number.isFinite(seed) ? seed : undefined,
-);
-if (!state) throw new Error("default scenario failed to load");
+const scenarioName = isScenarioName(requested) ? requested : DEFAULT_SCENARIO;
+const validSeed =
+  seed !== undefined && Number.isFinite(seed) ? seed : undefined;
+const load = () => {
+  const s = loadScenario(scenarioName, validSeed);
+  if (!s) throw new Error("default scenario failed to load");
+  return s;
+};
+
+const controller = createController(load, (c) => refresh(c.state()));
+const state = controller.state();
 
 const { board } = state;
 const { render, camera, scene } = createScene(canvas, {
@@ -39,11 +48,28 @@ const { render, camera, scene } = createScene(canvas, {
 const view = createBoardView(scene, state);
 const pathogenView = createPathogenView(scene, view.tilePosition);
 const swarmView = createSwarmView(scene, view.tilePosition);
-pathogenView.update(state);
-swarmView.update(state);
+const telegraphView = createTelegraphView(scene, view.tilePosition);
+const hud = createHud(ui, {
+  onEndTurn: () => controller.endTurn(),
+  onReset: () => controller.reset(),
+});
+function refresh(s: typeof state) {
+  view.update(s);
+  pathogenView.update(s);
+  swarmView.update(s);
+  telegraphView.update(s);
+  hud.update({
+    turn: s.turn,
+    maxTurns: s.maxTurns,
+    tissueHealth: s.tissueHealth,
+    canEndTurn: controller.canEndTurn(),
+    log: controller.lastEvents().map(describeEvent),
+  });
+}
+refresh(state);
 createDebugPanel(ui, {
   scenario: state.scenario,
-  seed: seed !== undefined && Number.isFinite(seed) ? seed : PARAMS.defaultSeed,
+  seed: validSeed ?? PARAMS.defaultSeed,
 });
 
 const readout = document.createElement("div");
