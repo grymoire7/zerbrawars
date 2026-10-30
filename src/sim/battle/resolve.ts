@@ -2,7 +2,7 @@ import { sameCoord, tileId } from "../board";
 import { PARAMS } from "../params";
 import type { BattleState, Order, Pathogen, SimEvent } from "../types";
 import { generateIntents, landingBlockers } from "./intents";
-import { applyMoves, orderProblems } from "./orders";
+import { applyOrders, orderProblems } from "./orders";
 
 export interface TurnResult {
   readonly state: BattleState;
@@ -10,19 +10,8 @@ export interface TurnResult {
 }
 
 /**
- * Player orders: moves, then engulfs (T5), then wall-offs (T7). Holds do nothing. Moves resolve
- * before intents, so a swarm that moves onto a telegraphed target blocks it.
- */
-function applyOrders(
-  battle: BattleState,
-  orders: readonly Order[],
-): TurnResult {
-  return applyMoves(battle, orders);
-}
-
-/**
  * Surviving pathogens run their telegraphed intents in telegraph (pathogen id) order.
- * - An intent whose pathogen is gone (engulfed) is cancelled.
+ * - An intent whose pathogen is gone (engulfed) is cancelled; applyEngulfs also drops it.
  * - A spread or spore onto a swarm emits Blocked; the parent pays no cost.
  * - A target holding a pathogen or granuloma does nothing and emits nothing. The first intent
  *   in order wins a shared tile; generateIntents never produces one, so this is a safety net.
@@ -92,7 +81,8 @@ function tick(battle: BattleState): TurnResult {
 }
 
 /**
- * One turn, in the plan's order: player orders, pathogen intents, inflammation and damage, then
+ * One turn, in the plan's order: player orders (moves, then engulfs, then wall-offs at T7; holds do
+ * nothing), pathogen intents, inflammation and damage, then
  * the next telegraph and turn + 1. Throws, before changing anything, if validateOrders rejects any
  * order; the error lists every reason.
  */

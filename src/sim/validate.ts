@@ -1,7 +1,7 @@
 import { inBounds, tileId } from "./board";
-import { isPathogenKindId, pathogenKind } from "./pathogens";
+import { isPathogenKindId, pathogenKind, wallOf } from "./pathogens";
 import { PARAMS } from "./params";
-import type { BattleState, Coord } from "./types";
+import type { BattleState, Contained, Coord } from "./types";
 
 /**
  * Structural checks on a BattleState (for fixtures, setup and anything loaded from JSON).
@@ -32,20 +32,48 @@ export function validateBattle(battle: BattleState): string[] {
     else occupied.set(tile, id);
   };
 
-  for (const s of battle.swarms) place(s.id, s.at);
-  for (const g of battle.granulomas) place(g.id, g.at);
-  for (const p of battle.pathogens) {
-    place(p.id, p.at);
+  const checkKindAndSize = (
+    id: string,
+    p: { readonly kind: string; readonly size: number },
+  ) => {
     if (!isPathogenKindId(p.kind))
-      problems.push(`${p.id} has unknown kind ${p.kind}`);
+      problems.push(`${id} has unknown kind ${p.kind}`);
     if (
       !Number.isInteger(p.size) ||
       p.size < 1 ||
       p.size > PARAMS.maxPathogenSize
     ) {
-      problems.push(`${p.id} has invalid size ${p.size}`);
+      problems.push(`${id} has invalid size ${p.size}`);
     }
+  };
+  // Only sealed pathogens are ever held; a leaky one dies on engulf.
+  const checkContained = (id: string, c: Contained) => {
+    checkKindAndSize(`${id} content`, c);
+    if (isPathogenKindId(c.kind) && wallOf(c) !== "sealed")
+      problems.push(`${id} holds leaky ${c.kind}`);
+  };
+
+  for (const s of battle.swarms) {
+    place(s.id, s.at);
+    if (s.load.length > PARAMS.loadCap)
+      problems.push(
+        `${s.id} load ${s.load.length} is over cap ${PARAMS.loadCap}`,
+      );
+    for (const c of s.load) checkContained(s.id, c);
+    if (!Number.isInteger(s.busyTurns) || s.busyTurns < 0)
+      problems.push(`${s.id} has invalid busyTurns ${s.busyTurns}`);
   }
+  for (const g of battle.granulomas) {
+    place(g.id, g.at);
+    for (const c of g.contents) checkContained(g.id, c);
+  }
+  for (const p of battle.pathogens) {
+    place(p.id, p.at);
+    checkKindAndSize(p.id, p);
+  }
+  const chance = battle.residualKillChance;
+  if (!(chance >= 0 && chance <= 1))
+    problems.push(`residualKillChance ${chance} is outside 0..1`);
   const intended = new Set<string>();
   const targets = new Map<number, string>();
   for (const i of battle.intents) {

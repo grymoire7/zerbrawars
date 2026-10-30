@@ -185,16 +185,11 @@ describe("resolveTurn", () => {
     }
   });
 
-  it("treats hold as no order and rejects engulf and wallOff for now", () => {
+  it("treats hold as no order and rejects wallOff for now", () => {
     const battle = load(1);
     expect(resolveTurn(battle, [{ type: "hold", swarmId: "s1" }])).toEqual(
       resolveTurn(battle, []),
     );
-    expect(() =>
-      resolveTurn(battle, [
-        { type: "engulf", swarmId: "s1", pathogenId: "p1", from: null },
-      ]),
-    ).toThrow(/not supported/);
     expect(() =>
       resolveTurn(battle, [{ type: "wallOff", swarmId: "s1" }]),
     ).toThrow(/not supported/);

@@ -10,11 +10,19 @@ export const PARAMS = {
    * or 1, which stays readable.
    */
   swarmMoveRange: 3,
-  /** Placeholder (T5). Contained pathogens a swarm can hold. 2 keeps the cap binding with 3 swarms. */
+  /**
+   * Contained pathogens a swarm can hold (a count, not total size). 2 keeps the cap binding with
+   * 3 swarms. A full swarm can still engulf leaky pathogens, which die instead of loading.
+   */
   loadCap: 2,
-  /** Placeholder (T5). Moves lost per turn while a swarm holds any load. */
+  /** Moves lost per contained pathogen: range 3, then 2, then 1. */
   loadedMovePenalty: 1,
-  /** Placeholder (T5). XL-like default; the debug panel overrides it. */
+  /** Load never slows a free swarm below this. */
+  minLoadedMoveRange: 1,
+  /**
+   * Chance an engulfed sealed pathogen dies instead of loading (residual oxidase activity).
+   * XL-like default; the debug panel overrides it per battle via BattleState.residualKillChance.
+   */
   residualKillChance: 0.1,
   maxPathogenSize: 4,
   /**

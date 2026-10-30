@@ -20,7 +20,7 @@ import type {
   SwarmId,
   TileId,
 } from "../types";
-import { applyMoves } from "./orders";
+import { applyMoves, validEngulfs } from "./orders";
 
 /**
  * Tiles a spread or spore may target right now: in bounds and holding no pathogen (hidden ones
@@ -133,20 +133,30 @@ export interface TelegraphMark {
   readonly childSize: number;
   /** The swarm that will stand on the target once `orders` move, which blocks it. */
   readonly blockedBy: SwarmId | null;
+  /**
+   * The swarm whose pending engulf removes this pathogen first, so the intent will not happen.
+   * The other fields still describe the intent as telegraphed.
+   */
+  readonly cancelledBy: SwarmId | null;
 }
 
 /**
  * The marks to draw, as they will resolve if the turn ends with `orders`. Uses the same move
- * code as resolveTurn, so a preview block is a real block. Invalid orders are ignored here.
+ * and engulf validation as resolveTurn, so a preview block or cancel is real. Invalid orders are
+ * ignored here.
  */
 export function telegraph(
   current: BattleState,
   orders: readonly Order[] = [],
 ): TelegraphMark[] {
   const battle = applyMoves(current, orders).state;
+  const engulfedBy = new Map(
+    validEngulfs(current, orders).map((e) => [e.pathogen.id, e.order.swarmId]),
+  );
   return battle.intents.flatMap((i): TelegraphMark[] => {
     const p = battle.pathogens.find((q) => q.id === i.pathogenId);
     if (!p) return [];
+    const cancelledBy = engulfedBy.get(p.id) ?? null;
     if (i.type === "grow") {
       return [
         {
@@ -157,6 +167,7 @@ export function telegraph(
           sizeAfter: p.size + i.amount,
           childSize: 0,
           blockedBy: null,
+          cancelledBy,
         },
       ];
     }
@@ -170,6 +181,7 @@ export function telegraph(
         sizeAfter: swarm ? p.size : p.size - i.cost,
         childSize: i.size,
         blockedBy: swarm?.id ?? null,
+        cancelledBy,
       },
     ];
   });

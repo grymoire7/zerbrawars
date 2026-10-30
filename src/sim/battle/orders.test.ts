@@ -163,7 +163,7 @@ describe("validateOrders", () => {
     expect(movePath(battle, "s1", { x: 1, y: 5 })).toBeNull();
   });
 
-  it("rejects a second order, a missing swarm and unsupported types", () => {
+  it("rejects a second order, a missing swarm, a bad engulf and unsupported types", () => {
     const battle = load();
     expect(
       reasons(battle, [
@@ -177,7 +177,7 @@ describe("validateOrders", () => {
       null,
       "two orders for s1",
       "no swarm s9",
-      "engulf orders are not supported yet",
+      "p1 is not next to 3,6",
       "wallOff orders are not supported yet",
     ]);
   });
