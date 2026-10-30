@@ -1,12 +1,16 @@
 import { createBoardView } from "../render/boardView";
+import { createPathogenView } from "../render/pathogenView";
 import { createScene } from "../render/scene";
+import { createSwarmView } from "../render/swarmView";
 import {
   DEFAULT_SCENARIO,
   isScenarioName,
   loadScenario,
 } from "../sim/scenarios";
+import { PARAMS } from "../sim/params";
 import type { Coord } from "../sim/types";
 import { getUiRoot } from "../ui";
+import { createDebugPanel } from "../ui/debugPanel";
 
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
@@ -33,6 +37,14 @@ const { render, camera, scene } = createScene(canvas, {
   depth: board.height,
 });
 const view = createBoardView(scene, state);
+const pathogenView = createPathogenView(scene, view.tilePosition);
+const swarmView = createSwarmView(scene, view.tilePosition);
+pathogenView.update(state);
+swarmView.update(state);
+createDebugPanel(ui, {
+  scenario: state.scenario,
+  seed: seed !== undefined && Number.isFinite(seed) ? seed : PARAMS.defaultSeed,
+});
 
 const readout = document.createElement("div");
 readout.style.cssText =
@@ -77,7 +89,12 @@ canvas.addEventListener("pointerleave", () => {
   updateReadout();
 });
 
-function frame() {
+let last = performance.now();
+function frame(now: number = performance.now()) {
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  pathogenView.tick(dt);
+  swarmView.tick(dt);
   render();
   requestAnimationFrame(frame);
 }
