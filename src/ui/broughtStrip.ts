@@ -5,7 +5,8 @@ export interface BroughtView {
 }
 
 export interface BroughtStrip {
-  show(heading: string, items: readonly BroughtView[]): void;
+  /** `soft`: a lighter, friendlier look for a skirmish. */
+  show(heading: string, items: readonly BroughtView[], soft?: boolean): void;
   hide(): void;
   dispose(): void;
 }
@@ -51,8 +52,15 @@ export function createBroughtStrip(
   root.append(box);
 
   return {
-    show(heading, items) {
-      title.textContent = heading;
+    show(heading, items, soft = false) {
+      title.textContent = soft
+        ? heading.charAt(0).toUpperCase() + heading.slice(1)
+        : heading;
+      box.style.background = soft
+        ? "rgba(34,48,58,0.9)"
+        : "rgba(35,38,46,0.94)";
+      box.style.borderColor = soft ? "#5b7f94" : "#4a505e";
+      title.style.fontWeight = soft ? "500" : "";
       chips.replaceChildren(
         ...items.map((it) => {
           const c = document.createElement("div");

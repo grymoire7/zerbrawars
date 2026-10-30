@@ -90,7 +90,7 @@ export const LIFE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "After the week",
-    "If something landed, you head into a battle with what you brought in and the medication you kept up. If nothing landed, it was a quiet week.",
+    "If something landed or flared, you head into a full battle with what you brought in and the medication you kept up. If nothing big landed, your body is still on patrol: a small skirmish, a few turns long. The one week with no fight is when the doctor finds only a virus.",
   ],
 ];
 

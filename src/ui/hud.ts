@@ -1,3 +1,4 @@
+import type { BattleKind } from "../sim/types";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 export interface HudOrder {
   readonly swarmId: string;
@@ -95,6 +96,8 @@ export interface HudModel {
   readonly turn: number;
   readonly over: boolean;
   readonly maxTurns: number;
+  /** A skirmish is labelled in the turn line. */
+  readonly kind: BattleKind;
   readonly tissueHealth: number;
   readonly canEndTurn: boolean;
   readonly log: readonly string[];
@@ -560,8 +563,8 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
         turn.style.color = "#9fd8f0";
       } else {
         turn.textContent = m.over
-          ? `Finished after ${Math.min(m.turn - 1, m.maxTurns)} turns`
-          : `Turn ${m.turn} / ${m.maxTurns}`;
+          ? `${m.kind === "skirmish" ? "Skirmish over" : "Finished"} after ${Math.min(m.turn - 1, m.maxTurns)} turns`
+          : `${m.kind === "skirmish" ? "Skirmish · " : ""}Turn ${m.turn} / ${m.maxTurns}`;
         turn.style.color = "";
         progress.style.width = "0";
         shownTissue = m.tissueHealth;

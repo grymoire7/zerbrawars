@@ -1,5 +1,10 @@
 import { pathogenKind } from "../sim/pathogens";
-import type { BattleGrade, BattleOutcome, BattleStatus } from "../sim/types";
+import type {
+  BattleGrade,
+  BattleKind,
+  BattleOutcome,
+  BattleStatus,
+} from "../sim/types";
 
 export interface OutcomeHandlers {
   onPlayAgain(): void;
@@ -23,6 +28,7 @@ export interface OutcomeOverlay {
     outcome: BattleOutcome,
     status: BattleStatus,
     extra?: OutcomeExtra,
+    kind?: BattleKind,
   ): void;
   hide(): void;
 }
@@ -44,6 +50,18 @@ const GRADE: Record<BattleGrade, { title: string; summary: string }> = {
       "This one needed extra help, and help arrived. That is what backup is for.",
   },
 };
+
+/** A skirmish ends gently: short, warm, never frightening. */
+export const SKIRMISH_COPY = {
+  cleared: {
+    title: "All quiet",
+    summary: "All quiet again. Your body handled it.",
+  },
+  loose: {
+    title: "Still stirring",
+    summary: "Something is still stirring, you may feel worn out tomorrow.",
+  },
+} as const;
 
 const ENDED = {
   noFreePathogens: "No loose germs were left.",
@@ -182,14 +200,19 @@ export function createOutcomeOverlay(
   };
 
   return {
-    show(outcome, status, extra) {
-      const g = GRADE[outcome.grade];
+    show(outcome, status, extra, kind = "full") {
+      const skirmish = kind === "skirmish";
+      const g = skirmish
+        ? SKIRMISH_COPY[outcome.grade === "cleared" ? "cleared" : "loose"]
+        : GRADE[outcome.grade];
       title.textContent = g.title;
       summary.textContent = g.summary;
-      const lines = [
-        status.reason ? ENDED[status.reason] : "",
-        ...outcome.backupReasons.map((r) => BACKUP_REASON[r]),
-      ].filter(Boolean);
+      const lines = skirmish
+        ? []
+        : [
+            status.reason ? ENDED[status.reason] : "",
+            ...outcome.backupReasons.map((r) => BACKUP_REASON[r]),
+          ].filter(Boolean);
       reasons.replaceChildren(
         ...lines.map((t) => {
           const li = document.createElement("li");
@@ -199,21 +222,25 @@ export function createOutcomeOverlay(
       );
       reasons.style.display = lines.length > 0 ? "" : "none";
       carry.replaceChildren(
-        ...rows(outcome),
-        ...(extra ? [meaning(extra)] : []),
+        ...(skirmish ? [] : rows(outcome)),
+        ...(extra && !skirmish ? [meaning(extra)] : []),
       );
       next.style.display = extra ? "" : "none";
       again.style.display = extra ? "none" : "";
       fresh.style.display = extra ? "none" : "";
       if (extra) next.textContent = extra.nextLabel;
       const { tissue } = outcome;
-      stats.textContent =
-        `Tissue ${tissue.health} of ${tissue.max}` +
-        (tissue.lost > 0 ? ` (${tissue.lost} lost)` : " (unharmed)") +
-        `. Energy carried forward: ${outcome.energy}. Turns played: ${outcome.turnsPlayed}.` +
-        (extra && !extra.lastWeek
-          ? ` You start next with ${extra.energyNext} energy.`
-          : "");
+      stats.textContent = skirmish
+        ? `Energy carried forward: ${outcome.energy}.` +
+          (extra && !extra.lastWeek
+            ? ` You start next with ${extra.energyNext} energy.`
+            : "")
+        : `Tissue ${tissue.health} of ${tissue.max}` +
+          (tissue.lost > 0 ? ` (${tissue.lost} lost)` : " (unharmed)") +
+          `. Energy carried forward: ${outcome.energy}. Turns played: ${outcome.turnsPlayed}.` +
+          (extra && !extra.lastWeek
+            ? ` You start next with ${extra.energyNext} energy.`
+            : "");
       open = true;
       setCollapsed(false);
     },

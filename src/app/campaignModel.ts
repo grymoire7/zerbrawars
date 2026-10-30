@@ -1,7 +1,13 @@
 import type { Campaign, CampaignEvent, CycleRecord } from "../sim/campaign";
 import { cardDef } from "../sim/life/cards";
 import type { CarriedReservoir } from "../sim/life/loadout";
-import type { CardId, Dose, LifeEvent, Symptom } from "../sim/life/types";
+import type {
+  Aftermath,
+  CardId,
+  Dose,
+  LifeEvent,
+  Symptom,
+} from "../sim/life/types";
 import { PARAMS } from "../sim/params";
 import {
   isPathogenKindId,
@@ -54,7 +60,8 @@ export function doctorBeat(
 export function bodyBeats(events: readonly LifeEvent[]): string[] {
   const out: string[] = [];
   for (const e of events) {
-    if (e.type === "SymptomAppeared") out.push(symptomText(e.symptom));
+    if (e.type === "SkirmishAftermath") out.push(aftermathText(e.aftermath));
+    else if (e.type === "SymptomAppeared") out.push(symptomText(e.symptom));
     else if (e.type === "DoctorVisited") out.push(...doctorBeat(e));
     else if (e.type === "ReservoirGrew")
       out.push("You feel worse than yesterday. Something is not settling.");
@@ -66,13 +73,30 @@ export function bodyBeats(events: readonly LifeEvent[]): string[] {
   return out;
 }
 
-/** The week-start lines: symptoms that show at once. */
+export const aftermathTitle = (a: Aftermath): string =>
+  a.kind === "wornOut" ? "You feel worn out" : "A spot flares up";
+
+/** The second half of the aftermath beat: where the white cells were, and the energy it cost. */
+export const aftermathDetail = (a: Aftermath): string =>
+  `${a.kind === "flareUp" ? "It settles again. " : ""}Your white cells were off fighting somewhere else today. It costs ${a.energy} energy this week.`;
+
+/** The flavor beat a lost skirmish leaves at the start of the next week. Not a symptom. */
+export const aftermathText = (a: Aftermath): string =>
+  `${aftermathTitle(a)}. ${aftermathDetail(a)}`;
+
+/**
+ * The week-start lines: a skirmish aftermath first (flavor, not a symptom), then symptoms that
+ * show at once.
+ */
 export function weekOpening(events: readonly CampaignEvent[]): string[] {
-  return events.flatMap((e) =>
-    e.type === "Life" && e.event.type === "SymptomAppeared"
-      ? [symptomText(e.event.symptom)]
-      : [],
-  );
+  return events.flatMap((e) => {
+    if (e.type !== "Life") return [];
+    if (e.event.type === "SkirmishAftermath")
+      return [aftermathText(e.event.aftermath)];
+    if (e.event.type === "SymptomAppeared")
+      return [symptomText(e.event.symptom)];
+    return [];
+  });
 }
 
 export function chargesText(c: MedCharges): string {
@@ -170,6 +194,15 @@ export function broughtItems(c: Campaign): BroughtItem[] {
         g.kinds.map(kindWord).join(" + ") + (sealed > 0 ? " (shelled)" : ""),
     });
   }
+  if (c.battleKind === "skirmish") {
+    // A little patrol: no exposures, and the carried-over spots stay off its board.
+    items.push({
+      icon: "⚡",
+      title: `Energy ${life.energy}`,
+      detail: "left after the week",
+    });
+    return items;
+  }
   const hidden = life.reservoirs.filter((r) => r.hidden && !r.flared);
   const shown = life.reservoirs.filter((r) => !r.hidden || r.flared);
   if (hidden.length > 0) {
@@ -200,6 +233,9 @@ export function broughtItems(c: Campaign): BroughtItem[] {
   });
   return items;
 }
+
+/** The strip's heading for a skirmish. */
+export const SKIRMISH_HEADING = "A little skirmish somewhere in your body";
 
 /** Why the battle is happening, in a few words per reason. */
 export function reasonText(
@@ -256,6 +292,11 @@ export interface WeekLine {
   readonly carried: string;
 }
 
+const SKIRMISH_TEXT = {
+  cleared: "skirmish: cleared",
+  loose: "skirmish: something still stirring",
+} as const;
+
 const GRADE_TEXT = {
   cleared: "battle: all clear",
   contained: "battle: contained",
@@ -266,8 +307,12 @@ const GRADE_TEXT = {
 export function weekLine(h: CycleRecord): WeekLine {
   const result =
     h.result.kind === "quiet"
-      ? "quiet week"
-      : GRADE_TEXT[h.result.outcome.grade];
+      ? "just a virus, no fight"
+      : h.result.battleKind === "skirmish"
+        ? SKIRMISH_TEXT[
+            h.result.outcome.grade === "cleared" ? "cleared" : "loose"
+          ]
+        : GRADE_TEXT[h.result.outcome.grade];
   const doctor = h.doctor
     ? h.doctor.finding === "reservoir"
       ? `doctor visit (${h.doctor.timing}): found something`

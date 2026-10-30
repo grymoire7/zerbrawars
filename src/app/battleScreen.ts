@@ -26,7 +26,12 @@ import { carryPreview } from "../sim/campaign";
 import { battleDueReasons } from "../sim/life/calendar";
 import { createBroughtStrip } from "../ui/broughtStrip";
 import { createProbe } from "../ui/probe";
-import { broughtItems, probeDue, reasonText } from "./campaignModel";
+import {
+  broughtItems,
+  probeDue,
+  reasonText,
+  SKIRMISH_HEADING,
+} from "./campaignModel";
 import { settings, type Run } from "./run";
 import { sessionOptions } from "./sessionOptions";
 import { createDebugPanel } from "../ui/debugPanel";
@@ -360,7 +365,12 @@ export function mountBattle(
             lastWeek: c.cycle >= c.cycles,
           };
         }
-        outcomeOverlay.show(outcome, battleStatus(controller.state()), extra);
+        outcomeOverlay.show(
+          outcome,
+          battleStatus(controller.state()),
+          extra,
+          controller.state().kind,
+        );
       }
     } else if (outcomeShown) {
       outcomeShown = false;
@@ -370,6 +380,7 @@ export function mountBattle(
       over: controller.over(),
       turn: s.turn,
       maxTurns: s.maxTurns,
+      kind: s.kind,
       tissueHealth: s.tissueHealth,
       canEndTurn: controller.canEndTurn(),
       log: logLines(controller.lastEvents()),
@@ -452,12 +463,16 @@ export function mountBattle(
   help.showFirstTime();
   if (run && settings.brought) {
     const c = run.campaign();
-    const why = reasonText(c.result ? [] : dueReasons(run));
+    const skirmish = c.battleKind === "skirmish";
+    const why = reasonText(c.result || skirmish ? [] : dueReasons(run));
     strip.show(
-      why
-        ? `You brought this fight: ${why}`
-        : "What you brought into this fight",
+      skirmish
+        ? SKIRMISH_HEADING.toLowerCase()
+        : why
+          ? `You brought this fight: ${why}`
+          : "What you brought into this fight",
       broughtItems(c),
+      skirmish,
     );
   }
 

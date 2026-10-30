@@ -14,6 +14,8 @@ import {
   particleCount,
   placementCheck,
   weekSummary,
+  battleOddsText,
+  weekEndText,
 } from "./lifeModel";
 
 const put = (
@@ -145,5 +147,35 @@ describe("pending pick", () => {
       slot: 1,
     });
     expect(clearPending()).toEqual(NO_PENDING);
+  });
+});
+
+describe("weekEndText", () => {
+  it("makes a skirmish week warm and not quiet", () => {
+    const t = weekEndText("skirmish", [], "100%");
+    expect(t.due).toBe(true);
+    expect(t.button).toBe("Start the skirmish");
+    expect(t.line).toContain("always on patrol");
+    expect(t.line).not.toMatch(/quiet|nothing landed|doctor/i);
+  });
+  it("keeps the full battle lines by reason", () => {
+    const t = weekEndText("full", ["exposure"], "80%");
+    expect(t.button).toBe("Start the battle");
+    expect(t.line).toContain("80%");
+    expect(weekEndText("full", ["reservoir"], "80%").line).toContain("flaring");
+    expect(weekEndText("full", ["doctor"], "80%").line).toContain("doctor");
+  });
+  it("is a friendly virus beat with Continue when there is no battle", () => {
+    const t = weekEndText(null, [], "90%");
+    expect(t.due).toBe(false);
+    expect(t.button).toBe("Continue");
+    expect(t.line).toContain("virus");
+  });
+});
+
+describe("battleOddsText", () => {
+  it("names the chance as a full battle", () => {
+    expect(battleOddsText(0.4)).toContain("full battle");
+    expect(battleOddsText(0.4)).toContain("40%");
   });
 });

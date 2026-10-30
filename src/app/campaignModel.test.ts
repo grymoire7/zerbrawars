@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { PARAMS } from "../sim/params";
 import { createCampaign, endWeek } from "../sim/campaign";
 import { medLevelOf } from "../sim/life/meds";
+import type { CampaignEvent } from "../sim/campaign";
 import {
+  aftermathText,
   bodyBeats,
   broughtItems,
   dosesForMed,
@@ -11,6 +13,7 @@ import {
   parseReservoirs,
   probeDue,
   symptomText,
+  weekOpening,
 } from "./campaignModel";
 
 describe("probeDue", () => {
@@ -126,5 +129,27 @@ describe("broughtItems", () => {
     expect(items.find((i) => /lake/i.test(i.title))?.detail).toBe(
       "bacteria + bacteria (shelled)",
     );
+  });
+});
+
+describe("skirmish aftermath", () => {
+  const worn = { kind: "wornOut", energy: 1 } as const;
+  const flare = { kind: "flareUp", energy: 1 } as const;
+
+  it("reads as flavor with the energy cost, not as a symptom", () => {
+    expect(aftermathText(worn)).toMatch(/^You feel worn out\./);
+    expect(aftermathText(worn)).toContain("costs 1 energy");
+    expect(aftermathText(flare)).toMatch(/^A spot flares up\./);
+    expect(aftermathText(flare)).not.toMatch(/doctor/i);
+  });
+
+  it("opens the week, ahead of symptoms", () => {
+    const events: CampaignEvent[] = [
+      { type: "Life", event: { type: "SkirmishAftermath", aftermath: worn } },
+    ];
+    expect(weekOpening(events)).toEqual([aftermathText(worn)]);
+    expect(
+      bodyBeats([{ type: "SkirmishAftermath", aftermath: flare }]),
+    ).toEqual([aftermathText(flare)]);
   });
 });

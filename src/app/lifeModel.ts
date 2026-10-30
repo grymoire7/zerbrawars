@@ -6,7 +6,13 @@ import {
   unplaceCard,
 } from "../sim/life/calendar";
 import { cardDef } from "../sim/life/cards";
-import type { CardId, LifeEvent, LifeState } from "../sim/life/types";
+import type {
+  BattleReason,
+  CardId,
+  LifeEvent,
+  LifeState,
+} from "../sim/life/types";
+import type { BattleKind } from "../sim/types";
 import { bodyBeats } from "./campaignModel";
 import { PARAMS } from "../sim/params";
 import { pathogenKind, type PathogenKindId } from "../sim/pathogens";
@@ -305,3 +311,48 @@ export function selectActivity(_p: Pending, activity: PickedActivity): Pending {
 
 /** Escape: drop whatever is pending. */
 export const clearPending = (): Pending => NO_PENDING;
+
+// ---- The end of the week: which battle follows, in plain words. ----
+
+export interface WeekEndText {
+  readonly due: boolean;
+  readonly line: string;
+  /** The button that leaves the week screen. */
+  readonly button: string;
+}
+
+/**
+ * The closing line and button for a finished week. Only a viral doctor result has no battle; a
+ * skirmish is the body's everyday patrol, never a quiet week.
+ */
+export function weekEndText(
+  kind: BattleKind | null,
+  reasons: readonly BattleReason[],
+  medPct: string,
+): WeekEndText {
+  if (kind === null) {
+    return {
+      due: false,
+      line: "It was just a virus. Nothing else came home with you, so there is no fight this week.",
+      button: "Continue",
+    };
+  }
+  if (kind === "skirmish") {
+    return {
+      due: true,
+      line: "Nothing big landed this week, but your body is always on patrol. A small skirmish is starting.",
+      button: "Start the skirmish",
+    };
+  }
+  const line = reasons.includes("exposure")
+    ? `Something came home with you. A battle is next, with your medication at ${medPct}.`
+    : reasons.includes("reservoir")
+      ? "Something left over is flaring up. A battle is next."
+      : "The doctor found something, and now it is out in the open. A battle is next, with strong backup on your side.";
+  return { due: true, line, button: "Start the battle" };
+}
+
+/** The week preview's odds line. The number is the chance of a full battle, not of any fight. */
+export function battleOddsText(chanceFull: number): string {
+  return `With this plan, the chance of a full battle this week is ${pct(chanceFull)}. Otherwise it is a small skirmish.`;
+}

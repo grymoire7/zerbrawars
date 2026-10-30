@@ -28,6 +28,8 @@ import { createDebugPanel } from "../ui/debugPanel";
 import { sessionOptions } from "./sessionOptions";
 import { createHelp, LIFE_LINES } from "../ui/help";
 import {
+  aftermathDetail,
+  aftermathTitle,
   doctorLines,
   DOCTOR_NUDGE,
   symptomText,
@@ -40,6 +42,8 @@ import {
   type LifeSlotModel,
 } from "../ui/lifePanel";
 import {
+  battleOddsText,
+  weekEndText,
   doseStrip,
   lifeBeats,
   oddsText,
@@ -247,7 +251,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     });
     const due = battleDue(life);
     const s = weekSummary(life);
-    const reasons = due.reasons;
+    const end = weekEndText(due.battleKind, due.reasons, pct(s.medLevel));
     const symptomLines = life.symptoms.map(symptomText);
     const notes: string[] = [];
     if (life.doctor) {
@@ -309,7 +313,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         ? ""
         : week.pending.length === 0
           ? "Nothing planned yet."
-          : `With this plan, the chance this week ends in a battle is ${pct(week.chanceBattle)}.`,
+          : battleOddsText(week.chanceBattle),
       beats,
       summary: over
         ? {
@@ -320,21 +324,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
             goalText: `${s.points} of ${s.target} points.`,
             metGoal: s.metGoal,
             notes,
-            battle: due.due
-              ? {
-                  due: true,
-                  line: reasons.includes("exposure")
-                    ? "Something came home with you. A battle is next, with your medication at " +
-                      pct(s.medLevel) +
-                      "."
-                    : reasons.includes("reservoir")
-                      ? "Something left over is flaring up. A battle is next."
-                      : "The doctor found something, and now it is out in the open. A battle is next, with strong backup on your side.",
-                }
-              : {
-                  due: false,
-                  line: "Quiet week. Nothing landed, so there is nothing to fight. Enjoy it.",
-                },
+            battle: { due: end.due, line: end.line },
           }
         : null,
       playLabel:
@@ -346,7 +336,14 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
             ? DOCTOR_NUDGE
             : null,
       },
-      endLabel: due.due ? "Start the battle" : run.standalone ? "" : "Continue",
+      endLabel: due.due ? end.button : run.standalone ? "" : end.button,
+      aftermath:
+        life.aftermath && life.day === 0
+          ? {
+              title: aftermathTitle(life.aftermath),
+              text: aftermathDetail(life.aftermath),
+            }
+          : null,
       canAgain: run.standalone,
     };
   };

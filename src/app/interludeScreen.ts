@@ -9,7 +9,7 @@ import type { Run } from "./run";
 import type { Screen, ScreenEnv } from "./screen";
 import { sessionOptions } from "./sessionOptions";
 
-/** The beats between weeks that have no board: a quiet week, and the campaign summary. */
+/** The beats between weeks that have no board: a viral week, and the campaign summary. */
 export function mountInterlude(
   env: ScreenEnv,
   run: Run,
@@ -37,8 +37,8 @@ export function mountInterlude(
     const carry = carryPreview(c);
     const last = c.cycle >= c.cycles;
     model = {
-      title: "A quiet week",
-      lead: "Nothing landed and nothing flared, so there is nothing to fight. Enjoy it.",
+      title: "Just a virus",
+      lead: "The doctor says it was only a virus, and nothing else came home with you. No fight this week. Rest up.",
       notes: [
         `You get a breather: energy goes from ${carry.energy.left} to ${carry.energy.next} for ${last ? "the days after" : "next week"}.`,
       ],
@@ -62,13 +62,17 @@ export function mountInterlude(
     const sum = campaignSummary(c);
     const g = sum.grades;
     const battles = g.cleared + g.contained + g.neededBackup;
+    const sk = sum.skirmishes;
+    const skirmishes = sk.cleared + sk.loose;
     model = {
       title: `Your ${c.cycles} weeks`,
       lead:
         `${sum.points} points across ${sum.weeks} weeks (${sum.goalsMet} goal${sum.goalsMet === 1 ? "" : "s"} met). ` +
-        `${battles} ${battles === 1 ? "battle" : "battles"}, ${sum.quietWeeks} quiet.`,
+        `${battles} ${battles === 1 ? "battle" : "battles"}, ${skirmishes} ${skirmishes === 1 ? "skirmish" : "skirmishes"}` +
+        (sum.quietWeeks > 0 ? `, ${sum.quietWeeks} virus-only.` : "."),
       notes: [
         `Battles: ${g.cleared} all clear, ${g.contained} contained, ${g.neededBackup} needed backup. ` +
+          `Skirmishes: ${sk.cleared} cleared, ${sk.loose} left something stirring. ` +
           `Doctor visits: ${sum.doctorVisits}${sum.earlyVisits > 0 ? ` (${sum.earlyVisits} early)` : ""}. ` +
           (sum.reservoirsLeft > 0
             ? `${sum.reservoirsLeft} still carried over at the end, and could show up as symptoms.`

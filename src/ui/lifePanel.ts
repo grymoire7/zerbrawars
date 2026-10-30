@@ -96,6 +96,8 @@ export interface LifePanelModel {
     readonly lines: readonly string[];
     readonly nudge: string | null;
   };
+  /** A lost skirmish's aftermath: flavor, not a symptom. */
+  readonly aftermath: { readonly title: string; readonly text: string } | null;
   /** The button that ends a finished week: the battle, or on to the next beat. */
   readonly endLabel: string;
   /** Standalone debug entry only: replan the same week. */
@@ -214,6 +216,12 @@ export function createLifePanel(
       "display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.35;",
   );
   feelBox.setAttribute("role", "status");
+  const aftermathBox = el(
+    "div",
+    "background:#22303a;border:1px dashed #5b7f94;border-radius:6px;padding:8px 10px;" +
+      "display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:1.35;color:#cfe3ee;",
+  );
+  aftermathBox.setAttribute("role", "status");
   const handBox = el("div", "display:flex;flex-direction:column;gap:8px;");
   const beatsBox = el("details", PANEL) as HTMLDetailsElement;
   beatsBox.open = true;
@@ -280,6 +288,7 @@ export function createLifePanel(
 
   mounts.scroll.append(
     top,
+    aftermathBox,
     feelBox,
     metersBox,
     medsBox,
@@ -296,7 +305,7 @@ export function createLifePanel(
     "play",
   );
   const battleBtn = button(
-    "Start the battle",
+    "",
     h.onStartBattle,
     "min-height:52px;width:100%;font-weight:700;font-size:16px;",
     "battle",
@@ -671,6 +680,15 @@ export function createLifePanel(
     update(m) {
       const focus = activeKey();
       title.textContent = m.title;
+      aftermathBox.style.display = m.aftermath ? "flex" : "none";
+      aftermathBox.replaceChildren(
+        ...(m.aftermath
+          ? [
+              el("div", "font-weight:600;", m.aftermath.title),
+              el("div", "font-size:12px;opacity:0.9;", m.aftermath.text),
+            ]
+          : []),
+      );
       feelBox.style.display = m.feel.lines.length > 0 ? "flex" : "none";
       feelBox.replaceChildren(
         el("div", "font-weight:700;", "How you feel"),
