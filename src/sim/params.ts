@@ -162,5 +162,91 @@ export const PARAMS = {
     /** Energy carried into the life phase per grade (T13). */
     energy: { cleared: 3, contained: 2, neededBackup: 1 },
   },
+  /**
+   * The life phase (T11): three days of two slots (day, evening) and a hand of four cards, each
+   * played at most once, in its own or its smarter version. An empty slot is rest.
+   * - goalTarget: points that fill the goal meter. The smarter week (12) fills it only with the
+   *   sleepover, so the friction event is part of the route; the all-risky week scores 14.
+   * - Energy (game-only, labelled as such): cards cost it when their day ends, rest refunds
+   *   `restEnergy`, packing the pills costs `packPillsEnergy`. The plan's running balance may never
+   *   go below 0, so a low-energy week has to rest a slot it would have filled. What is left
+   *   carries into the Loadout (the battle ignores it) and on into the next week (T13). A first week
+   *   starts at `startEnergy`: all four cards cost 6, two rests refund 2, which leaves exactly 1
+   *   for the pills.
+   * - meds.window: the med level is the share of doses taken over the last `window` days (pre-week
+   *   days count as taken). With 3, one miss in the week gives 0.67 at battle time (one antifungal
+   *   charge instead of 1 + 2), two give 0.33 (no charges), and a miss leaves the window three days
+   *   later, so the aura dims for as long as the dose would have lasted.
+   * - cards: tuning per card. `chance` is the honest landing odds of the card's exposure, rolled
+   *   once when its day ends; when it lands it brings `count` pathogens of `size`, entering at the
+   *   first free tile of `at` (then PARAMS.setup.exposureTiles). Risky versions pay more points
+   *   than their smarter versions. Tuned in life/balance.test.ts.
+   * - battleSeedSalt: mixed with the life seed and week into the battle seed, so the same seed and
+   *   week always fight with the same battle dice whatever was played.
+   */
+  life: {
+    days: 3,
+    slotsPerDay: 2,
+    goalTarget: 10,
+    startEnergy: 5,
+    maxEnergy: 6,
+    restEnergy: 1,
+    packPillsEnergy: 1,
+    meds: { window: 3 },
+    cards: {
+      yard: {
+        points: 4,
+        energy: 2,
+        chance: 0.45,
+        size: 3,
+        count: 1,
+        at: [{ x: 5, y: 2 }],
+      },
+      yardIndoor: {
+        points: 3,
+        energy: 2,
+        chance: 0.1,
+        size: 1,
+        count: 1,
+        at: [{ x: 5, y: 2 }],
+      },
+      lake: {
+        points: 5,
+        energy: 2,
+        chance: 0.45,
+        size: 2,
+        count: 2,
+        at: [
+          { x: 1, y: 2 },
+          { x: 3, y: 0 },
+        ],
+      },
+      beach: {
+        points: 4,
+        energy: 2,
+        chance: 0.15,
+        size: 1,
+        count: 1,
+        at: [{ x: 1, y: 2 }],
+      },
+      band: {
+        points: 2,
+        energy: 1,
+        chance: 0.05,
+        size: 1,
+        count: 1,
+        at: [{ x: 6, y: 4 }],
+      },
+      sleepover: {
+        points: 3,
+        energy: 1,
+        chance: 0.1,
+        size: 1,
+        count: 1,
+        at: [{ x: 0, y: 4 }],
+      },
+    },
+    battleSeedSalt: 0x5bd1e995,
+  },
   defaultSeed: 1,
 } as const;

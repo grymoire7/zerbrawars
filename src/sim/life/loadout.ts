@@ -1,5 +1,10 @@
+import { sameCoord } from "../board";
+import { PARAMS } from "../params";
 import type { PathogenKindId } from "../pathogens";
 import type { Coord } from "../types";
+import { battleDueReasons, weekOver } from "./calendar";
+import { cardDef } from "./cards";
+import type { LifeState } from "./types";
 
 // The only bridge from the life phase into a battle: plain JSON, read by battleFromLoadout
 // (battle/setup.ts). The debug panel and scenario presets build one directly.
@@ -41,4 +46,65 @@ export interface Loadout {
   readonly energy: number;
   /** Per-character residual oxidase activity; omitted = PARAMS.residualKillChance. */
   readonly residualKillChance?: number;
+}
+
+/** The battle's seed: fixed by the life seed and week, whatever was played. */
+export function battleSeed(life: LifeState): number {
+  return (
+    (Math.imul(life.seed ^ PARAMS.life.battleSeedSalt, 0x85ebca6b) +
+      life.week) >>>
+    0
+  );
+}
+
+/**
+ * Builds the battle's loadout from the life phase as it stands (normally once the week is over):
+ * the week-end med level, every pathogen that landed, the carried reservoirs, the doctor flag and
+ * the energy left. Each exposure takes the first tile of its card's `at` list not yet taken, else
+ * the setup default. `load` stays 0.
+ */
+export function loadoutFromLife(life: LifeState): Loadout {
+  const taken: Coord[] = [];
+  const exposures = life.exposures.map((e): Exposure => {
+    const at = cardDef(e.card).exposure.at.find(
+      (c) => !taken.some((t) => sameCoord(t, c)),
+    );
+    if (at) taken.push(at);
+    return at
+      ? { kind: e.kind, size: e.size, at }
+      : { kind: e.kind, size: e.size };
+  });
+  // Exposures without a tile fall back to setup's list; keep it from reusing a card tile.
+  const fallback = PARAMS.setup.exposureTiles.filter(
+    (c) => !taken.some((t) => sameCoord(t, c)),
+  );
+  return {
+    schema: 1,
+    scenario: `life-week-${life.week}`,
+    seed: battleSeed(life),
+    medLevel: life.medLevel,
+    exposures: exposures.map((e) =>
+      e.at ? e : { ...e, at: fallback.shift() as Coord },
+    ),
+    load: 0,
+    reservoirs: life.reservoirs,
+    doctorVisit: life.flags.doctorVisit,
+    energy: life.energy,
+  };
+}
+
+export interface BattleDue {
+  readonly due: boolean;
+  readonly reasons: readonly ("exposure" | "reservoir")[];
+  /** Every die is rolled and nothing landed or flared. */
+  readonly quietWeek: boolean;
+}
+
+export function battleDue(life: LifeState): BattleDue {
+  const reasons = battleDueReasons(life);
+  return {
+    due: reasons.length > 0,
+    reasons,
+    quietWeek: weekOver(life) && reasons.length === 0,
+  };
 }
