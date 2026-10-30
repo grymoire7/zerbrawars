@@ -23,6 +23,8 @@ export interface PathogenView {
   setSize(id: PathogenId, size: number): void;
   /** Resets every pose to rest. */
   clearPoses(): void;
+  /** Pathogens that will grow next turn swell slowly (a static token under reduced motion). */
+  setGrowing(ids: readonly PathogenId[]): void;
   /** Gentle idle bob so tokens read as alive. */
   tick(dtSeconds: number): void;
 }
@@ -49,6 +51,7 @@ const CLUSTER: readonly (readonly [number, number, number, number])[] = [
 ];
 
 const SPIKES = 12;
+const bodyScale = (size: number) => 0.7 + 0.2 * Math.min(size, 3);
 
 export function createPathogenView(
   scene: THREE.Scene,
@@ -88,6 +91,8 @@ export function createPathogenView(
   const tokens = new Map<PathogenId, Token>();
   const bodies: THREE.Object3D[] = [];
   let clock = 0;
+  let growing = new Set<PathogenId>();
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   const buildBody = (form: PathogenForm): THREE.Group => {
     const body = new THREE.Group();
@@ -128,7 +133,7 @@ export function createPathogenView(
 
   const sizeToken = (t: Token, size: number) => {
     t.size = size;
-    t.body.scale.setScalar(0.7 + 0.2 * Math.min(size, 3));
+    t.body.scale.setScalar(bodyScale(size));
     t.badge.material = labelMaterial(String(size), {
       background: "rgba(20,22,28,0.92)",
       round: true,
@@ -197,8 +202,16 @@ export function createPathogenView(
         t.root.position.copy(t.home);
       }
     },
+    setGrowing(ids) {
+      growing = new Set(ids);
+    },
     tick(dt) {
       clock += dt;
+      for (const [id, t] of tokens) {
+        const swell = growing.has(id) && !calm.matches;
+        const f = swell ? 1 + 0.045 * Math.sin(clock * 2.2) : 1;
+        t.body.scale.setScalar(bodyScale(t.size) * f);
+      }
       bodies.forEach((b, i) => {
         b.position.y = Math.sin(clock * 1.6 + i * 1.7) * 0.012;
       });

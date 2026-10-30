@@ -59,6 +59,40 @@ function heatTexture(level: number): THREE.CanvasTexture {
   return tex;
 }
 
+/** Warm corner glow with one or two small flame glyphs, so the cue is a shape and not just color. */
+function chipTexture(flames: number): THREE.CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const g = canvas.getContext("2d");
+  if (g) {
+    const glow = g.createRadialGradient(64, 64, 4, 64, 64, 62);
+    glow.addColorStop(0, "rgba(255,150,40,0.95)");
+    glow.addColorStop(0.55, "rgba(255,110,20,0.55)");
+    glow.addColorStop(1, "rgba(255,90,10,0)");
+    g.fillStyle = glow;
+    g.fillRect(0, 0, size, size);
+    g.fillStyle = "#fff3c4";
+    const flame = (cx: number) => {
+      g.beginPath();
+      g.moveTo(cx, 30);
+      g.bezierCurveTo(cx + 6, 46, cx + 16, 52, cx + 14, 70);
+      g.bezierCurveTo(cx + 12, 84, cx - 12, 84, cx - 14, 70);
+      g.bezierCurveTo(cx - 16, 58, cx - 6, 52, cx, 30);
+      g.fill();
+    };
+    if (flames === 1) flame(64);
+    else {
+      flame(46);
+      flame(82);
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 export interface BoardView {
   readonly group: THREE.Group;
   /** Recolors tiles from state. Reads only; never mutates it. */
@@ -69,7 +103,7 @@ export interface BoardView {
   setSelected(coord: Coord | null): void;
   /** Marks legal destination tiles for the selected swarm. */
   setOptions(coords: readonly Coord[]): void;
-  /** Up-arrow chips on tiles that will heat up if the turn ends now (empty clears them). */
+  /** Warm flame glows in a tile corner on tiles that will heat up if the turn ends now (empty clears them). */
   setForecast(rising: readonly TileHeat[]): void;
   /** Playback: 0..1 warm tint on a tile (inflammation change or summary pulse). */
   setPulse(coord: Coord, amount: number): void;
@@ -135,21 +169,24 @@ export function createBoardView(
     return h;
   });
 
-  const arrowChips: THREE.Group[] = [];
-  const chipGeo = new THREE.BoxGeometry(0.3, 0.05, 0.3);
-  const chipMat = new THREE.MeshBasicMaterial({ color: 0x2a1410 });
-  const arrowGeo = new THREE.ConeGeometry(0.07, 0.14, 4);
-  const arrowMat = new THREE.MeshBasicMaterial({ color: 0xffb347 });
+  const chips: THREE.Mesh[] = [];
+  const chipGeo = new THREE.PlaneGeometry(0.5, 0.5);
+  chipGeo.rotateX(-Math.PI / 2);
+  const chipMats = [1, 2].map(
+    (flames) =>
+      new THREE.MeshBasicMaterial({
+        map: chipTexture(flames),
+        transparent: true,
+        depthWrite: false,
+      }),
+  );
+  // A flat decal on the tile surface, drawn before everything else transparent so it never covers
+  // tokens, swarms or fx.
   const makeChip = () => {
-    const g = new THREE.Group();
-    g.add(new THREE.Mesh(chipGeo, chipMat));
-    for (const dx of [-0.06, 0.06]) {
-      const a = new THREE.Mesh(arrowGeo, arrowMat);
-      a.position.set(dx, 0.1, 0);
-      g.add(a);
-    }
-    group.add(g);
-    return g;
+    const m = new THREE.Mesh(chipGeo, chipMats[0]);
+    m.renderOrder = -1;
+    group.add(m);
+    return m;
   };
 
   const outline = (color: number, inner: number) => {
@@ -287,16 +324,15 @@ export function createBoardView(
       });
     },
     setForecast(rising) {
-      while (arrowChips.length < rising.length) arrowChips.push(makeChip());
-      arrowChips.forEach((g, i) => {
+      while (chips.length < rising.length) chips.push(makeChip());
+      chips.forEach((m, i) => {
         const r = rising[i];
-        g.visible = r !== undefined;
+        m.visible = r !== undefined;
         if (!r) return;
         const p = toWorld(r.at);
-        g.position.set(p.x + 0.28, 0.12, p.z + 0.28);
-        // Two arrows when it climbs two levels or more.
-        g.children[2]!.visible = r.after - r.before >= 2;
-        g.children[1]!.position.x = r.after - r.before >= 2 ? -0.06 : 0;
+        m.position.set(p.x + 0.2, 0.009, p.z + 0.2);
+        // Two flames when it climbs two levels or more.
+        m.material = chipMats[r.after - r.before >= 2 ? 1 : 0]!;
       });
     },
     setPulse(coord, amount) {

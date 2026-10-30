@@ -18,7 +18,7 @@ export interface HudInfo {
 export interface HudKey {
   /** Heat levels on the board right now (1..3). */
   readonly heatLevels: readonly number[];
-  /** Some tile will heat up next turn (the arrow chip). */
+  /** Some tile will heat up next turn (the flame glow). */
   readonly forecast: boolean;
 }
 
@@ -275,7 +275,8 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     const c = el(
       "span",
       `display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:none;` +
-        `background:#2a1410;color:#ff9a3c;font-size:10px;`,
+        `background:radial-gradient(circle,#ff9628 0%,rgba(255,110,20,0.5) 60%,transparent 100%);` +
+        `color:#fff3c4;font-size:10px;`,
       "▲",
     );
     c.setAttribute("aria-hidden", "true");
@@ -292,7 +293,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
         ? [
             keyRow(
               chipSwatch(),
-              "Corner arrow: this tile will heat up next turn",
+              "Corner flame glow: this tile will heat up next turn",
             ),
           ]
         : []),
@@ -301,9 +302,11 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       line("What germs will do next turn", "font-weight:600;"),
       keyRow(glyph("→", "#ffd23f"), "Yellow arrow: spread"),
       keyRow(glyph("···", "#6fb8ff"), "Blue dotted arc: spore"),
-      keyRow(glyph("▲", "#f2f2f2"), "White cone: grows (grow 3→4)"),
+      keyRow(
+        glyph("◯", "#f2f2f2"),
+        "Swelling germ with faint outline: grows (grow 3→4)",
+      ),
       keyRow(glyph("✕", "#ff5040"), "Red: blocked by your swarm"),
-      keyRow(glyph("- -", "#8a8f9a"), "Grey: cancelled, you engulf it first"),
       keyRow(glyph("3", "#ffffff"), "Number on a germ: its size"),
       ...(heat.length > 0
         ? [line("Heat", "font-weight:600;margin-top:4px;"), ...heat]
@@ -438,7 +441,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
             ? `Heat will cost ${f.tissueDamage} tissue this turn.`
             : "No tissue lost to heat this turn.",
           f.rising > 0
-            ? `${f.rising} ${f.rising === 1 ? "tile" : "tiles"} will heat up (corner arrows).`
+            ? `${f.rising} ${f.rising === 1 ? "tile" : "tiles"} will heat up (corner flames).`
             : "",
           f.slowed.length > 0
             ? `Slowed next turn: ${f.slowed.join(", ")}.`

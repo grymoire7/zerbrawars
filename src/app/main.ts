@@ -161,6 +161,14 @@ function refresh() {
   // The pre-turn telegraph stays up (dimmed) while the turn plays out over it.
   if (!playing || began) telegraphView.update(s, controller.marks());
   telegraphView.setDim(playing !== null);
+  pathogenView.setGrowing(
+    playing
+      ? []
+      : controller
+          .marks()
+          .filter((m) => !m.cancelledBy && (m.type === "grow" || !m.to))
+          .map((m) => m.pathogenId),
+  );
   const statuses = controller.statuses();
   const idle =
     playing || controller.over()

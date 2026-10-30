@@ -20,7 +20,7 @@ const LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Arrows show what germs do next turn",
-    "Yellow arrow: spread to the next tile. Blue dotted arc: a spore lands further away. White cone: grows (grow 3 to 4). Red cross: blocked by your swarm. Grey dashes: cancelled because you engulf it first.",
+    "Yellow arrow: spread to the next tile. Blue dotted arc: a spore lands further away. A germ that slowly swells, with a faint larger outline: it grows (grow 3 to 4). Red cross: blocked by your swarm. If you engulf a germ first, its arrow disappears.",
   ],
   [
     "Sizes",
@@ -36,7 +36,7 @@ const LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Heat",
-    "Heated tiles (dots and stripes) cost tissue every turn. A swarm that starts its turn on an inflamed tile moves 1 less. A small arrow chip on a tile means it will heat up next turn.",
+    "Heated tiles (dots and stripes) cost tissue every turn. A swarm that starts its turn on an inflamed tile moves 1 less. A warm glow with a small flame in a tile corner means it will heat up next turn.",
   ],
 ];
 
