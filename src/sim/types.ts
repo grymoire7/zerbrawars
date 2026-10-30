@@ -77,13 +77,17 @@ export type Intent =
       readonly type: "spread";
       readonly pathogenId: PathogenId;
       readonly to: Coord;
+      /** Size of the new pathogen. */
       readonly size: number;
+      /** Taken off the parent's size if the action lands (not when blocked). */
+      readonly cost: number;
     }
   | {
       readonly type: "spore";
       readonly pathogenId: PathogenId;
       readonly to: Coord;
       readonly size: number;
+      readonly cost: number;
     };
 
 /** At most one order per swarm per turn; a swarm with no order holds. */
@@ -197,6 +201,8 @@ export type SimEvent =
       readonly from: Coord;
       readonly to: Coord;
       readonly size: number;
+      /** The parent's size afterwards. */
+      readonly parentSize: number;
     }
   | {
       readonly type: "Spored";
@@ -205,6 +211,8 @@ export type SimEvent =
       readonly from: Coord;
       readonly to: Coord;
       readonly size: number;
+      /** The parent's size afterwards. */
+      readonly parentSize: number;
     }
   | {
       /** A swarm standing on the target tile stopped a spread or spore. */

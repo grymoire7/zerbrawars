@@ -1,3 +1,4 @@
+import { initBattle } from "./battle/intents";
 import { createBoard } from "./board";
 import { PARAMS } from "./params";
 import { rngFromSeed } from "./rng";
@@ -60,10 +61,13 @@ export function isScenarioName(name: string): name is ScenarioName {
   return Object.hasOwn(SCENARIOS, name);
 }
 
-/** Load by name (e.g. from a URL parameter). Returns null for an unknown name. */
+/**
+ * Load by name (e.g. from a URL parameter), with the first telegraph already rolled.
+ * Returns null for an unknown name.
+ */
 export function loadScenario(
   name: string,
   seed: number = PARAMS.defaultSeed,
 ): BattleState | null {
-  return isScenarioName(name) ? SCENARIOS[name](seed) : null;
+  return isScenarioName(name) ? initBattle(SCENARIOS[name](seed)) : null;
 }

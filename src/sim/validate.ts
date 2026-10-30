@@ -1,5 +1,5 @@
 import { inBounds, tileId } from "./board";
-import { isPathogenKindId } from "./pathogens";
+import { isPathogenKindId, pathogenKind } from "./pathogens";
 import { PARAMS } from "./params";
 import type { BattleState, Coord } from "./types";
 
@@ -46,10 +46,34 @@ export function validateBattle(battle: BattleState): string[] {
       problems.push(`${p.id} has invalid size ${p.size}`);
     }
   }
+  const intended = new Set<string>();
+  const targets = new Map<number, string>();
   for (const i of battle.intents) {
-    if (!battle.pathogens.some((p) => p.id === i.pathogenId)) {
+    const p = battle.pathogens.find((q) => q.id === i.pathogenId);
+    if (!p) {
       problems.push(`intent for missing pathogen ${i.pathogenId}`);
+      continue;
     }
+    if (intended.has(p.id)) problems.push(`${p.id} has more than one intent`);
+    intended.add(p.id);
+    if (p.hidden) problems.push(`hidden ${p.id} has an intent`);
+    if (i.type === "grow") continue;
+    if (
+      i.type === "spore" &&
+      isPathogenKindId(p.kind) &&
+      !pathogenKind(p.kind).canSpore
+    ) {
+      problems.push(`${p.id} cannot spore`);
+    }
+    if (!inBounds(board, i.to)) {
+      problems.push(`${p.id} targets out of bounds ${i.to.x},${i.to.y}`);
+      continue;
+    }
+    const tile = tileId(board, i.to);
+    const other = targets.get(tile);
+    if (other !== undefined)
+      problems.push(`${p.id} and ${other} target ${i.to.x},${i.to.y}`);
+    else targets.set(tile, p.id);
   }
   return problems;
 }
