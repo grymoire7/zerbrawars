@@ -74,10 +74,15 @@ describe("cards", () => {
     }
   });
 
-  it("uses strep for bacteria and aspergillus for mold, with valid odds and tiles", () => {
-    expect(cardDef("yard").exposure.kind).toBe("aspergillus");
-    expect(cardDef("lake").exposure.kind).toBe("strep");
-    for (const id of CARD_IDS) {
+  it("brings mold from the yard, strep and staph from the lake, with valid odds and tiles", () => {
+    expect(cardDef("yard").exposure.kinds).toEqual(["aspergillus"]);
+    expect(cardDef("lake").exposure.kinds).toEqual(["strep", "staph"]);
+    expect(cardDef("beach").exposure.kinds).toEqual(["strep"]);
+    expect(cardPreview(createLife({ seed: 1 }), "lake").kinds).toEqual([
+      "strep",
+      "staph",
+    ]);
+    for (const id of CARD_IDS.filter((c) => c !== "doctor")) {
       const d = cardDef(id);
       expect(d.exposure.chance).toBeGreaterThan(0);
       expect(d.exposure.chance).toBeLessThan(1);
@@ -435,17 +440,26 @@ describe("loadoutFromLife and battleDue", () => {
     expect(battleDue(createLife({ seed: 1 })).quietWeek).toBe(false);
   });
 
-  it("calls a battle for a carried reservoir even in a quiet week", () => {
+  it("calls a battle for a flared reservoir, which starts visible", () => {
     const reservoirs = [
-      { kind: "aspergillus" as const, size: 1, hidden: true },
+      { kind: "aspergillus" as const, size: 2, hidden: true },
     ];
-    const life = finish(createLife({ seed: 1, reservoirs }));
-    expect(battleDue(life)).toEqual({
-      due: true,
-      reasons: ["reservoir"],
-      quietWeek: false,
-    });
-    expect(loadoutFromLife(life).reservoirs).toEqual(reservoirs);
+    let checked = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const life = finish(createLife({ seed, reservoirs }));
+      const flared = life.reservoirs[0].flared;
+      expect(battleDue(life)).toEqual({
+        due: flared,
+        reasons: flared ? ["reservoir"] : [],
+        quietWeek: !flared,
+      });
+      expect(loadoutFromLife(life).reservoirs).toEqual([
+        { kind: "aspergillus", size: 3, hidden: !flared },
+      ]);
+      checked += flared ? 1 : 0;
+    }
+    expect(checked).toBeGreaterThan(0);
+    expect(checked).toBeLessThan(40);
   });
 
   it("carries every landed exposure into a valid battle on distinct tiles", () => {

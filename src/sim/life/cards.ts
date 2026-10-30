@@ -13,9 +13,12 @@ interface CardText {
   readonly base: HandCardId;
   /** The smarter version of a base card. */
   readonly smarter?: CardId;
-  readonly kind: PathogenKindId;
+  /** What it brings: pathogen i is kinds[i % kinds.length]. Empty for the doctor. */
+  readonly kinds: readonly PathogenKindId[];
   /** Runs overnight: evening slot only, never the last day, and the next morning's dose is away. */
   readonly overnight?: boolean;
+  /** The doctor visit: costs set by its timing (PARAMS.campaign.doctor), brings nothing in. */
+  readonly doctor?: boolean;
 }
 
 const TEXT: Record<CardId, CardText> = {
@@ -25,36 +28,37 @@ const TEXT: Record<CardId, CardText> = {
     blurb: "Mulch, dead leaves and compost: mold spores in the air.",
     base: "yard",
     smarter: "yardIndoor",
-    kind: "aspergillus",
+    kinds: ["aspergillus"],
   },
   yardIndoor: {
     label: "Indoor jobs for Maya",
     people: "Maya does the mulch; you set up inside and fire up the grill.",
     blurb: "Still helping, still hanging out, mostly away from the spores.",
     base: "yard",
-    kind: "aspergillus",
+    kinds: ["aspergillus"],
   },
   lake: {
     label: "The lake with Jordan",
     people: "Jordan wants you at the lake, lagoon swim and all.",
-    blurb: "The warm, still lagoon water carries bacteria.",
+    blurb:
+      "The warm, still lagoon carries bacteria, some of them the kind your cells can only hold.",
     base: "lake",
     smarter: "beach",
-    kind: "strep",
+    kinds: ["strep", "staph"],
   },
   beach: {
     label: "The beach, not the lagoon",
     people: "Same day with Jordan, but you swim off the open beach.",
     blurb: "Open, moving water brings far fewer bacteria.",
     base: "lake",
-    kind: "strep",
+    kinds: ["strep"],
   },
   band: {
     label: "Band practice",
     people: "Alex needs the whole band for the recording.",
     blurb: "Indoors with friends. Low odds of anything.",
     base: "band",
-    kind: "strep",
+    kinds: ["strep"],
   },
   sleepover: {
     label: "Sleepover at Sam's",
@@ -62,8 +66,17 @@ const TEXT: Record<CardId, CardText> = {
     blurb:
       "Your pills are in the other bag. Pack them, or miss tomorrow's dose.",
     base: "sleepover",
-    kind: "strep",
+    kinds: ["strep"],
     overnight: true,
+  },
+  doctor: {
+    label: "See the doctor",
+    people: "Your care team can fit you in today.",
+    blurb:
+      "Imaging shows what is hiding, and you leave with strong backup for the next fight.",
+    base: "doctor",
+    kinds: [],
+    doctor: true,
   },
 };
 
@@ -72,7 +85,9 @@ export interface CardDef extends CardText {
   readonly points: number;
   readonly energy: number;
   readonly exposure: {
+    /** The main kind (kinds[0]); strep for the doctor, which brings nothing. */
     readonly kind: PathogenKindId;
+    readonly kinds: readonly PathogenKindId[];
     /** Odds the exposure lands when the card's day ends. */
     readonly chance: number;
     readonly size: number;
@@ -84,7 +99,13 @@ export interface CardDef extends CardText {
 
 export const CARD_IDS = Object.keys(TEXT) as CardId[];
 
-/** The four cards dealt each week (the same hand every week in the prototype). */
+/** The kind of the i-th pathogen a card brings. */
+export function exposureKind(card: CardId, i: number): PathogenKindId {
+  const kinds = TEXT[card].kinds;
+  return kinds[i % kinds.length];
+}
+
+/** The four cards dealt each week (the same hand every week in the prototype); see DOCTOR_CARD. */
 export const HAND: readonly HandCardId[] = [
   "yard",
   "lake",
@@ -105,7 +126,8 @@ export function cardDef(id: CardId): CardDef {
     points: n.points,
     energy: n.energy,
     exposure: {
-      kind: t.kind,
+      kind: t.kinds[0] ?? "strep",
+      kinds: t.kinds,
       chance: n.chance,
       size: n.size,
       count: n.count,
@@ -120,7 +142,12 @@ export function versionsOf(base: HandCardId): CardId[] {
   return s ? [base, s] : [base];
 }
 
-/** Energy a placement costs, the pills included when packed for an overnight card. */
+export const DOCTOR_CARD = "doctor" satisfies HandCardId;
+
+/**
+ * Energy a placement costs, the pills included when packed for an overnight card. The doctor's
+ * cost depends on its timing; see doctorCost in body.ts.
+ */
 export function placementCost(card: CardId, packPills: boolean): number {
   return (
     cardDef(card).energy +

@@ -43,10 +43,27 @@ export function duelLoadout(seed: number, medLevel = 1): Loadout {
   };
 }
 
+/**
+ * What a risky week's lake and yard bring when both land: a strep (killable), a staph (a sealed
+ * bacterium: round, but engulfing only contains it) and a mold, all inside a charge's size limit.
+ */
+export function lakeWeekLoadout(seed: number, medLevel = 1): Loadout {
+  return {
+    ...firstBoardLoadout(seed, medLevel),
+    scenario: "lake-week",
+    exposures: [
+      { kind: "strep", size: 2, at: { x: 1, y: 2 } },
+      { kind: "staph", size: 2, at: { x: 3, y: 0 } },
+      { kind: "aspergillus", size: 2, at: { x: 5, y: 2 } },
+    ],
+  };
+}
+
 /** Each named scenario's loadout, for the debug panel to start from. */
 export const SCENARIO_LOADOUTS = {
   "first-board": firstBoardLoadout,
   duel: duelLoadout,
+  "lake-week": lakeWeekLoadout,
 } as const satisfies Record<
   string,
   (seed: number, medLevel?: number) => Loadout

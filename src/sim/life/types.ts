@@ -6,10 +6,10 @@ import type { CarriedReservoir } from "./loadout";
 
 /** Every card version. The hand holds base cards; a smarter version replaces its base when placed. */
 export type CardId =
-  "yard" | "yardIndoor" | "lake" | "beach" | "band" | "sleepover";
+  "yard" | "yardIndoor" | "lake" | "beach" | "band" | "sleepover" | "doctor";
 
-/** The four cards dealt each week. */
-export type HandCardId = "yard" | "lake" | "band" | "sleepover";
+/** The four cards dealt each week, plus the doctor once a symptom shows. */
+export type HandCardId = "yard" | "lake" | "band" | "sleepover" | "doctor";
 
 /** A card on the calendar. `packPills` only matters on an overnight card. */
 export interface Placement {
@@ -32,6 +32,7 @@ export interface ExposureRoll {
   readonly day: number;
   readonly slot: number;
   readonly card: CardId;
+  /** The card's main kind (see CardDef.exposure.kinds for a mix). */
   readonly kind: PathogenKindId;
   readonly chance: number;
   /** The uniform roll; it landed if roll < chance. */
@@ -48,10 +49,36 @@ export interface LandedExposure {
   readonly size: number;
 }
 
-/** T13 hook: a carried reservoir surfacing in the life phase. Nothing produces one yet. */
+/**
+ * How the body shows a hidden reservoir (or a passing virus) in the life phase. A symptom never
+ * says which: only the doctor can tell.
+ */
 export interface Symptom {
-  readonly kind: "lowFever";
+  readonly kind: "lowFever" | "soreSpot" | "tired";
+  /** 0-based day whose morning it showed. */
   readonly day: number;
+}
+
+/** A carried reservoir during a life week. */
+export interface LifeReservoir extends CarriedReservoir {
+  /** The morning its symptom shows. */
+  readonly symptomDay: number;
+  /** Flared this week: a battle is due and it starts visible. */
+  readonly flared: boolean;
+  /** Grew this week (it went untreated past its early window). */
+  readonly grown: boolean;
+}
+
+export type DoctorTiming = "early" | "late";
+
+/** A doctor visit that has happened this week. */
+export interface DoctorVisit {
+  readonly day: number;
+  readonly slot: number;
+  readonly timing: DoctorTiming;
+  /** What the doctor found: a reservoir (now revealed), or only a passing virus. */
+  readonly finding: "reservoir" | "viral";
+  readonly energy: number;
 }
 
 export interface LifeState {
@@ -76,11 +103,13 @@ export interface LifeState {
   readonly rolls: readonly ExposureRoll[];
   readonly exposures: readonly LandedExposure[];
   /** Carried in from an earlier battle (T13). */
-  readonly reservoirs: readonly CarriedReservoir[];
+  readonly reservoirs: readonly LifeReservoir[];
+  /** Symptoms that have shown so far this week, in order. */
   readonly symptoms: readonly Symptom[];
+  readonly doctor: DoctorVisit | null;
   readonly flags: {
     readonly frictionFired: boolean;
-    /** T13: the doctor-visit card was played. */
+    /** The doctor-visit card was played. */
     readonly doctorVisit: boolean;
   };
   /** Exposure rolls only: slotsPerDay draws at every day end, so placement never shifts them. */
@@ -142,6 +171,8 @@ export type LifeEvent =
   | ({ readonly type: "ExposureRolled" } & ExposureRoll & {
         readonly size: number;
         readonly count: number;
+        /** The kind of each pathogen it brings if it lands. */
+        readonly kinds: readonly PathogenKindId[];
       })
   | {
       readonly type: "GoalPoints";
@@ -151,10 +182,30 @@ export type LifeEvent =
       readonly target: number;
     }
   | { readonly type: "SymptomAppeared"; readonly symptom: Symptom }
+  | ({ readonly type: "DoctorVisited" } & DoctorVisit & {
+        /** Tokens the visit revealed. */
+        readonly revealed: number;
+      })
+  | {
+      /** An untreated reservoir grew at the end of its early window. */
+      readonly type: "ReservoirGrew";
+      readonly day: number;
+      readonly index: number;
+      readonly size: number;
+    }
+  | {
+      /** A reservoir flared: the symptoms spike and a battle is due. */
+      readonly type: "ReservoirFlared";
+      readonly day: number;
+      readonly index: number;
+      readonly chance: number;
+    }
   | {
       readonly type: "WeekEnded";
       readonly battleDue: boolean;
     };
+
+export type BattleReason = "exposure" | "reservoir" | "doctor";
 
 export interface LifeStep {
   readonly state: LifeState;

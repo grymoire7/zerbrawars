@@ -140,4 +140,13 @@ describe("life strategies into battle", () => {
     );
     expect(rows.smarterSkipMeds.score).toBeLessThan(rows.smarter.score);
   });
+
+  it("shifts the risky week's battles at each lost charge tier", () => {
+    // Full meds kill the staph and the mold with charges; one miss keeps only the antifungal.
+    const cleared = (n: string) => share(rows[n], "cleared");
+    expect(cleared("riskyNoPack")).toBeLessThan(cleared("risky") - 0.15);
+    expect(cleared("riskySkipMeds")).toBeLessThan(
+      cleared("riskyNoPack") - 0.15,
+    );
+  });
 });

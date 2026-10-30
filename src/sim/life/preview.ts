@@ -2,7 +2,7 @@ import type { PathogenKindId } from "../pathogens";
 import { PARAMS } from "../params";
 import { chargesFor } from "../battle/setup";
 import type { MedCharges } from "../types";
-import { cardDef, placementCost } from "./cards";
+import { cardDef, exposureKind, placementCost } from "./cards";
 import { frictionFor, medForecast, weekOver } from "./calendar";
 import type { CardId, LifeState } from "./types";
 
@@ -13,7 +13,9 @@ export interface CardPreview {
   readonly blurb: string;
   readonly points: number;
   readonly energy: number;
+  /** The main kind; `kinds` lists each pathogen it brings (the lake brings strep and staph). */
   readonly kind: PathogenKindId;
+  readonly kinds: readonly PathogenKindId[];
   /** Odds the exposure lands, as rolled. */
   readonly chance: number;
   /** Size and number of pathogens if it lands. */
@@ -41,6 +43,9 @@ export function cardPreview(_life: LifeState, card: CardId): CardPreview {
     points: d.points,
     energy: d.energy,
     kind: d.exposure.kind,
+    kinds: Array.from({ length: d.exposure.count }, (_, i) =>
+      exposureKind(card, i),
+    ),
     chance: d.exposure.chance,
     size: d.exposure.size,
     count: d.exposure.count,
@@ -64,7 +69,11 @@ export interface WeekPreview {
   readonly landed: number;
   /** Chance at least one more exposure lands. */
   readonly chanceAnyExposure: number;
-  /** Chance the week ends in a battle (an exposure, landed or still to roll, or a reservoir). */
+  /**
+   * Chance the week ends in a battle, from what the player can know: exposures landed or still to
+   * roll, a reservoir that flared, or a doctor visit that found one. Hidden reservoirs that have
+   * not flared are left out, so the number never gives them away.
+   */
   readonly chanceBattle: number;
   readonly expectedPathogens: Readonly<Record<PathogenKindId, number>>;
   readonly points: { readonly planned: number; readonly target: number };
@@ -78,7 +87,11 @@ export interface WeekPreview {
 /** The whole week's odds and consequences as the calendar stands. */
 export function exposurePreview(life: LifeState): WeekPreview {
   const pending: WeekPreview["pending"][number][] = [];
-  const expected: Record<PathogenKindId, number> = { strep: 0, aspergillus: 0 };
+  const expected: Record<PathogenKindId, number> = {
+    strep: 0,
+    aspergillus: 0,
+    staph: 0,
+  };
   for (const e of life.exposures) expected[e.kind] += 1;
   let none = 1;
   let planned = life.goal.points;
@@ -88,11 +101,14 @@ export function exposurePreview(life: LifeState): WeekPreview {
       const preview = cardPreview(life, p.card);
       pending.push({ day, slot, preview });
       none *= 1 - preview.chance;
-      expected[preview.kind] += preview.expectedPathogens;
+      for (const k of preview.kinds) expected[k] += preview.chance;
       planned += preview.points;
     });
   }
-  const certain = life.exposures.length > 0 || life.reservoirs.length > 0;
+  const certain =
+    life.exposures.length > 0 ||
+    life.reservoirs.some((r) => r.flared) ||
+    life.doctor?.finding === "reservoir";
   const forecast = medForecast(life);
   const medLevel = weekOver(life)
     ? life.medLevel

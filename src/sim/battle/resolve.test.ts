@@ -59,7 +59,7 @@ const TICK: readonly SimEvent["type"][] = [
   "TissueDamaged",
 ];
 
-describe.each(["duel", "first-board"])(
+describe.each(["duel", "first-board", "lake-week"])(
   "zero orders equals telegraph on %s",
   (scenario) => {
     it(`holds for ${SEEDS} seeds over ${TURNS} turns`, () => {

@@ -4,7 +4,7 @@ import type { PathogenKindId } from "../pathogens";
 import type { Coord } from "../types";
 import { battleDueReasons, weekOver } from "./calendar";
 import { cardDef } from "./cards";
-import type { LifeState } from "./types";
+import type { BattleReason, LifeState } from "./types";
 
 // The only bridge from the life phase into a battle: plain JSON, read by battleFromLoadout
 // (battle/setup.ts). The debug panel and scenario presets build one directly.
@@ -60,7 +60,7 @@ export function battleSeed(life: LifeState): number {
 /**
  * Builds the battle's loadout from the life phase as it stands (normally once the week is over):
  * the week-end med level, every pathogen that landed, the carried reservoirs, the doctor flag and
- * the energy left. Each exposure takes the first tile of its card's `at` list not yet taken, else
+ * the energy left. Flared reservoirs start visible. Each exposure takes the first tile of its card's `at` list not yet taken, else
  * the setup default. `load` stays 0.
  */
 export function loadoutFromLife(life: LifeState): Loadout {
@@ -87,7 +87,15 @@ export function loadoutFromLife(life: LifeState): Loadout {
       e.at ? e : { ...e, at: fallback.shift() as Coord },
     ),
     load: 0,
-    reservoirs: life.reservoirs,
+    // A flared reservoir is an active infection now, so it starts visible.
+    reservoirs: life.reservoirs.map((r) => {
+      const c: CarriedReservoir = {
+        kind: r.kind,
+        size: r.size,
+        hidden: r.hidden && !r.flared,
+      };
+      return r.at ? { ...c, at: r.at } : c;
+    }),
     doctorVisit: life.flags.doctorVisit,
     energy: life.energy,
   };
@@ -95,7 +103,7 @@ export function loadoutFromLife(life: LifeState): Loadout {
 
 export interface BattleDue {
   readonly due: boolean;
-  readonly reasons: readonly ("exposure" | "reservoir")[];
+  readonly reasons: readonly BattleReason[];
   /** Every die is rolled and nothing landed or flared. */
   readonly quietWeek: boolean;
 }

@@ -35,6 +35,14 @@ export const PATHOGEN_KINDS = {
     label: "fungus",
     organism: "Aspergillus",
   },
+  // A sealed bacterium: round like strep, but with the shell rim, so engulfing only contains it.
+  staph: {
+    wall: "sealed",
+    form: "bacterium",
+    canSpore: false,
+    label: "bacteria",
+    organism: "Staphylococcus aureus",
+  },
 } as const satisfies Record<string, PathogenKindDef>;
 
 export type PathogenKindId = keyof typeof PATHOGEN_KINDS;

@@ -53,6 +53,17 @@ export const PARAMS = {
       sporeMinDistance: 3,
       sporeMaxDistance: 4,
     },
+    // Staph: a slow abscess. It grows to 3, then seeds a neighbour and shrinks by 1, so it never
+    // fans out like strep, but every bud is sealed: engulfing only contains it.
+    staph: {
+      growAmount: 1,
+      actMinSize: 3,
+      actChance: 0.5,
+      actCost: 1,
+      childSize: 1,
+      sporeMinDistance: 0,
+      sporeMaxDistance: 0,
+    },
   },
   /**
    * Turns a swarm stays busy after the turn it walls off (it cannot move, engulf or wall off).
@@ -180,7 +191,11 @@ export const PARAMS = {
    * - cards: tuning per card. `chance` is the honest landing odds of the card's exposure, rolled
    *   once when its day ends; when it lands it brings `count` pathogens of `size`, entering at the
    *   first free tile of `at` (then PARAMS.setup.exposureTiles). Risky versions pay more points
-   *   than their smarter versions. Tuned in life/balance.test.ts.
+   *   than their smarter versions. Tuned in life/balance.test.ts. The lake brings one strep and
+   *   one staph (cards.ts lists the kinds), so only the antibacterial charge of a full week kills
+   *   its sealed half. The yard's mold arrives at size 2, inside chargeMaxSize, so each charge tier
+   *   counts on the risky week: full meds kill both sealed exposures with charges, one miss (one
+   *   antifungal) still kills the mold, two misses leave both to the swarms.
    * - battleSeedSalt: mixed with the life seed and week into the battle seed, so the same seed and
    *   week always fight with the same battle dice whatever was played.
    */
@@ -198,7 +213,7 @@ export const PARAMS = {
         points: 4,
         energy: 2,
         chance: 0.45,
-        size: 3,
+        size: 2,
         count: 1,
         at: [{ x: 5, y: 2 }],
       },
@@ -245,8 +260,67 @@ export const PARAMS = {
         count: 1,
         at: [{ x: 0, y: 4 }],
       },
+      /** Only in hand once a symptom shows; its energy is set by PARAMS.campaign.doctor. */
+      doctor: {
+        points: 0,
+        energy: 0,
+        chance: 0,
+        size: 1,
+        count: 0,
+        at: [],
+      },
     },
     battleSeedSalt: 0x5bd1e995,
+  },
+  /**
+   * The campaign (T13): life week, a battle only if one is due, the outcome, then the next week.
+   * - cycles: weeks in a campaign.
+   * - carry: at the carry, unkilled sealed pathogens (swarm loads, granuloma contents, hidden
+   *   tokens) become reservoirs. Biggest first (ties keep load, granuloma, hidden order), at most
+   *   `maxReservoirs` are kept and the rest are dropped (the body clears the small stuff), and each
+   *   is cut to `maxSize`: a reservoir is a smouldering remnant, not a full infection. Free
+   *   pathogens never carry: "needed backup" means help arrived and dealt with them.
+   * - energy: next week starts with what was left + `weekRecovery` + the outcome's energy
+   *   (PARAMS.outcome.energy, or `quietWeekEnergy` with no battle), capped at life.maxEnergy.
+   * - symptoms: each carried reservoir surfaces on the morning of day `earlyDay` if its size is at
+   *   least `earlySize`, else on day `lateDay`, as a low fever (mold) or a sore spot (bacteria).
+   *   Carrying a total size of `tiredTotal`+ also starts the week tired: `tiredEnergy` less energy.
+   *   With chance `viralChance` a week also brings a viral low fever on a rolled day (unless a
+   *   reservoir fever is already due), so a fever is never proof of a reservoir, nor of nothing.
+   * - growth: an untreated reservoir grows by `growth` at the end of its early window (the day
+   *   its symptom shows + doctor.earlyDays). A doctor visit by then stops it.
+   * - flare: at each day end an unflared reservoir flares with chance
+   *   `flare.perDay` * (day + 1) + `flare.perSize` * (size - 1), until the doctor is seen. A flare
+   *   makes a battle due and that token starts visible; unflared ones start hidden. A week with no
+   *   exposure, no flare and no doctor visit is quiet, and its reservoirs carry on (grown).
+   * - doctor: the doctor card comes into hand with the first symptom and takes a slot. Within
+   *   `earlyDays` of that symptom it is early and costs `earlyEnergy` (-1: as restful as the rest
+   *   it replaces, so an early visit costs only the slot); later it costs `lateEnergy` and the
+   *   reservoir has grown meanwhile. Either way it reveals every token, adds
+   *   PARAMS.meds.doctorStrongCharges strong charges and makes the battle due, so the reservoir is
+   *   fought on the player's terms. With no reservoir the fever was viral: the visit gives back
+   *   `viralRefund` more energy (reassurance), so checking a fever never costs more than resting.
+   * - weekRecovery is 4 so a contained week (2) still starts the next one at the 6 cap, where the
+   *   full hand plus an early visit fits; a backup week (1) starts at 5 and has to drop a card.
+   */
+  campaign: {
+    cycles: 2,
+    carry: { maxReservoirs: 2, maxSize: 2 },
+    weekRecovery: 4,
+    quietWeekEnergy: 3,
+    symptoms: {
+      earlySize: 2,
+      earlyDay: 0,
+      lateDay: 1,
+      tiredTotal: 3,
+      tiredEnergy: 1,
+      viralChance: 0.25,
+    },
+    growth: 1,
+    flare: { perDay: 0.12, perSize: 0.08 },
+    doctor: { earlyDays: 1, earlyEnergy: -1, lateEnergy: 1, viralRefund: 1 },
+    bodySalt: 0x27d4eb2f,
+    weekSalt: 0x165667b1,
   },
   defaultSeed: 1,
 } as const;

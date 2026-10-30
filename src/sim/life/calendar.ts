@@ -1,19 +1,37 @@
 import { PARAMS } from "../params";
 import { rngFromSeed, rngNext } from "../rng";
-import { cardDef, HAND, placementCost } from "./cards";
+import {
+  bodyRoll,
+  doctorCost,
+  doctorTiming,
+  flareChance,
+  growthDayOf,
+  scheduledSymptoms,
+  toLifeReservoirs,
+} from "./body";
+import {
+  cardDef,
+  DOCTOR_CARD,
+  exposureKind,
+  HAND,
+  placementCost,
+} from "./cards";
 import type { CarriedReservoir } from "./loadout";
 import { medLevelOf, preWeekDoses, streakOf } from "./meds";
 import type {
+  BattleReason,
   CardId,
   Dose,
   LandedExposure,
   LifeEvent,
+  LifeReservoir,
   LifeState,
   LifeStep,
   Placement,
 } from "./types";
 
 const L = PARAMS.life;
+const C = PARAMS.campaign;
 const EVENING = L.slotsPerDay - 1;
 
 export interface LifeOptions {
@@ -26,15 +44,33 @@ export interface LifeOptions {
   readonly doses?: readonly Dose[];
 }
 
+/** Week 1 rolls from the seed itself; later weeks mix the week in so their dice differ. */
+export function lifeRngSeed(seed: number, week: number): number {
+  return week === 1
+    ? seed
+    : (Math.imul(seed ^ C.weekSalt, 0x9e3779b1) + week) >>> 0;
+}
+
+/**
+ * A fresh week. Carried reservoirs come in with their symptom day set; symptoms due on day 0
+ * show at once (see weekStartEvents), and tiredness takes its energy now.
+ */
 export function createLife(opts: LifeOptions): LifeState {
   const week = opts.week ?? 1;
   const doses = opts.doses ?? preWeekDoses(week);
+  const reservoirs = toLifeReservoirs(opts.reservoirs ?? []);
+  const symptoms = scheduledSymptoms(opts.seed, week, reservoirs).filter(
+    (s) => s.day === 0,
+  );
+  const tired = symptoms.some((s) => s.kind === "tired")
+    ? C.symptoms.tiredEnergy
+    : 0;
   return {
     schema: 1,
     seed: opts.seed,
     week,
     day: 0,
-    hand: HAND,
+    hand: symptoms.length > 0 ? [...HAND, DOCTOR_CARD] : HAND,
     plan: Array.from({ length: L.days }, () =>
       Array.from({ length: L.slotsPerDay }, () => null),
     ),
@@ -42,14 +78,25 @@ export function createLife(opts: LifeOptions): LifeState {
     streak: streakOf(doses),
     medLevel: medLevelOf(doses),
     goal: { points: 0, target: L.goalTarget },
-    energy: Math.min(L.maxEnergy, opts.energy ?? L.startEnergy),
+    energy: Math.max(
+      0,
+      Math.min(L.maxEnergy, opts.energy ?? L.startEnergy) - tired,
+    ),
     rolls: [],
     exposures: [],
-    reservoirs: opts.reservoirs ?? [],
-    symptoms: [],
+    reservoirs,
+    symptoms,
+    doctor: null,
     flags: { frictionFired: false, doctorVisit: false },
-    rng: rngFromSeed(opts.seed),
+    rng: rngFromSeed(lifeRngSeed(opts.seed, week)),
   };
+}
+
+/** The events a fresh week opens with: day 0's symptoms. */
+export function weekStartEvents(life: LifeState): LifeEvent[] {
+  return life.symptoms
+    .filter((s) => s.day === 0)
+    .map((symptom) => ({ type: "SymptomAppeared", symptom }));
 }
 
 export const weekOver = (life: LifeState) => life.day >= L.days;
@@ -70,10 +117,17 @@ export function findPlaced(
   return null;
 }
 
+/** Energy a planned slot costs: the card's (pills included), or the doctor's for that day. */
+export function slotCost(life: LifeState, day: number, p: Placement): number {
+  return cardDef(p.card).doctor
+    ? doctorCost(life, day)
+    : placementCost(p.card, p.packPills);
+}
+
 /**
  * Energy after each remaining slot, in play order, starting from the current energy: a card costs
- * its energy (plus the pills if packed), a rest refunds PARAMS.life.restEnergy up to maxEnergy.
- * Index [d][s] is relative to `life.day`.
+ * slotCost, a rest refunds PARAMS.life.restEnergy up to maxEnergy. The doctor's viral refund is
+ * not counted (nobody knows yet). Index [d][s] is relative to `life.day`.
  */
 export function energyPlan(
   life: LifeState,
@@ -85,7 +139,7 @@ export function energyPlan(
     out.push(
       plan[day].map((p) => {
         e = p
-          ? e - placementCost(p.card, p.packPills)
+          ? Math.min(L.maxEnergy, e - slotCost(life, day, p))
           : Math.min(L.maxEnergy, e + L.restEnergy);
         return e;
       }),
@@ -277,9 +331,12 @@ export function frictionFor(life: LifeState, day: number): CardId | null {
 
 /**
  * Ends the current day: an undecided dose is taken (the default), each slot plays in order
- * (points and energy for a card, a refund for a rest), then one roll per slot decides each card's
- * exposure. The next day then starts; a sleepover the night before without the pills packed
- * fires the friction event and that morning's dose is missed. After the last day, WeekEnded.
+ * (points and energy for a card, a refund for a rest, the visit for the doctor), then one roll per
+ * slot decides each card's exposure. Then the body: an untreated reservoir at the end of its early
+ * window grows, and each unflared one rolls its flare (both stop once the doctor is seen). The
+ * next day then starts: its symptoms show (the first puts the doctor in hand), and a sleepover the
+ * night before without the pills packed fires the friction event and that morning's dose is
+ * missed. After the last day, WeekEnded.
  */
 export function advanceDay(life: LifeState): LifeStep {
   if (weekOver(life)) throw new Error("the week is over");
@@ -300,6 +357,8 @@ export function advanceDay(life: LifeState): LifeStep {
   let energy = s.energy;
   let points = s.goal.points;
   let rng = s.rng;
+  let reservoirs: LifeReservoir[] = [...s.reservoirs];
+  let doctor = s.doctor;
   const rolls = [...s.rolls];
   const exposures: LandedExposure[] = [...s.exposures];
   for (let slot = 0; slot < L.slotsPerDay; slot++) {
@@ -310,6 +369,24 @@ export function advanceDay(life: LifeState): LifeStep {
     if (!p) {
       energy = Math.min(L.maxEnergy, energy + L.restEnergy);
       events.push({ type: "Rested", day, slot });
+    } else if (cardDef(p.card).doctor) {
+      const finding = reservoirs.length > 0 ? "reservoir" : "viral";
+      const cost = doctorCost(s, day);
+      const refund = finding === "viral" ? C.doctor.viralRefund : 0;
+      energy = Math.min(L.maxEnergy, energy - cost + refund);
+      doctor = {
+        day,
+        slot,
+        timing: doctorTiming(s, day),
+        finding,
+        energy: cost - refund,
+      };
+      const revealed = reservoirs.filter((r) => r.hidden).length;
+      reservoirs = reservoirs.map((r) => ({ ...r, hidden: false }));
+      events.push(
+        { type: "CardPlayed", day, slot, card: p.card },
+        { type: "DoctorVisited", ...doctor, revealed },
+      );
     } else {
       const def = cardDef(p.card);
       energy -= placementCost(p.card, p.packPills);
@@ -340,6 +417,9 @@ export function advanceDay(life: LifeState): LifeStep {
         ...roll,
         size: x.size,
         count: x.count,
+        kinds: Array.from({ length: x.count }, (_, i) =>
+          exposureKind(p.card, i),
+        ),
       });
       if (roll.landed) {
         for (let i = 0; i < x.count; i++) {
@@ -347,7 +427,7 @@ export function advanceDay(life: LifeState): LifeStep {
             day,
             slot,
             card: p.card,
-            kind: x.kind,
+            kind: exposureKind(p.card, i),
             size: x.size,
           });
         }
@@ -356,6 +436,26 @@ export function advanceDay(life: LifeState): LifeStep {
     if (energy !== from)
       events.push({ type: "EnergyChanged", from, to: energy });
   }
+
+  if (!doctor) {
+    reservoirs = reservoirs.map((r, index) => {
+      let next = r;
+      if (day === growthDayOf(r) && r.size < PARAMS.maxPathogenSize) {
+        const size = Math.min(PARAMS.maxPathogenSize, r.size + C.growth);
+        next = { ...next, size, grown: true };
+        events.push({ type: "ReservoirGrew", day, index, size });
+      }
+      if (!next.flared) {
+        const chance = flareChance(day, next.size);
+        if (bodyRoll(s.seed, s.week, day, index) < chance) {
+          next = { ...next, flared: true };
+          events.push({ type: "ReservoirFlared", day, index, chance });
+        }
+      }
+      return next;
+    });
+  }
+
   s = {
     ...s,
     day: day + 1,
@@ -364,6 +464,9 @@ export function advanceDay(life: LifeState): LifeStep {
     rng,
     rolls,
     exposures,
+    reservoirs,
+    doctor,
+    flags: { ...s.flags, doctorVisit: doctor !== null },
   };
 
   if (weekOver(s)) {
@@ -374,6 +477,18 @@ export function advanceDay(life: LifeState): LifeStep {
     return { state: s, events };
   }
   events.push({ type: "DayStarted", day: s.day });
+  const today = scheduledSymptoms(s.seed, s.week, s.reservoirs).filter(
+    (x) => x.day === s.day && !s.symptoms.some((y) => y.kind === x.kind),
+  );
+  if (today.length > 0) {
+    s = {
+      ...s,
+      symptoms: [...s.symptoms, ...today],
+      hand: s.hand.includes(DOCTOR_CARD) ? s.hand : [...s.hand, DOCTOR_CARD],
+    };
+    for (const symptom of today)
+      events.push({ type: "SymptomAppeared", symptom });
+  }
   const away = frictionFor(s, s.day);
   if (away) {
     events.push({ type: "FrictionEvent", day: s.day, card: away });
@@ -390,15 +505,15 @@ export function advanceDay(life: LifeState): LifeStep {
 }
 
 /**
- * Why a battle follows this week: an exposure landed, or a carried reservoir flares. T13 owns
- * reservoir growth and flare timing; until then every carried reservoir flares.
+ * Why a battle follows this week: an exposure landed, a carried reservoir flared, or the doctor
+ * found a reservoir (the visit turns it into a fight on the player's terms). A viral visit adds
+ * no reason.
  */
-export function battleDueReasons(
-  life: LifeState,
-): ("exposure" | "reservoir")[] {
-  const reasons: ("exposure" | "reservoir")[] = [];
+export function battleDueReasons(life: LifeState): BattleReason[] {
+  const reasons: BattleReason[] = [];
   if (life.exposures.length > 0) reasons.push("exposure");
-  if (life.reservoirs.length > 0) reasons.push("reservoir");
+  if (life.reservoirs.some((r) => r.flared)) reasons.push("reservoir");
+  if (life.doctor?.finding === "reservoir") reasons.push("doctor");
   return reasons;
 }
 

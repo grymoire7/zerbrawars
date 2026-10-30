@@ -1,4 +1,8 @@
+import { battleStatus } from "./battle/outcome";
 import { inBounds, tileId } from "./board";
+import type { Campaign } from "./campaign";
+import { medLevelOf } from "./life/meds";
+import type { LifeState } from "./life/types";
 import { isPathogenKindId, pathogenKind, wallOf } from "./pathogens";
 import { PARAMS } from "./params";
 import type { BattleState, Contained, Coord } from "./types";
@@ -121,6 +125,81 @@ export function validateBattle(battle: BattleState): string[] {
     if (other !== undefined)
       problems.push(`${p.id} and ${other} target ${i.to.x},${i.to.y}`);
     else targets.set(tile, p.id);
+  }
+  return problems;
+}
+
+/** Structural checks on a LifeState; an empty list means valid. */
+export function validateLife(life: LifeState): string[] {
+  const problems: string[] = [];
+  const L = PARAMS.life;
+  if (!Number.isInteger(life.day) || life.day < 0 || life.day > L.days)
+    problems.push(`invalid day ${life.day}`);
+  if (
+    life.plan.length !== L.days ||
+    life.plan.some((row) => row.length !== L.slotsPerDay)
+  )
+    problems.push("plan has the wrong shape");
+  if (
+    !Number.isInteger(life.energy) ||
+    life.energy < 0 ||
+    life.energy > L.maxEnergy
+  )
+    problems.push(`invalid energy ${life.energy}`);
+  if (life.medLevel !== medLevelOf(life.doses))
+    problems.push(`med level ${life.medLevel} does not match the doses`);
+  if (life.reservoirs.length > PARAMS.campaign.carry.maxReservoirs)
+    problems.push(`${life.reservoirs.length} reservoirs is over the cap`);
+  life.reservoirs.forEach((r, i) => {
+    if (!isPathogenKindId(r.kind))
+      problems.push(`reservoir ${i} has unknown kind`);
+    else if (wallOf(r) !== "sealed") problems.push(`reservoir ${i} is leaky`);
+    if (
+      !Number.isInteger(r.size) ||
+      r.size < 1 ||
+      r.size > PARAMS.maxPathogenSize
+    )
+      problems.push(`reservoir ${i} has invalid size ${r.size}`);
+  });
+  if (life.hand.includes("doctor") !== life.symptoms.length > 0)
+    problems.push(
+      "the doctor is in hand without a symptom, or missing with one",
+    );
+  if ((life.doctor !== null) !== life.flags.doctorVisit)
+    problems.push("doctor visit and flag disagree");
+  return problems;
+}
+
+/** Mode and structure checks on a Campaign, its week and its battle. */
+export function validateCampaign(c: Campaign): string[] {
+  const problems = validateLife(c.life).map((p) => `life: ${p}`);
+  if (!Number.isInteger(c.cycle) || c.cycle < 1 || c.cycle > c.cycles)
+    problems.push(`invalid cycle ${c.cycle} of ${c.cycles}`);
+  const finished = c.mode === "done" ? c.cycle : c.cycle - 1;
+  if (c.history.length !== finished)
+    problems.push(`${c.history.length} weeks recorded, expected ${finished}`);
+  if (c.battle)
+    problems.push(...validateBattle(c.battle).map((p) => `battle: ${p}`));
+  switch (c.mode) {
+    case "life":
+      if (c.battle || c.loadout || c.result)
+        problems.push("life mode keeps a battle or result");
+      break;
+    case "battle":
+      if (!c.battle || !c.loadout)
+        problems.push("battle mode without a battle");
+      else if (battleStatus(c.battle).over)
+        problems.push("battle mode with a finished battle");
+      if (c.result) problems.push("battle mode with a result");
+      break;
+    case "outcome":
+    case "done":
+      if (!c.result) problems.push(`${c.mode} mode without a result`);
+      else if ((c.result.kind === "battle") !== (c.battle !== null))
+        problems.push("result and battle disagree");
+      if (c.mode === "done" && c.cycle !== c.cycles)
+        problems.push("done before the last week");
+      break;
   }
   return problems;
 }
