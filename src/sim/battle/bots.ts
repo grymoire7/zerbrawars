@@ -1,0 +1,231 @@
+import { distance, sameCoord } from "../board";
+import { PARAMS } from "../params";
+import { wallOf } from "../pathogens";
+import { rngFromSeed, rngInt, type RngState } from "../rng";
+import type {
+  BattleOutcome,
+  BattleState,
+  Coord,
+  Order,
+  Pathogen,
+  Swarm,
+} from "../types";
+import { telegraph } from "./intents";
+import { engulfTargets, moveOptions, orderProblems } from "./orders";
+import { battleStatus, gradeOutcome } from "./outcome";
+import { resolveTurn } from "./resolve";
+
+// Headless players for balance checks. Each one picks one order per swarm, in swarm order,
+// seeing the orders already picked this turn. They are deliberately simple.
+
+export interface BotTurn {
+  readonly battle: BattleState;
+  readonly swarm: Swarm;
+  readonly orders: readonly Order[];
+  readonly rng: { state: RngState };
+}
+
+export type Bot = (turn: BotTurn) => Order | null;
+
+const visible = (b: BattleState) => b.pathogens.filter((p) => !p.hidden);
+
+/** Where a swarm will stand once `orders` resolve. */
+function endOf(s: Swarm, orders: readonly Order[]): Coord {
+  const o = orders.find((q) => q.swarmId === s.id);
+  if (o?.type === "move") return o.to;
+  if (o?.type === "engulf" && o.from) return o.from;
+  return s.at;
+}
+
+/**
+ * The legal move that gets closest to `goal`; null if none gets closer than where it stands. With
+ * `avoidCrowd`, tiles touching another swarm's end tile are skipped.
+ */
+function toward(t: BotTurn, goal: Coord, avoidCrowd = false): Order | null {
+  const ends = t.battle.swarms
+    .filter((s) => s.id !== t.swarm.id)
+    .map((s) => endOf(s, t.orders));
+  const crowded = (c: Coord) =>
+    avoidCrowd &&
+    ends.some((e) => Math.abs(e.x - c.x) <= 1 && Math.abs(e.y - c.y) <= 1);
+  let best: Coord | null = null;
+  let bestD = distance(t.swarm.at, goal);
+  for (const r of moveOptions(t.battle, t.swarm.id, t.orders)) {
+    if (crowded(r.at)) continue;
+    const d = distance(r.at, goal);
+    if (d < bestD) {
+      best = r.at;
+      bestD = d;
+    }
+  }
+  return best ? { type: "move", swarmId: t.swarm.id, to: best } : null;
+}
+
+function nearest(from: Coord, ps: readonly Pathogen[]): Pathogen | null {
+  return (
+    [...ps].sort((a, b) => distance(from, a.at) - distance(from, b.at))[0] ??
+    null
+  );
+}
+
+/** An engulf on the first target `ok` accepts, leaky ones first. */
+function engulfIf(t: BotTurn, ok: (p: Pathogen) => boolean): Order | null {
+  const targets = engulfTargets(t.battle, t.swarm.id, t.orders)
+    .map((e) => ({
+      e,
+      p: t.battle.pathogens.find((q) => q.id === e.pathogenId) as Pathogen,
+    }))
+    .filter(({ p }) => ok(p))
+    .sort(
+      (a, b) =>
+        (wallOf(a.p) === "leaky" ? 0 : 1) - (wallOf(b.p) === "leaky" ? 0 : 1),
+    );
+  const first = targets[0];
+  return first
+    ? {
+        type: "engulf",
+        swarmId: t.swarm.id,
+        pathogenId: first.p.id,
+        from: first.e.from,
+      }
+    : null;
+}
+
+const full = (s: Swarm) => s.load.length >= PARAMS.loadCap;
+const canTake = (s: Swarm) => (p: Pathogen) =>
+  wallOf(p) === "leaky" || !full(s);
+
+/** Telegraphed spread or spore targets that will land with the orders picked so far. */
+function landingTargets(t: BotTurn): Coord[] {
+  return telegraph(t.battle, t.orders).flatMap((m) =>
+    m.to && !m.blockedBy && !m.cancelledBy ? [m.to] : [],
+  );
+}
+
+const wallOff = (t: BotTurn): Order => ({
+  type: "wallOff",
+  swarmId: t.swarm.id,
+});
+
+export const BOTS: Record<string, Bot> = {
+  /** Never orders anything. */
+  hold: () => null,
+
+  /** Engulfs anything it can reach, else walks to the nearest pathogen it could take. */
+  engulfAll: (t) =>
+    engulfIf(t, canTake(t.swarm)) ??
+    toward(
+      t,
+      nearest(t.swarm.at, visible(t.battle).filter(canTake(t.swarm)))?.at ??
+        t.swarm.at,
+    ),
+
+  /** Engulfs sealed pathogens before leaky ones, so carried loads get longer to die. */
+  sealedFirst: (t) => {
+    const targets = engulfTargets(t.battle, t.swarm.id, t.orders);
+    const sealed = targets.find((e) => e.wall === "sealed" && !full(t.swarm));
+    if (sealed) {
+      return {
+        type: "engulf",
+        swarmId: t.swarm.id,
+        pathogenId: sealed.pathogenId,
+        from: sealed.from,
+      };
+    }
+    return BOTS.engulfAll(t);
+  },
+
+  /** Kills leaky pathogens and ignores sealed ones. */
+  leakyOnly: (t) =>
+    engulfIf(t, (p) => wallOf(p) === "leaky") ??
+    toward(
+      t,
+      nearest(
+        t.swarm.at,
+        visible(t.battle).filter((p) => wallOf(p) === "leaky"),
+      )?.at ?? t.swarm.at,
+    ),
+
+  /** engulfAll, but walls off any load as soon as it has one. */
+  wallAtOnce: (t) =>
+    t.swarm.load.length > 0 && t.swarm.busyTurns === 0
+      ? wallOff(t)
+      : BOTS.engulfAll(t),
+
+  /** engulfAll, but walls off a loaded swarm that has nothing to engulf this turn. */
+  wallIdle: (t) => {
+    if (t.swarm.load.length === 0 || t.swarm.busyTurns > 0) {
+      return BOTS.engulfAll(t);
+    }
+    return engulfIf(t, canTake(t.swarm)) ?? wallOff(t);
+  },
+
+  /** engulfAll, but walls off a full swarm. */
+  wallWhenFull: (t) =>
+    full(t.swarm) && t.swarm.busyTurns === 0 ? wallOff(t) : BOTS.engulfAll(t),
+
+  /**
+   * A careful player: kill leaky, stand on any spread or spore about to land, take a sealed one
+   * only with an empty swarm, wall off a full swarm, and keep swarms apart when just walking.
+   */
+  careful: (t) => {
+    if (t.swarm.busyTurns > 0) return null;
+    const leaky = engulfIf(t, (p) => wallOf(p) === "leaky");
+    if (leaky) return leaky;
+    const reach = moveOptions(t.battle, t.swarm.id, t.orders);
+    const block = landingTargets(t).find((to) =>
+      reach.some((r) => sameCoord(r.at, to)),
+    );
+    if (block) return { type: "move", swarmId: t.swarm.id, to: block };
+    if (full(t.swarm)) return wallOff(t);
+    const sealed = engulfIf(t, () => t.swarm.load.length === 0);
+    if (sealed) return sealed;
+    const goal = nearest(
+      t.swarm.at,
+      visible(t.battle).filter(canTake(t.swarm)),
+    );
+    return goal ? (toward(t, goal.at, true) ?? toward(t, goal.at)) : null;
+  },
+
+  /** A random legal order (or nothing) per swarm. */
+  random: (t) => {
+    const options: Order[] = [
+      ...engulfTargets(t.battle, t.swarm.id, t.orders).map((e): Order => ({
+        type: "engulf",
+        swarmId: t.swarm.id,
+        pathogenId: e.pathogenId,
+        from: e.from,
+      })),
+      ...moveOptions(t.battle, t.swarm.id, t.orders).map((r): Order => ({
+        type: "move",
+        swarmId: t.swarm.id,
+        to: r.at,
+      })),
+    ];
+    if (t.swarm.load.length > 0) options.push(wallOff(t));
+    const pick = rngInt(t.rng.state, options.length + 1);
+    t.rng.state = pick.rng;
+    return options[pick.value] ?? null;
+  },
+};
+
+/** Plays a battle to the end with `bot` and grades it. `seed` drives the random bot only. */
+export function playBattle(
+  bot: Bot,
+  start: BattleState,
+  seed: number,
+): { outcome: BattleOutcome; final: BattleState } {
+  let battle = start;
+  const rng = { state: rngFromSeed(seed * 7919 + 1) };
+  while (!battleStatus(battle).over) {
+    let orders: Order[] = [];
+    for (const swarm of battle.swarms) {
+      const order = bot({ battle, swarm, orders, rng });
+      if (!order) continue;
+      const next = [...orders, order];
+      if (orderProblems(battle, next).length === 0) orders = next;
+    }
+    battle = resolveTurn(battle, orders).state;
+  }
+  return { outcome: gradeOutcome(battle), final: battle };
+}

@@ -54,11 +54,59 @@ export const PARAMS = {
       sporeMaxDistance: 4,
     },
   },
-  /** Placeholder (T7). */
+  /**
+   * Turns a swarm stays busy after the turn it walls off (it cannot move, engulf or wall off).
+   * The wall-off turn itself is spent too, so walling costs the swarm two turns of action.
+   */
+  wallOffBusyTurns: 1,
+  /**
+   * Per-tile inflammation, an integer 0..maxInflammation, ticked once a turn after the pathogens
+   * act. A tile rises by the sum of its causes, otherwise it decays:
+   * - crowding: each swarm adds `crowdRise` to its tile per other swarm touching it (8
+   *   neighbours, so diagonal counts). Three swarms in a clump heat the middle one by 2. The
+   *   starting line (two tiles apart) does not crowd.
+   * - load: a swarm carrying anything adds `loadRise` to its tile, so a loaded swarm that stands
+   *   still heats up (1, 2, 3) while one that keeps moving leaves only 1s that fade.
+   * - infection: each visible pathogen adds `pathogenRise` to its own tile, so an ignored
+   *   pathogen costs 0, 1, then 2 tissue a turn.
+   * - granuloma: adds `granulomaRise` the turn it is walled, and its tile never decays below
+   *   `granulomaInflammation`. Walling a load that was heating its tile costs about 1 tissue.
+   * Effects: a swarm starting its turn on a tile at `slowThreshold`+ loses `inflammationMovePenalty`
+   * moves (never below minLoadedMoveRange); every tile drains `damagePerLevel` tissue health per
+   * level above `damageThreshold` each tick. Pathogens never read inflammation, so the telegraph
+   * stays exact.
+   */
   maxInflammation: 3,
-  /** Placeholder (T7). */
+  inflammation: {
+    crowdRise: 1,
+    loadRise: 1,
+    pathogenRise: 1,
+    granulomaRise: 1,
+    granulomaInflammation: 1,
+    decay: 1,
+    slowThreshold: 2,
+    inflammationMovePenalty: 1,
+    damageThreshold: 1,
+    damagePerLevel: 1,
+  },
+  /**
+   * Each turn a swarm carries a sealed pathogen loaded on an earlier turn, it gets the residual
+   * kill roll again (times this scale), so a carried load can still die. This is the only road to
+   * "cleared" once a sealed pathogen is engulfed. Walled contents never roll: walling trades the
+   * chance to clear for a free swarm. 1 = the same per-character chance; 0 turns it off.
+   */
+  carriedKillScale: 1,
   maxTissueHealth: 20,
-  /** Placeholder (T8). */
+  /** The battle ends after this many turns, or sooner once no visible pathogen is left. */
   maxTurns: 6,
+  outcome: {
+    /**
+     * At or below this tissue health the grade is neededBackup whatever else is true. Half of 20:
+     * a do-nothing battle loses all 20; careful play typically ends at 16-17.
+     */
+    backupTissueHealth: 10,
+    /** Energy carried into the life phase per grade (T13). */
+    energy: { cleared: 3, contained: 2, neededBackup: 1 },
+  },
   defaultSeed: 1,
 } as const;

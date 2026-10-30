@@ -5,9 +5,12 @@ import { rngFromSeed } from "./rng";
 import type { BattleState } from "./types";
 
 /**
- * First board. Swarms arrive along the near edge. The leaky cluster is one move-and-engulf away
- * from s1 (an early, easy kill); the sealed mold sits in the far corner where s3 can reach it,
- * so turn 1 already asks "grab it and get slow, or leave it to spread?".
+ * First board. Swarms arrive along the near edge. p1 (leaky) is one move-and-engulf from s1, an
+ * early easy kill. The sealed mold p2 starts at spore size, so turn 1 already telegraphs a spore
+ * (70%) and s3 must choose: engulf it now (cancels the spore, loads and slows s3, and starts the
+ * carried kill rolls that are the only road to "cleared") or kill p4, the strep next to it, and
+ * deal with a spore. p3 is a big strep two turns away that fans out if left. Tuned with the bots
+ * in battle/balance.test.ts.
  */
 function firstBoard(seed: number): BattleState {
   return {
@@ -25,10 +28,12 @@ function firstBoard(seed: number): BattleState {
       {
         id: "p2",
         kind: "aspergillus",
-        size: 2,
+        size: 3,
         at: { x: 5, y: 2 },
         hidden: false,
       },
+      { id: "p3", kind: "strep", size: 3, at: { x: 3, y: 0 }, hidden: false },
+      { id: "p4", kind: "strep", size: 2, at: { x: 6, y: 4 }, hidden: false },
     ],
     granulomas: [],
     intents: [],
@@ -43,12 +48,29 @@ function firstBoard(seed: number): BattleState {
       intents: rngFromSeed(seed),
       resolution: rngFromSeed(seed ^ 0x9e3779b9),
     },
+    nextId: 5,
+  };
+}
+
+/**
+ * The T1-T6 board: one leaky and one sealed pathogen, the mold below spore size. Small enough to
+ * teach engulf and load in a turn or two; rule tests use it as their fixture.
+ */
+function duel(seed: number): BattleState {
+  const b = firstBoard(seed);
+  return {
+    ...b,
+    scenario: "duel",
+    pathogens: b.pathogens
+      .filter((p) => p.id === "p1" || p.id === "p2")
+      .map((p) => (p.id === "p2" ? { ...p, size: 2 } : p)),
     nextId: 3,
   };
 }
 
 export const SCENARIOS = {
   "first-board": firstBoard,
+  duel,
 } as const satisfies Record<string, (seed: number) => BattleState>;
 
 export type ScenarioName = keyof typeof SCENARIOS;

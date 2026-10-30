@@ -5,7 +5,8 @@ import type { BattleState, Contained, Coord } from "./types";
 
 /**
  * Structural checks on a BattleState (for fixtures, setup and anything loaded from JSON).
- * Returns human-readable problems; an empty list means valid. One occupant per tile.
+ * Returns human-readable problems; an empty list means valid. One occupant per tile, except that
+ * a swarm may stand on the granuloma it walled off until it moves away.
  */
 export function validateBattle(battle: BattleState): string[] {
   const problems: string[] = [];
@@ -16,9 +17,23 @@ export function validateBattle(battle: BattleState): string[] {
     );
   }
 
+  board.tiles.forEach((t, id) => {
+    const v = t.inflammation;
+    if (!Number.isInteger(v) || v < 0 || v > PARAMS.maxInflammation)
+      problems.push(`tile ${id} has invalid inflammation ${v}`);
+  });
+  const health = battle.tissueHealth;
+  if (
+    !Number.isInteger(health) ||
+    health < 0 ||
+    health > PARAMS.maxTissueHealth
+  )
+    problems.push(`invalid tissue health ${health}`);
+
+  type Kind = "swarm" | "granuloma" | "pathogen";
   const ids = new Set<string>();
-  const occupied = new Map<number, string>();
-  const place = (id: string, at: Coord) => {
+  const occupied = new Map<number, { id: string; kind: Kind }[]>();
+  const place = (id: string, at: Coord, kind: Kind) => {
     if (ids.has(id)) problems.push(`duplicate id ${id}`);
     ids.add(id);
     if (!inBounds(board, at)) {
@@ -26,10 +41,13 @@ export function validateBattle(battle: BattleState): string[] {
       return;
     }
     const tile = tileId(board, at);
-    const other = occupied.get(tile);
-    if (other !== undefined)
-      problems.push(`${id} overlaps ${other} at ${at.x},${at.y}`);
-    else occupied.set(tile, id);
+    const here = occupied.get(tile) ?? [];
+    const shared =
+      here.length === 1 &&
+      [here[0].kind, kind].sort().join() === "granuloma,swarm";
+    if (here.length > 0 && !shared)
+      problems.push(`${id} overlaps ${here[0].id} at ${at.x},${at.y}`);
+    occupied.set(tile, [...here, { id, kind }]);
   };
 
   const checkKindAndSize = (
@@ -54,7 +72,7 @@ export function validateBattle(battle: BattleState): string[] {
   };
 
   for (const s of battle.swarms) {
-    place(s.id, s.at);
+    place(s.id, s.at, "swarm");
     if (s.load.length > PARAMS.loadCap)
       problems.push(
         `${s.id} load ${s.load.length} is over cap ${PARAMS.loadCap}`,
@@ -64,11 +82,12 @@ export function validateBattle(battle: BattleState): string[] {
       problems.push(`${s.id} has invalid busyTurns ${s.busyTurns}`);
   }
   for (const g of battle.granulomas) {
-    place(g.id, g.at);
+    place(g.id, g.at, "granuloma");
+    if (g.contents.length === 0) problems.push(`${g.id} is empty`);
     for (const c of g.contents) checkContained(g.id, c);
   }
   for (const p of battle.pathogens) {
-    place(p.id, p.at);
+    place(p.id, p.at, "pathogen");
     checkKindAndSize(p.id, p);
   }
   const chance = battle.residualKillChance;

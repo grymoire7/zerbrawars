@@ -147,7 +147,41 @@ export interface BattleState {
   readonly nextId: number;
 }
 
-export type BattleOutcome = "cleared" | "contained" | "neededBackup";
+export type BattleGrade = "cleared" | "contained" | "neededBackup";
+
+export interface BattleStatus {
+  readonly over: boolean;
+  /** Why it ended; null while it goes on. */
+  readonly reason: "noFreePathogens" | "maxTurns" | null;
+  /** Turns still to play, counting the current one. 0 once over. */
+  readonly turnsLeft: number;
+}
+
+/** Something still alive at battle end that carries over (T13). */
+export interface Reservoir extends Contained {
+  /** A swarm's load, a granuloma's contents, or a hidden token never revealed. */
+  readonly source: "swarm" | "granuloma" | "hidden";
+  /** Swarm, granuloma or pathogen id. */
+  readonly sourceId: string;
+}
+
+export interface BattleOutcome {
+  readonly grade: BattleGrade;
+  /** Why the grade is neededBackup; empty otherwise. */
+  readonly backupReasons: readonly ("tissue" | "freePathogens")[];
+  /** Visible pathogens still on the board. */
+  readonly freePathogens: number;
+  readonly reservoirs: readonly Reservoir[];
+  readonly tissue: {
+    readonly health: number;
+    readonly max: number;
+    readonly lost: number;
+  };
+  /** Energy carried into the life phase. */
+  readonly energy: number;
+  /** Turns resolved. */
+  readonly turnsPlayed: number;
+}
 
 export type Mode = "life" | "battle" | "outcome";
 

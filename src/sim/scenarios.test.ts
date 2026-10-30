@@ -39,25 +39,50 @@ describe.each(SCENARIO_NAMES)("scenario %s", (name) => {
   });
 });
 
-describe("first-board", () => {
-  const battle = loadScenario("first-board") as BattleState;
-
-  it("has one leaky and one sealed pathogen", () => {
-    expect(battle.pathogens.map(wallOf).sort()).toEqual(["leaky", "sealed"]);
-  });
-
-  it("puts every pathogen within move-and-engulf range of some swarm on turn 1", () => {
-    for (const p of battle.pathogens) {
-      const canReach = battle.swarms.some((s) =>
+/** Pathogens some swarm can move next to and engulf on turn 1. */
+function turnOneTargets(battle: BattleState): string[] {
+  return battle.pathogens
+    .filter((p) =>
+      battle.swarms.some((s) =>
         reachableTiles(
           battle.board,
           s.at,
           PARAMS.swarmMoveRange,
           swarmBlockers(battle, s.id),
         ).some((t) => isAdjacent(t.at, p.at)),
-      );
-      expect(canReach, p.id).toBe(true);
-    }
+      ),
+    )
+    .map((p) => p.id);
+}
+
+describe("first-board", () => {
+  const battle = loadScenario("first-board") as BattleState;
+
+  it("has three leaky and one sealed pathogen", () => {
+    expect(battle.pathogens.map(wallOf).sort()).toEqual([
+      "leaky",
+      "leaky",
+      "leaky",
+      "sealed",
+    ]);
+  });
+
+  it("puts all but the far strep within move-and-engulf range on turn 1", () => {
+    expect(turnOneTargets(battle)).toEqual(["p1", "p2", "p4"]);
+  });
+
+  it("starts the mold at spore size, so turn 1 can telegraph a spore", () => {
+    const mold = battle.pathogens.find((p) => p.id === "p2");
+    expect(mold?.size).toBe(PARAMS.intents.aspergillus.actMinSize);
+  });
+});
+
+describe("duel", () => {
+  const battle = loadScenario("duel") as BattleState;
+
+  it("has one leaky and one sealed pathogen, both reachable on turn 1", () => {
+    expect(battle.pathogens.map(wallOf).sort()).toEqual(["leaky", "sealed"]);
+    expect(turnOneTargets(battle)).toEqual(["p1", "p2"]);
   });
 });
 

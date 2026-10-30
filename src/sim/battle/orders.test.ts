@@ -3,7 +3,7 @@ import { sameCoord } from "../board";
 import { PARAMS } from "../params";
 import { rngFromSeed, rngInt, type RngState } from "../rng";
 import { loadScenario } from "../scenarios";
-import type { BattleState, Coord, Order, Swarm } from "../types";
+import type { BattleState, Coord, Order, SimEvent, Swarm } from "../types";
 import { validateBattle } from "../validate";
 import { telegraph } from "./intents";
 import {
@@ -16,7 +16,7 @@ import {
 import { resolveTurn } from "./resolve";
 
 function load(seed = 1): BattleState {
-  return loadScenario("first-board", seed) as BattleState;
+  return loadScenario("duel", seed) as BattleState;
 }
 
 const move = (swarmId: string, x: number, y: number): Order => ({
@@ -24,6 +24,12 @@ const move = (swarmId: string, x: number, y: number): Order => ({
   swarmId,
   to: { x, y },
 });
+
+/** Event types without the end-of-turn inflammation tick. */
+const acts = (events: readonly SimEvent[]) =>
+  events
+    .map((e) => e.type)
+    .filter((t) => t !== "InflammationChanged" && t !== "TissueDamaged");
 
 const reasons = (battle: BattleState, orders: Order[]) =>
   validateOrders(battle, orders).map((c) => c.reason);
@@ -163,7 +169,7 @@ describe("validateOrders", () => {
     expect(movePath(battle, "s1", { x: 1, y: 5 })).toBeNull();
   });
 
-  it("rejects a second order, a missing swarm, a bad engulf and unsupported types", () => {
+  it("rejects a second order, a missing swarm, a bad engulf and an empty wall-off", () => {
     const battle = load();
     expect(
       reasons(battle, [
@@ -178,7 +184,7 @@ describe("validateOrders", () => {
       "two orders for s1",
       "no swarm s9",
       "p1 is not next to 3,6",
-      "wallOff orders are not supported yet",
+      "s3 has nothing to wall off",
     ]);
   });
 });
@@ -269,7 +275,7 @@ describe("resolveTurn with moves", () => {
       sizeAfter: 2,
     });
     const { state, events } = resolveTurn(battle, orders);
-    expect(events.map((e) => e.type)).toEqual(["SwarmMoved", "Blocked"]);
+    expect(acts(events)).toEqual(["SwarmMoved", "Blocked"]);
     expect(events[1]).toEqual({
       type: "Blocked",
       pathogenId: "p1",
@@ -293,7 +299,7 @@ describe("resolveTurn with moves", () => {
     expect(telegraph(battle)[0].blockedBy).toBe("s1");
     expect(telegraph(battle, orders)[0].blockedBy).toBeNull();
     const { events } = resolveTurn(battle, orders);
-    expect(events.map((e) => e.type)).toEqual(["SwarmMoved", "Spread"]);
+    expect(acts(events)).toEqual(["SwarmMoved", "Spread"]);
   });
 
   it("rejects the whole set without changing anything and lists every reason", () => {

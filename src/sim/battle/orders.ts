@@ -12,10 +12,12 @@ import {
 import { PARAMS } from "../params";
 import { wallOf, type Wall } from "../pathogens";
 import { rngNext } from "../rng";
+import { inflammationAt } from "./inflammation";
 import type {
   BattleState,
   Contained,
   Coord,
+  Granuloma,
   Order,
   Pathogen,
   PathogenId,
@@ -23,13 +25,6 @@ import type {
   Swarm,
   SwarmId,
 } from "../types";
-
-/** Order types resolveTurn can apply so far; wallOff lands with T7. */
-const SUPPORTED: ReadonlySet<Order["type"]> = new Set([
-  "hold",
-  "move",
-  "engulf",
-]);
 
 type EngulfOrder = Extract<Order, { type: "engulf" }>;
 
@@ -43,14 +38,25 @@ export interface OrderCheck {
 
 /**
  * Steps a swarm may move this turn: 0 while busy, otherwise the base range less
- * `loadedMovePenalty` per contained pathogen, never below `minLoadedMoveRange`.
- * Inflammation (T7) will lower it here too.
+ * `loadedMovePenalty` per contained pathogen, less `inflammationMovePenalty` if it stands on a
+ * tile at the slow threshold, never below `minLoadedMoveRange`.
  */
-export function moveRange(swarm: Pick<Swarm, "busyTurns" | "load">): number {
+export function moveRange(
+  swarm: Pick<Swarm, "busyTurns" | "load">,
+  inflammation = 0,
+): number {
   if (swarm.busyTurns > 0) return 0;
+  const I = PARAMS.inflammation;
   const range =
-    PARAMS.swarmMoveRange - swarm.load.length * PARAMS.loadedMovePenalty;
+    PARAMS.swarmMoveRange -
+    swarm.load.length * PARAMS.loadedMovePenalty -
+    (inflammation >= I.slowThreshold ? I.inflammationMovePenalty : 0);
   return Math.max(PARAMS.minLoadedMoveRange, range);
+}
+
+/** moveRange for a swarm where it stands now. */
+export function swarmMoveRange(battle: BattleState, swarm: Swarm): number {
+  return moveRange(swarm, inflammationAt(battle, swarm.at));
 }
 
 const key = (c: Coord) => `${c.x},${c.y}`;
@@ -75,7 +81,7 @@ function moveProblem(
   if (claimer) return fail(`${claimer} is already moving to ${key(to)}`);
   const path = shortestPath(board, swarm.at, to, blockers);
   if (!path) return fail(`no path to ${key(to)}`);
-  const range = moveRange(swarm);
+  const range = swarmMoveRange(battle, swarm);
   if (path.length - 1 > range) {
     return fail(`${key(to)} is ${path.length - 1} steps away, max ${range}`);
   }
@@ -121,6 +127,15 @@ function engulfProblem(
   return { reason: null, path };
 }
 
+function wallOffProblem(battle: BattleState, swarm: Swarm): string | null {
+  if (swarm.busyTurns > 0) return `${swarm.id} is busy`;
+  if (swarm.load.length === 0) return `${swarm.id} has nothing to wall off`;
+  if (battle.granulomas.some((g) => sameCoord(g.at, swarm.at))) {
+    return `${swarm.id} already stands on a granuloma`;
+  }
+  return null;
+}
+
 /**
  * Checks each order in list order and returns one result per order.
  * - One order per swarm: a later order for the same swarm is rejected.
@@ -131,6 +146,7 @@ function engulfProblem(
  *   cancelling one order never invalidates another.
  * - Two moves may not share a destination: the earlier valid one in the list keeps it. An
  *   engulf's `from` tile counts as a destination.
+ * - A wall-off needs a free swarm with a load, not already standing on a granuloma.
  * - An engulf needs a free swarm, a visible pathogen edge-adjacent to the tile it ends on (after
  *   its optional `from` move), no earlier engulf on the same pathogen, and a free load slot if the
  *   pathogen is sealed.
@@ -152,8 +168,8 @@ export function validateOrders(
     if (!swarm) return fail(`no swarm ${order.swarmId}`);
     if (seen.has(swarm.id)) return fail(`two orders for ${swarm.id}`);
     seen.add(swarm.id);
-    if (!SUPPORTED.has(order.type)) {
-      return fail(`${order.type} orders are not supported yet`);
+    if (order.type === "wallOff") {
+      return { order, reason: wallOffProblem(battle, swarm), path: null };
     }
     if (order.type === "engulf") {
       const r = engulfProblem(battle, swarm, order, claimed, targeted);
@@ -198,7 +214,7 @@ export function moveOptions(
 ): Reach[] {
   const swarm = battle.swarms.find((s) => s.id === swarmId);
   if (!swarm) return [];
-  const range = moveRange(swarm);
+  const range = swarmMoveRange(battle, swarm);
   if (range === 0) return [];
   const claimed = new Set(
     validateOrders(
@@ -340,16 +356,133 @@ export function applyEngulfs(
   };
 }
 
-/** Moves (engulf `from` moves included), then engulfs. */
+/**
+ * Applies the valid wall-offs among `orders` in swarm order: each swarm's whole load becomes a
+ * granuloma on its tile (Walled), its load empties and it is busy for `wallOffBusyTurns`. Every
+ * other swarm that started the turn busy counts down by one.
+ */
+export function applyWallOffs(
+  before: BattleState,
+  after: BattleState,
+  orders: readonly Order[],
+): { state: BattleState; events: SimEvent[] } {
+  const walling = new Set(
+    validateOrders(before, orders).flatMap((c) =>
+      c.reason === null && c.order.type === "wallOff" ? [c.order.swarmId] : [],
+    ),
+  );
+  const events: SimEvent[] = [];
+  const granulomas: Granuloma[] = [...after.granulomas];
+  let nextId = after.nextId;
+  const swarms = after.swarms.map((s): Swarm => {
+    if (!walling.has(s.id)) {
+      return s.busyTurns > 0 ? { ...s, busyTurns: s.busyTurns - 1 } : s;
+    }
+    const granulomaId = `g${nextId++}`;
+    granulomas.push({ id: granulomaId, at: s.at, contents: s.load });
+    events.push({ type: "Walled", swarmId: s.id, granulomaId, at: s.at });
+    return { ...s, load: [], busyTurns: PARAMS.wallOffBusyTurns };
+  });
+  return { state: { ...after, swarms, granulomas, nextId }, events };
+}
+
+/**
+ * Carried loads (held since an earlier turn and not walled off this turn) each get the residual
+ * roll again at `residualKillChance * carriedKillScale`, in swarm then load order. Each roll emits
+ * ResidualKill; a swarm that lost any load then emits Loaded with what is left. Rolls are always
+ * made, so the stream advances the same way whatever the chance.
+ */
+export function applyCarriedKills(
+  before: BattleState,
+  after: BattleState,
+): { state: BattleState; events: SimEvent[] } {
+  if (PARAMS.carriedKillScale <= 0) return { state: after, events: [] };
+  const chance = Math.min(
+    1,
+    after.residualKillChance * PARAMS.carriedKillScale,
+  );
+  const events: SimEvent[] = [];
+  let rng = after.rng.resolution;
+  const swarms = after.swarms.map((s): Swarm => {
+    // A walled swarm's load is already empty; engulfs this turn only append.
+    const carried = Math.min(
+      s.load.length,
+      before.swarms.find((b) => b.id === s.id)?.load.length ?? 0,
+    );
+    if (carried === 0) return s;
+    const kept: Contained[] = [];
+    for (const c of s.load.slice(0, carried)) {
+      const roll = rngNext(rng);
+      rng = roll.rng;
+      const success = roll.value < chance;
+      events.push({ type: "ResidualKill", swarmId: s.id, chance, success });
+      if (!success) kept.push(c);
+    }
+    const load = [...kept, ...s.load.slice(carried)];
+    if (load.length === s.load.length) return s;
+    events.push({ type: "Loaded", swarmId: s.id, load });
+    return { ...s, load };
+  });
+  return {
+    state: { ...after, swarms, rng: { ...after.rng, resolution: rng } },
+    events,
+  };
+}
+
+/** Moves (engulf `from` moves included), engulfs, wall-offs, then carried-load kill rolls. */
 export function applyOrders(
   battle: BattleState,
   orders: readonly Order[],
 ): { state: BattleState; events: SimEvent[] } {
   const moved = applyMoves(battle, orders);
   const engulfed = applyEngulfs(battle, moved.state, orders);
+  const walled = applyWallOffs(battle, engulfed.state, orders);
+  const carried = applyCarriedKills(battle, walled.state);
   return {
-    state: engulfed.state,
-    events: [...moved.events, ...engulfed.events],
+    state: carried.state,
+    events: [
+      ...moved.events,
+      ...engulfed.events,
+      ...walled.events,
+      ...carried.events,
+    ],
+  };
+}
+
+export interface WallOffPreview {
+  /** null = valid. */
+  readonly reason: string | null;
+  readonly at: Coord;
+  /** What the granuloma would hold. */
+  readonly contents: readonly Contained[];
+  /** Inflammation the granuloma tile will hold at least, every turn from now on. */
+  readonly inflammation: number;
+  /** Tissue health that tile alone drains per turn at that level. */
+  readonly tissuePerTurn: number;
+  /** Turns after this one the swarm cannot act. */
+  readonly busyTurns: number;
+}
+
+/** What walling off would do for this swarm, or null if the swarm does not exist. */
+export function wallOffPreview(
+  battle: BattleState,
+  swarmId: SwarmId,
+): WallOffPreview | null {
+  const swarm = battle.swarms.find((s) => s.id === swarmId);
+  if (!swarm) return null;
+  const I = PARAMS.inflammation;
+  const inflammation = Math.max(
+    I.granulomaInflammation,
+    inflammationAt(battle, swarm.at),
+  );
+  return {
+    reason: wallOffProblem(battle, swarm),
+    at: swarm.at,
+    contents: swarm.load,
+    inflammation,
+    tissuePerTurn:
+      Math.max(0, inflammation - I.damageThreshold) * I.damagePerLevel,
+    busyTurns: PARAMS.wallOffBusyTurns,
   };
 }
 
@@ -369,7 +502,10 @@ export interface EngulfPreview {
   readonly killChance: number;
   /** The `from` move's path, or null when engulfing in place. */
   readonly path: readonly Coord[] | null;
-  /** The swarm's load and next-turn move range if the pathogen is loaded (unchanged if it dies). */
+  /**
+   * The swarm's load and next-turn move range if the pathogen is loaded (unchanged if it dies),
+   * counting the current inflammation of the tile it engulfs from.
+   */
   readonly loadIfLoaded: readonly Contained[];
   readonly moveRangeIfLoaded: number;
   /** The same if it dies. */
@@ -408,6 +544,7 @@ export function engulfPreview(
       ? [...swarm.load, { kind: p.kind, size: p.size }]
       : swarm.load;
   const free = { busyTurns: 0, load: swarm.load };
+  const heat = inflammationAt(battle, order.from ?? swarm.at);
   return {
     reason: check.reason,
     pathogenId: p.id,
@@ -416,8 +553,8 @@ export function engulfPreview(
     killChance: wall === "leaky" ? 1 : battle.residualKillChance,
     path: check.path,
     loadIfLoaded,
-    moveRangeIfLoaded: moveRange({ ...free, load: loadIfLoaded }),
-    moveRangeIfKilled: moveRange(free),
+    moveRangeIfLoaded: moveRange({ ...free, load: loadIfLoaded }, heat),
+    moveRangeIfKilled: moveRange(free, heat),
   };
 }
 

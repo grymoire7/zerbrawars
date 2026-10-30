@@ -12,7 +12,7 @@ const SEEDS = 1000;
 const TURNS = 6;
 
 function load(seed: number): BattleState {
-  return loadScenario("first-board", seed) as BattleState;
+  return loadScenario("duel", seed) as BattleState;
 }
 
 /** What the telegraph promises for a zero-order turn, computed straight from the intents. */
@@ -53,47 +53,60 @@ function run(seed: number, turns = TURNS): BattleState[] {
   return states;
 }
 
-describe("zero orders equals telegraph", () => {
-  it(`holds for ${SEEDS} seeds over ${TURNS} turns`, () => {
-    const seen = new Set<string>();
-    for (let seed = 1; seed <= SEEDS; seed++) {
-      let battle = load(seed);
-      for (let t = 0; t < TURNS; t++) {
-        const expected = promise(battle);
-        const { state, events } = resolveTurn(battle, []);
-        expect(state.pathogens).toEqual(expected.pathogens);
-        expect(events.map((e) => e.type)).toEqual(expected.events);
-        events.forEach((e, k) => {
-          expect("pathogenId" in e && e.pathogenId).toBe(
-            battle.intents[k].pathogenId,
-          );
-        });
-        for (const e of events) seen.add(e.type);
-        expect(state.swarms).toEqual(battle.swarms);
-        expect(state.turn).toBe(battle.turn + 1);
-        battle = state;
-      }
-    }
-    // The first board must actually exercise every pathogen action, including a block.
-    expect([...seen].sort()).toEqual(["Blocked", "Grew", "Spored", "Spread"]);
-  });
+const TICK: readonly SimEvent["type"][] = [
+  "InflammationChanged",
+  "TissueDamaged",
+];
 
-  it("matches the telegraph marks the renderer draws", () => {
-    for (let seed = 1; seed <= 100; seed++) {
-      for (const battle of run(seed).slice(0, -1)) {
-        const next = resolveTurn(battle, []).state;
-        for (const m of telegraph(battle)) {
-          const after = next.pathogens.find((p) => p.id === m.pathogenId);
-          expect(after?.size).toBe(m.sizeAfter);
-          if (m.to && !m.blockedBy) {
-            const child = next.pathogens.find((p) => sameCoord(p.at, m.to!));
-            expect(child?.size).toBe(m.childSize);
+describe.each(["duel", "first-board"])(
+  "zero orders equals telegraph on %s",
+  (scenario) => {
+    it(`holds for ${SEEDS} seeds over ${TURNS} turns`, () => {
+      const seen = new Set<string>();
+      for (let seed = 1; seed <= SEEDS; seed++) {
+        let battle = loadScenario(scenario, seed) as BattleState;
+        for (let t = 0; t < TURNS; t++) {
+          const expected = promise(battle);
+          const { state, events } = resolveTurn(battle, []);
+          expect(state.pathogens).toEqual(expected.pathogens);
+          // Pathogen actions come first, then only the inflammation tick, which never touches them.
+          const acts = events.filter((e) => !TICK.includes(e.type));
+          expect(events.slice(acts.length).map((e) => e.type)).toEqual(
+            events.filter((e) => TICK.includes(e.type)).map((e) => e.type),
+          );
+          expect(acts.map((e) => e.type)).toEqual(expected.events);
+          acts.forEach((e, k) => {
+            expect("pathogenId" in e && e.pathogenId).toBe(
+              battle.intents[k].pathogenId,
+            );
+          });
+          for (const e of acts) seen.add(e.type);
+          expect(state.swarms).toEqual(battle.swarms);
+          expect(state.turn).toBe(battle.turn + 1);
+          battle = state;
+        }
+      }
+      // The board must actually exercise every pathogen action, including a block.
+      expect([...seen].sort()).toEqual(["Blocked", "Grew", "Spored", "Spread"]);
+    });
+
+    it("matches the telegraph marks the renderer draws", () => {
+      for (let seed = 1; seed <= 100; seed++) {
+        for (const battle of run(seed).slice(0, -1)) {
+          const next = resolveTurn(battle, []).state;
+          for (const m of telegraph(battle)) {
+            const after = next.pathogens.find((p) => p.id === m.pathogenId);
+            expect(after?.size).toBe(m.sizeAfter);
+            if (m.to && !m.blockedBy) {
+              const child = next.pathogens.find((p) => sameCoord(p.at, m.to!));
+              expect(child?.size).toBe(m.childSize);
+            }
           }
         }
       }
-    }
-  });
-});
+    });
+  },
+);
 
 describe("intents", () => {
   it("are legal, unique per pathogen and target, and valid every turn", () => {
@@ -185,14 +198,14 @@ describe("resolveTurn", () => {
     }
   });
 
-  it("treats hold as no order and rejects wallOff for now", () => {
+  it("treats hold as no order and rejects a wall-off with no load", () => {
     const battle = load(1);
     expect(resolveTurn(battle, [{ type: "hold", swarmId: "s1" }])).toEqual(
       resolveTurn(battle, []),
     );
     expect(() =>
       resolveTurn(battle, [{ type: "wallOff", swarmId: "s1" }]),
-    ).toThrow(/not supported/);
+    ).toThrow(/s1 has nothing to wall off/);
     expect(() =>
       resolveTurn(battle, [
         { type: "hold", swarmId: "s1" },
@@ -223,7 +236,7 @@ describe("resolveTurn", () => {
       ],
     };
     const { state, events } = resolveTurn(battle, []);
-    expect(events).toEqual([
+    expect(events.filter((e) => !TICK.includes(e.type))).toEqual([
       {
         type: "Blocked",
         pathogenId: "p1",
@@ -251,7 +264,9 @@ describe("resolveTurn", () => {
       ],
     };
     const { state, events } = resolveTurn(battle, []);
-    expect(events.map((e) => e.type)).toEqual(["Spread"]);
+    expect(
+      events.filter((e) => !TICK.includes(e.type)).map((e) => e.type),
+    ).toEqual(["Spread"]);
     expect(state.pathogens.filter((p) => sameCoord(p.at, to))).toEqual([
       { id: "p3", kind: "strep", size: 1, at: to, hidden: false },
     ]);

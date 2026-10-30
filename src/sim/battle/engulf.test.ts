@@ -8,10 +8,12 @@ import type {
   Coord,
   Intent,
   Order,
+  SimEvent,
   Swarm,
 } from "../types";
 import { validateBattle } from "../validate";
 import { telegraph } from "./intents";
+import { battleStatus } from "./outcome";
 import {
   engulfPreview,
   engulfTargets,
@@ -23,11 +25,11 @@ import {
 } from "./orders";
 import { resolveTurn } from "./resolve";
 
-// First board: s1 1,6  s2 3,6  s3 5,6; p1 strep (leaky) size 2 at 1,2; p2 aspergillus (sealed)
+// Duel board: s1 1,6  s2 3,6  s3 5,6; p1 strep (leaky) size 2 at 1,2; p2 aspergillus (sealed)
 // size 2 at 5,2.
 
 function load(seed = 1, residualKillChance?: number): BattleState {
-  const b = loadScenario("first-board", seed) as BattleState;
+  const b = loadScenario("duel", seed) as BattleState;
   return residualKillChance === undefined ? b : { ...b, residualKillChance };
 }
 
@@ -52,6 +54,12 @@ const withSwarm = (
   ...battle,
   swarms: battle.swarms.map((s) => (s.id === id ? { ...s, ...patch } : s)),
 });
+
+/** Event types without the end-of-turn inflammation tick. */
+const acts = (events: readonly SimEvent[]) =>
+  events
+    .map((e) => e.type)
+    .filter((t) => t !== "InflammationChanged" && t !== "TissueDamaged");
 
 const reasons = (battle: BattleState, orders: Order[]) =>
   validateOrders(battle, orders).map((c) => c.reason);
@@ -222,8 +230,7 @@ describe("engulf resolution", () => {
     expect(state.pathogens).toEqual([]);
     expect(state.nextId).toBe(battle.nextId);
     // Without the engulfs both actions land.
-    const idle = resolveTurn(battle, []).events.map((e) => e.type);
-    expect(idle).toEqual(["Spread", "Spored"]);
+    expect(acts(resolveTurn(battle, []).events)).toEqual(["Spread", "Spored"]);
   });
 
   it("keeps other pathogens' intents running", () => {
@@ -231,7 +238,7 @@ describe("engulf resolution", () => {
     const { events } = resolveTurn(battle, [
       engulf("s1", "p1", { x: 1, y: 3 }),
     ]);
-    expect(events.map((e) => e.type)).toEqual([
+    expect(acts(events)).toEqual([
       "SwarmMoved",
       "Engulfed",
       "Killed",
@@ -481,7 +488,7 @@ describe("random legal orders with engulfs", () => {
     const seen = new Set<string>();
     for (let seed = 1; seed <= 200; seed++) {
       let battle = load(seed, 0.5);
-      for (let t = 0; t < 6; t++) {
+      while (!battleStatus(battle).over) {
         let orders: Order[] = [];
         for (const s of battle.swarms) {
           const targets = engulfTargets(battle, s.id, orders);
@@ -495,6 +502,9 @@ describe("random legal orders with engulfs", () => {
               swarmId: s.id,
               to: m.at,
             })),
+            ...(s.load.length > 0 && s.busyTurns === 0
+              ? [{ type: "wallOff", swarmId: s.id } as Order]
+              : []),
           ]);
           orders = withOrder(orders, choice ?? { type: "hold", swarmId: s.id });
         }
@@ -533,7 +543,14 @@ describe("random legal orders with engulfs", () => {
       }
     }
     expect([...seen]).toEqual(
-      expect.arrayContaining(["Engulfed", "Killed", "Loaded", "ResidualKill"]),
+      expect.arrayContaining([
+        "Engulfed",
+        "Killed",
+        "Loaded",
+        "ResidualKill",
+        "Walled",
+        "InflammationChanged",
+      ]),
     );
   });
 });
