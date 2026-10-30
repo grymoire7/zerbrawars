@@ -19,6 +19,15 @@ import {
   type InflammationPreview,
 } from "../sim/battle/resolve";
 import { pathogenKind } from "../sim/pathogens";
+import {
+  entityAt,
+  infoFor,
+  sameRef,
+  swarmStatuses,
+  type InfoCard,
+  type InfoRef,
+  type SwarmStatus,
+} from "./info";
 import { createPlayback, type Playback, type Speed } from "../render/playback";
 import type {
   BattleOutcome,
@@ -291,7 +300,11 @@ export interface Controller {
   targets(): readonly EngulfTarget[];
   /** Odds for the hovered target, else the selected swarm's engulf order, else all engulf orders. */
   odds(): OddsEntry[];
-  /** Pointer tile (null = off the board); only changes the odds panel. */
+  /** One status per swarm, for the order list. */
+  statuses(): SwarmStatus[];
+  /** Info card for the hovered, else tapped, else selected pathogen or swarm. */
+  info(): InfoCard | null;
+  /** Pointer tile (null = off the board); only changes the odds and info panels. */
   hover(at: Coord | null): void;
   /** Telegraph marks as they will resolve with the pending orders. */
   marks(): TelegraphMark[];
@@ -328,6 +341,7 @@ export function createController(
   let ui: OrderUi = NONE;
   let problems: readonly string[] = [];
   let hovered: Coord | null = null;
+  let inspected: InfoRef | null = null;
   let last: PlayedTurn | null = null;
   let pb: Playback | null = null;
   let speed: Speed = 1;
@@ -335,6 +349,7 @@ export function createController(
   const playing = () => pb !== null && !pb.done;
   const hoverTarget = () =>
     hovered ? targetAt(state, ui, hovered) : undefined;
+  const hoverRef = () => (hovered ? entityAt(state, hovered) : null);
   const over = () => battleStatus(state).over;
   const set = (next: OrderUi) => {
     if (playing() || over()) return;
@@ -427,11 +442,26 @@ export function createController(
         return e ? [e] : [];
       });
     },
+    statuses: () => swarmStatuses(state, ui.orders, ui.selected),
+    info() {
+      if (playing()) return null;
+      const ref =
+        hoverRef() ??
+        inspected ??
+        (ui.selected ? { kind: "swarm" as const, id: ui.selected } : null);
+      return ref ? infoFor(state, c.marks(), ref, ui.orders) : null;
+    },
     hover(at) {
       if (playing()) return;
       const before = hoverTarget()?.pathogenId;
+      const beforeRef = hoverRef();
       hovered = at;
-      if (hoverTarget()?.pathogenId !== before) onChange(c);
+      if (
+        hoverTarget()?.pathogenId !== before ||
+        !sameRef(hoverRef(), beforeRef)
+      ) {
+        onChange(c);
+      }
     },
     marks: () =>
       playing() && last
@@ -458,7 +488,10 @@ export function createController(
     select: (id) => set({ ...ui, selected: id }),
     cycle: (dir = 1) =>
       set({ ...ui, selected: cycleSelection(state, ui.selected, dir) }),
-    tap: (at) => set(tapTile(state, ui, at)),
+    tap(at) {
+      if (!playing()) inspected = at ? entityAt(state, at) : null;
+      set(tapTile(state, ui, at));
+    },
     clearOrder: (id) => set({ ...ui, orders: clearOrder(ui.orders, id) }),
     endTurn() {
       if (!c.canEndTurn()) return;
@@ -476,6 +509,7 @@ export function createController(
       ui = NONE;
       problems = [];
       hovered = null;
+      inspected = null;
       play(last, reduced);
     },
     reset() {
@@ -483,6 +517,7 @@ export function createController(
       events = [];
       ui = NONE;
       problems = [];
+      inspected = null;
       last = null;
       pb = null;
       onChange(c);

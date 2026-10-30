@@ -17,14 +17,17 @@ import { battleStatus } from "../sim/battle/outcome";
 import { PARAMS } from "../sim/params";
 import { pathogenKind } from "../sim/pathogens";
 import type { Coord } from "../sim/types";
-import { getUiRoot } from "../ui";
+import { getPanels, getUiRoot } from "../ui";
 import { createDebugPanel } from "../ui/debugPanel";
+import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { createOutcomeOverlay } from "../ui/outcome";
-import { createController, logLines } from "./controller";
+import { createController, describeOrder, logLines } from "./controller";
+import { endTurnHint, heatKey, orderCount } from "./info";
 
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
+const panels = getPanels();
 
 const params = new URLSearchParams(window.location.search);
 const requested = params.get("scenario") ?? DEFAULT_SCENARIO;
@@ -73,7 +76,9 @@ const playbackView = createPlaybackView({
   fx: fxView,
   tilePosition: view.tilePosition,
 });
-const hud = createHud(ui, {
+const help = createHelp(ui);
+const hud = createHud(panels, {
+  onHelp: () => help.open(),
   onEndTurn: () => controller.endTurn(),
   onSkip: () => controller.skip(),
   onReplay: () => controller.replay(),
@@ -96,9 +101,7 @@ const outcomeOverlay = createOutcomeOverlay(ui, {
 });
 let outcomeShown = false;
 const readout = document.createElement("div");
-readout.style.cssText =
-  "position:absolute;left:8px;top:8px;font:12px monospace;color:#c8ccd4;opacity:0.7";
-ui.appendChild(readout);
+readout.style.cssText = "font:11px monospace;color:#c8ccd4;opacity:0.7;";
 let hovered: Coord | null = null;
 let selected: Coord | null = null;
 const fmt = (c: Coord | null) => (c ? `${c.x},${c.y}` : "-");
@@ -158,7 +161,12 @@ function refresh() {
   // The pre-turn telegraph stays up (dimmed) while the turn plays out over it.
   if (!playing || began) telegraphView.update(s, controller.marks());
   telegraphView.setDim(playing !== null);
-  orderView.update(s, controller.orders(), controller.targets());
+  const statuses = controller.statuses();
+  const idle =
+    playing || controller.over()
+      ? []
+      : statuses.filter((w) => w.status === "none").map((w) => w.swarmId);
+  orderView.update(s, controller.orders(), controller.targets(), idle);
   const sel = s.swarms.find((w) => w.id === controller.selected());
   view.setSelected(sel?.at ?? null);
   view.setOptions(controller.options());
@@ -184,7 +192,24 @@ function refresh() {
     tissueHealth: s.tissueHealth,
     canEndTurn: controller.canEndTurn(),
     log: logLines(controller.lastEvents()),
-    orders: controller.pending(),
+    orders: statuses.map((w) => {
+      const o = controller.orders().find((q) => q.swarmId === w.swarmId);
+      return {
+        swarmId: w.swarmId,
+        label: w.label,
+        detail: o ? describeOrder(o).slice(w.swarmId.length + 1) : "",
+        hasOrder: o !== undefined,
+        idle: w.status === "none",
+        selected: w.selected,
+      };
+    }),
+    holding: orderCount(statuses).holding,
+    hint: playing ? "" : endTurnHint(orderCount(statuses).holding),
+    info: controller.info(),
+    key: {
+      heatLevels: heatKey(s, forecast?.rising.length ?? 0).levels,
+      forecast: (forecast?.rising.length ?? 0) > 0,
+    },
     odds: controller.odds(),
     problems: controller.problems(),
     wall: wall && {
@@ -207,12 +232,14 @@ function refresh() {
   });
 }
 refresh();
-const debug = createDebugPanel(ui, {
+const debug = createDebugPanel(panels.scroll, {
   scenario: state.scenario,
   seed: validSeed ?? PARAMS.defaultSeed,
   skipPlayback: controller.reducedMotion(),
   onSkipPlayback: (on) => controller.setReducedMotion(on),
 });
+panels.scroll.append(readout);
+help.showFirstTime();
 
 // Pointer events (not mouse) so touch works; the canvas must not pan or zoom on touch.
 canvas.style.touchAction = "none";
@@ -239,6 +266,7 @@ canvas.addEventListener("pointerdown", (e) => {
   controller.tap(hovered);
 });
 window.addEventListener("keydown", (e) => {
+  if (help.isOpen()) return;
   const t = e.target as HTMLElement | null;
   if (t && ["INPUT", "SELECT", "TEXTAREA"].includes(t.tagName)) return;
   // A focused, enabled button already turns Enter and Space into a click.
@@ -298,6 +326,7 @@ function frame(now: number = performance.now()) {
   playbackView.tick(dt);
   pathogenView.tick(dt);
   swarmView.tick(dt);
+  orderView.tick(dt);
   render();
   requestAnimationFrame(frame);
 }

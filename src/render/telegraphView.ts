@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { telegraph, type TelegraphMark } from "../sim/battle/intents";
+import { labelSprite } from "./labels";
 import type { BattleState, Coord } from "../sim/types";
 
 export interface TelegraphView {
@@ -19,7 +20,8 @@ const BLOCKED_COLOR = 0xff5040;
 const CANCELLED_COLOR = 0x8a8f9a;
 
 const LIFT = 0.5;
-const MAX_PIPS = 8;
+const LABEL_HEIGHT = 0.26;
+const css = (hex: number) => `#${hex.toString(16).padStart(6, "0")}`;
 const UP = new THREE.Vector3(0, 1, 0);
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 
@@ -50,9 +52,10 @@ export function createTelegraphView(
       opacity: 0.55,
     }),
   };
-  const baseOpacity = new Map(
+  const baseOpacity = new Map<THREE.Material, number>(
     Object.values(mats).map((m) => [m, m.opacity] as const),
   );
+  let dimmed = false;
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
   const coneGeo = new THREE.ConeGeometry(0.18, 0.34, 3);
   const diamondGeo = new THREE.OctahedronGeometry(0.17);
@@ -82,6 +85,15 @@ export function createTelegraphView(
     const mesh = add(boxGeo, m, a.clone().add(b).multiplyScalar(0.5));
     mesh.scale.set(len, width, width);
     mesh.quaternion.setFromUnitVectors(X_AXIS, dir.normalize());
+  };
+
+  // Text beside an arrow says what it is; the sprite materials are shared, so dimming tracks them.
+  const label = (text: string, at: THREE.Vector3, color: number) => {
+    const sprite = labelSprite(text, LABEL_HEIGHT, { color: css(color) });
+    if (!baseOpacity.has(sprite.material)) baseOpacity.set(sprite.material, 1);
+    sprite.material.opacity = dimmed ? 0.35 : 1;
+    sprite.position.copy(at);
+    group.add(sprite);
   };
 
   const tileY = (c: Coord, y: number) =>
@@ -132,22 +144,18 @@ export function createTelegraphView(
     segment(p.clone().sub(side), p.clone().add(side), 0.1, mats.blocked);
   };
 
-  const drawGrow = (m: TelegraphMark) => {
+  const drawGrow = (m: TelegraphMark, size: number) => {
     const base = tileY(m.from, 0.95);
     add(
       coneGeo,
       mats.grow,
       base.clone().add(new THREE.Vector3(0, 0.2, 0)),
     ).quaternion.setFromUnitVectors(UP, UP);
-    const n = Math.min(m.sizeAfter, MAX_PIPS);
-    for (let i = 0; i < n; i++) {
-      const pip = add(
-        boxGeo,
-        mats.grow,
-        base.clone().add(new THREE.Vector3((i - (n - 1) / 2) * 0.14, -0.05, 0)),
-      );
-      pip.scale.set(0.1, 0.1, 0.1);
-    }
+    label(
+      `grow ${size}\u2192${m.sizeAfter}`,
+      base.clone().add(new THREE.Vector3(0, 0.62, 0)),
+      GROW_COLOR,
+    );
   };
 
   /** An engulfed pathogen's intent: faint dashes, no arrowhead, a small x where it would land. */
@@ -171,6 +179,11 @@ export function createTelegraphView(
         );
       }
     }
+    label(
+      "cancelled",
+      mid.clone().add(new THREE.Vector3(0, 0.3, 0)),
+      CANCELLED_COLOR,
+    );
     const r = 0.14;
     for (const s of [-1, 1]) {
       segment(
@@ -193,6 +206,7 @@ export function createTelegraphView(
       stopBar(end, dir);
       cross(to);
       outline(to, mats.blocked, false);
+      label("blocked", tileY(to, 0.75), BLOCKED_COLOR);
       return;
     }
     const tip = b.clone().addScaledVector(dir, -0.3);
@@ -204,6 +218,14 @@ export function createTelegraphView(
     );
     head.quaternion.setFromUnitVectors(UP, dir);
     outline(to, mats.spread, false);
+    label(
+      "spread",
+      a
+        .clone()
+        .lerp(b, 0.5)
+        .add(new THREE.Vector3(0, 0.3, 0)),
+      SPREAD_COLOR,
+    );
   };
 
   const drawSpore = (m: TelegraphMark, to: Coord) => {
@@ -226,10 +248,12 @@ export function createTelegraphView(
       stopBar(at(end), dir);
       cross(to);
       outline(to, mats.blocked, true);
+      label("blocked", tileY(to, 0.75), BLOCKED_COLOR);
       return;
     }
     add(diamondGeo, mats.spore, at(1));
     outline(to, mats.spore, true);
+    label("spore", at(0.5).add(new THREE.Vector3(0, 0.25, 0)), SPORE_COLOR);
   };
 
   return {
@@ -238,12 +262,15 @@ export function createTelegraphView(
       group.clear();
       for (const m of marks) {
         if (m.cancelledBy) drawCancelled(m);
-        else if (m.type === "grow" || !m.to) drawGrow(m);
-        else if (m.type === "spread") drawSpread(m, m.to);
+        else if (m.type === "grow" || !m.to) {
+          const size = state.pathogens.find((p) => p.id === m.pathogenId)?.size;
+          drawGrow(m, size ?? m.sizeAfter);
+        } else if (m.type === "spread") drawSpread(m, m.to);
         else drawSpore(m, m.to);
       }
     },
     setDim(dim) {
+      dimmed = dim;
       for (const [m, o] of baseOpacity) m.opacity = dim ? o * 0.35 : o;
     },
   };

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { labelMaterial, sizeLabel } from "./labels";
 import { PATHOGEN_KINDS, type PathogenForm } from "../sim/pathogens";
 import type { BattleState, Coord, Pathogen, PathogenId } from "../sim/types";
 
@@ -18,7 +19,7 @@ export interface PathogenView {
     dy: number,
     dz: number,
   ): void;
-  /** Shows a different size (body scale and pips) without rebuilding everything. */
+  /** Shows a different size (body scale and size badge) without rebuilding everything. */
   setSize(id: PathogenId, size: number): void;
   /** Resets every pose to rest. */
   clearPoses(): void;
@@ -33,8 +34,7 @@ export const FORM_COLOR: Record<PathogenForm, number> = {
   mold: 0x6f4fb8,
 };
 const RIM_COLOR = 0xf4efe0;
-const PIP_COLOR = 0xffffff;
-const MAX_PIPS = 3;
+const BADGE_HEIGHT = 0.34;
 
 // Fixed offsets (unit-ish sphere packing) so every bacterium cluster looks the same.
 const CLUSTER: readonly (readonly [number, number, number, number])[] = [
@@ -62,7 +62,6 @@ export function createPathogenView(
   spikeGeo.translate(0, 0.15, 0);
   const rimGeo = new THREE.TorusGeometry(0.4, 0.045, 8, 28);
   rimGeo.rotateX(Math.PI / 2);
-  const pipGeo = new THREE.BoxGeometry(0.1, 0.05, 0.1);
   const mats: Record<PathogenForm, THREE.MeshStandardMaterial> = {
     bacterium: new THREE.MeshStandardMaterial({
       color: FORM_COLOR.bacterium,
@@ -78,12 +77,11 @@ export function createPathogenView(
     roughness: 0.3,
     metalness: 0.4,
   });
-  const pipMat = new THREE.MeshBasicMaterial({ color: PIP_COLOR });
 
   interface Token {
     readonly root: THREE.Group;
     readonly body: THREE.Group;
-    readonly pips: THREE.Mesh[];
+    readonly badge: THREE.Sprite;
     readonly home: THREE.Vector3;
     size: number;
   }
@@ -131,12 +129,11 @@ export function createPathogenView(
   const sizeToken = (t: Token, size: number) => {
     t.size = size;
     t.body.scale.setScalar(0.7 + 0.2 * Math.min(size, 3));
-    // Size pips: a row on the near edge of the tile.
-    const n = Math.min(Math.max(size, 1), MAX_PIPS);
-    t.pips.forEach((pip, i) => {
-      pip.visible = i < n;
-      pip.position.set((i - (n - 1) / 2) * 0.16, 0.03, 0.44);
+    t.badge.material = labelMaterial(String(size), {
+      background: "rgba(20,22,28,0.92)",
+      round: true,
     });
+    sizeLabel(t.badge, BADGE_HEIGHT);
   };
 
   const buildToken = (p: Pathogen): Token => {
@@ -150,14 +147,13 @@ export function createPathogenView(
       rim.position.y = 0.05;
       root.add(rim);
     }
-    const pips = Array.from({ length: MAX_PIPS }, () => {
-      const pip = new THREE.Mesh(pipGeo, pipMat);
-      root.add(pip);
-      return pip;
-    });
+    const badge = new THREE.Sprite();
+    badge.position.set(-0.3, 0.3, 0.32);
+    badge.renderOrder = 12;
+    root.add(badge);
     const home = tilePosition(p.at);
     root.position.copy(home);
-    const t: Token = { root, body, pips, home, size: p.size };
+    const t: Token = { root, body, badge, home, size: p.size };
     sizeToken(t, p.size);
     return t;
   };

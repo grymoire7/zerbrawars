@@ -13,7 +13,11 @@ export interface OrderView {
     state: BattleState,
     orders: readonly Order[],
     targets?: readonly EngulfTarget[],
+    /** Swarms with no order yet, which get a soft pulsing ring. */
+    idle?: readonly string[],
   ): void;
+  /** Pulses the idle rings. */
+  tick(dtSeconds: number): void;
 }
 
 const LIFT = 0.1;
@@ -42,9 +46,18 @@ export function createOrderView(
     opacity: 0.4,
     depthWrite: false,
   });
+  const idleMat = new THREE.MeshBasicMaterial({
+    color: 0xcfeefa,
+    depthTest: false,
+    transparent: true,
+    opacity: 0.4,
+    side: THREE.DoubleSide,
+  });
+  let clock = 0;
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
   const ringGeo = new THREE.RingGeometry(0.34, 0.44, 24);
   const dotGeo = new THREE.CircleGeometry(0.1, 12);
+  const idleGeo = new THREE.RingGeometry(0.4, 0.45, 32);
   const reticleGeo = new THREE.RingGeometry(0.47, 0.51, 32);
   const coneGeo = new THREE.ConeGeometry(0.16, 0.3, 3);
   const cellGeo = new THREE.SphereGeometry(1, 8, 6);
@@ -186,10 +199,26 @@ export function createOrderView(
     head.quaternion.setFromUnitVectors(UP, dir);
   };
 
+  const flatIdle = (c: Coord) => {
+    const m = new THREE.Mesh(idleGeo, idleMat);
+    m.rotation.x = -Math.PI / 2;
+    m.position.copy(at(c, 0.06));
+    m.renderOrder = 8;
+    group.add(m);
+  };
+
   return {
     group,
-    update(state, orders, targets = []) {
+    tick(dt) {
+      clock += dt;
+      idleMat.opacity = 0.4 + 0.3 * Math.sin(clock * 3);
+    },
+    update(state, orders, targets = [], idle = []) {
       group.clear();
+      for (const id of idle) {
+        const swarm = state.swarms.find((s) => s.id === id);
+        if (swarm) flatIdle(swarm.at);
+      }
       const queued = new Set(
         orders.flatMap((o) => (o.type === "engulf" ? [o.pathogenId] : [])),
       );

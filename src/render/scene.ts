@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { setLabelBoost } from "./labels";
 
 export interface SceneContext {
   renderer: THREE.WebGLRenderer;
@@ -11,7 +12,10 @@ export interface SceneContext {
 const VIEW_DIR = new THREE.Vector3(0, 7, 6).normalize();
 const FRAME_MARGIN = 0.94;
 
-/** `extent` is the board footprint in world units; the camera backs off until all of it fits. */
+/**
+ * `extent` is the board footprint in world units; the camera backs off until all of it fits in
+ * the canvas's container (not the window).
+ */
 export function createScene(
   canvas: HTMLCanvasElement,
   extent: { width: number; depth: number },
@@ -58,15 +62,18 @@ export function createScene(
     fits(hi);
   };
 
+  const host = canvas.parentElement ?? document.body;
   const resize = () => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const w = host.clientWidth;
+    const h = host.clientHeight;
+    if (w === 0 || h === 0) return;
+    setLabelBoost(w, h);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     frame();
   };
-  window.addEventListener("resize", resize);
+  new ResizeObserver(resize).observe(host);
   resize();
 
   return {
