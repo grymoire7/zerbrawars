@@ -1,4 +1,5 @@
 import { createBoardView } from "../render/boardView";
+import { createOrderView } from "../render/orderView";
 import { createPathogenView } from "../render/pathogenView";
 import { createScene } from "../render/scene";
 import { createSwarmView } from "../render/swarmView";
@@ -49,34 +50,17 @@ const view = createBoardView(scene, state);
 const pathogenView = createPathogenView(scene, view.tilePosition);
 const swarmView = createSwarmView(scene, view.tilePosition);
 const telegraphView = createTelegraphView(scene, view.tilePosition);
+const orderView = createOrderView(scene, view.tilePosition);
 const hud = createHud(ui, {
   onEndTurn: () => controller.endTurn(),
   onReset: () => controller.reset(),
+  onSelect: (id) => controller.select(id),
+  onClearOrder: (id) => controller.clearOrder(id),
 });
-function refresh(s: typeof state) {
-  view.update(s);
-  pathogenView.update(s);
-  swarmView.update(s);
-  telegraphView.update(s);
-  hud.update({
-    turn: s.turn,
-    maxTurns: s.maxTurns,
-    tissueHealth: s.tissueHealth,
-    canEndTurn: controller.canEndTurn(),
-    log: controller.lastEvents().map(describeEvent),
-  });
-}
-refresh(state);
-createDebugPanel(ui, {
-  scenario: state.scenario,
-  seed: validSeed ?? PARAMS.defaultSeed,
-});
-
 const readout = document.createElement("div");
 readout.style.cssText =
   "position:absolute;left:8px;top:8px;font:12px monospace;color:#c8ccd4;opacity:0.7";
 ui.appendChild(readout);
-
 let hovered: Coord | null = null;
 let selected: Coord | null = null;
 const fmt = (c: Coord | null) => (c ? `${c.x},${c.y}` : "-");
@@ -84,6 +68,32 @@ const updateReadout = () => {
   readout.textContent = `hover ${fmt(hovered)}  selected ${fmt(selected)}`;
 };
 updateReadout();
+function refresh(s: typeof state) {
+  view.update(s);
+  pathogenView.update(s);
+  swarmView.update(s);
+  telegraphView.update(s, controller.marks());
+  orderView.update(s, controller.orders());
+  const sel = s.swarms.find((w) => w.id === controller.selected());
+  view.setSelected(sel?.at ?? null);
+  view.setOptions(controller.options());
+  selected = sel?.at ?? null;
+  updateReadout();
+  hud.update({
+    turn: s.turn,
+    maxTurns: s.maxTurns,
+    tissueHealth: s.tissueHealth,
+    canEndTurn: controller.canEndTurn(),
+    log: controller.lastEvents().map(describeEvent),
+    orders: controller.pending(),
+    problems: controller.problems(),
+  });
+}
+refresh(state);
+createDebugPanel(ui, {
+  scenario: state.scenario,
+  seed: validSeed ?? PARAMS.defaultSeed,
+});
 
 // Pointer events (not mouse) so touch works; the canvas must not pan or zoom on touch.
 canvas.style.touchAction = "none";
@@ -104,10 +114,18 @@ canvas.addEventListener("pointermove", (e) => {
 });
 canvas.addEventListener("pointerdown", (e) => {
   hovered = pickAt(e);
-  selected = hovered;
   view.setHover(hovered);
-  view.setSelected(selected);
-  updateReadout();
+  controller.tap(hovered);
+});
+window.addEventListener("keydown", (e) => {
+  const t = e.target as HTMLElement | null;
+  if (t && ["INPUT", "SELECT", "TEXTAREA"].includes(t.tagName)) return;
+  if (e.key === "Tab") {
+    e.preventDefault();
+    controller.cycle(e.shiftKey ? -1 : 1);
+  } else if (e.key === "Escape") {
+    controller.select(null);
+  }
 });
 canvas.addEventListener("pointerleave", () => {
   hovered = null;

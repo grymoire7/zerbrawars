@@ -12,6 +12,9 @@ const BASE_B = new THREE.Color(0x84716f);
 const INFLAMED = new THREE.Color(0xc4554a);
 const HOVER_TINT = new THREE.Color(0xffffff);
 const SLAB = 0x3a2f31;
+// Order UI: magenta-violet, apart from the telegraph's yellow/blue/red/white. Shape carries it too:
+// a thick solid frame for the selection, filled discs with a ring for destinations.
+export const ORDER_COLOR = 0xd05cff;
 
 export interface BoardView {
   readonly group: THREE.Group;
@@ -21,6 +24,8 @@ export interface BoardView {
   pick(pointer: { x: number; y: number }, camera: THREE.Camera): Coord | null;
   setHover(coord: Coord | null): void;
   setSelected(coord: Coord | null): void;
+  /** Marks legal destination tiles for the selected swarm. */
+  setOptions(coords: readonly Coord[]): void;
   /** Centre of a tile in world space (y = top surface), for later views to place things. */
   tilePosition(coord: Coord): THREE.Vector3;
 }
@@ -83,9 +88,37 @@ export function createBoardView(
     return mesh;
   };
   const hoverFrame = outline(0xffffff, TILE - GAP - 0.06);
-  const selectedFrame = outline(0xffd23f, TILE - GAP - 0.16);
+  const selectedFrame = outline(ORDER_COLOR, TILE - GAP - 0.34);
   selectedFrame.position.y = 0.012;
   hoverFrame.position.y = 0.006;
+
+  const optionMarks: THREE.Group[] = [];
+  const discGeo = new THREE.CircleGeometry(0.2, 20);
+  const ringGeo = new THREE.RingGeometry(0.3, 0.37, 24);
+  const discMat = new THREE.MeshBasicMaterial({
+    color: ORDER_COLOR,
+    transparent: true,
+    opacity: 0.55,
+    side: THREE.DoubleSide,
+  });
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: ORDER_COLOR,
+    side: THREE.DoubleSide,
+  });
+  const makeOptionMark = () => {
+    const g = new THREE.Group();
+    for (const [geo, mat] of [
+      [discGeo, discMat],
+      [ringGeo, ringMat],
+    ] as const) {
+      const m = new THREE.Mesh(geo, mat);
+      m.rotation.x = -Math.PI / 2;
+      g.add(m);
+    }
+    g.position.y = 0.01;
+    group.add(g);
+    return g;
+  };
 
   let hover: Coord | null = null;
   let selected: Coord | null = null;
@@ -146,6 +179,19 @@ export function createBoardView(
     setSelected(coord) {
       selected = coord && inBounds(board, coord) ? coord : null;
       place(selectedFrame, selected);
+    },
+    setOptions(coords) {
+      while (optionMarks.length < coords.length) {
+        optionMarks.push(makeOptionMark());
+      }
+      optionMarks.forEach((g, i) => {
+        const c = coords[i];
+        g.visible = c !== undefined;
+        if (c) {
+          const p = toWorld(c);
+          g.position.set(p.x, 0.01, p.z);
+        }
+      });
     },
     tilePosition: (c) => toWorld(c),
   };

@@ -4,8 +4,8 @@ import type { BattleState, Coord } from "../sim/types";
 
 export interface TelegraphView {
   readonly group: THREE.Group;
-  /** Redraws the marks for state.intents. Reads only; never mutates it. */
-  update(state: BattleState): void;
+  /** Redraws the given marks (default: state.intents with no orders). Reads only. */
+  update(state: BattleState, marks?: readonly TelegraphMark[]): void;
 }
 
 // Shape carries the meaning (solid straight arrow = spread, dotted arc = spore, X + bar = blocked);
@@ -190,9 +190,9 @@ export function createTelegraphView(
 
   return {
     group,
-    update(state) {
+    update(state, marks = telegraph(state)) {
       group.clear();
-      for (const m of telegraph(state)) {
+      for (const m of marks) {
         if (m.type === "grow" || !m.to) drawGrow(m);
         else if (m.type === "spread") drawSpread(m, m.to);
         else drawSpore(m, m.to);
