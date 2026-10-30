@@ -52,7 +52,7 @@ describe("first-board", () => {
         reachableTiles(
           battle.board,
           s.at,
-          PARAMS.swarmMoves,
+          PARAMS.swarmMoveRange,
           swarmBlockers(battle, s.id),
         ).some((t) => isAdjacent(t.at, p.at)),
       );

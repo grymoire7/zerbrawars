@@ -185,15 +185,18 @@ describe("resolveTurn", () => {
     }
   });
 
-  it("accepts hold orders and rejects the rest for now", () => {
+  it("treats hold as no order and rejects engulf and wallOff for now", () => {
     const battle = load(1);
     expect(resolveTurn(battle, [{ type: "hold", swarmId: "s1" }])).toEqual(
       resolveTurn(battle, []),
     );
     expect(() =>
       resolveTurn(battle, [
-        { type: "move", swarmId: "s1", to: { x: 1, y: 5 } },
+        { type: "engulf", swarmId: "s1", pathogenId: "p1", from: null },
       ]),
+    ).toThrow(/not supported/);
+    expect(() =>
+      resolveTurn(battle, [{ type: "wallOff", swarmId: "s1" }]),
     ).toThrow(/not supported/);
     expect(() =>
       resolveTurn(battle, [
@@ -203,7 +206,7 @@ describe("resolveTurn", () => {
     ).toThrow(/two orders/);
     expect(() =>
       resolveTurn(battle, [{ type: "hold", swarmId: "s9" }]),
-    ).toThrow(/missing swarm/);
+    ).toThrow(/no swarm s9/);
   });
 
   it("blocks a spread onto a swarm and charges no cost", () => {

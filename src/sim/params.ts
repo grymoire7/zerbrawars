@@ -3,8 +3,13 @@ export const PARAMS = {
   boardWidth: 7,
   boardHeight: 7,
   swarmCount: 3,
-  /** Tiles a free swarm can move per turn. */
-  swarmMoves: 3,
+  /**
+   * Steps a free swarm can move per turn. 3 lets a swarm on the near edge reach row 3 on turn 1,
+   * just in time to stand in a fresh strep spread, but covers at most half a 7x7 board, so a mold
+   * spore 3-4 tiles out still has to be anticipated. Load (T5) and inflammation (T7) cut it to 2
+   * or 1, which stays readable.
+   */
+  swarmMoveRange: 3,
   /** Placeholder (T5). Contained pathogens a swarm can hold. 2 keeps the cap binding with 3 swarms. */
   loadCap: 2,
   /** Placeholder (T5). Moves lost per turn while a swarm holds any load. */

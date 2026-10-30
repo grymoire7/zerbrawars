@@ -14,11 +14,13 @@ import type {
   BattleState,
   Coord,
   Intent,
+  Order,
   Pathogen,
   PathogenId,
   SwarmId,
   TileId,
 } from "../types";
+import { applyMoves } from "./orders";
 
 /**
  * Tiles a spread or spore may target right now: in bounds and holding no pathogen (hidden ones
@@ -129,11 +131,19 @@ export interface TelegraphMark {
   readonly sizeAfter: number;
   /** Size of the new pathogen for spread/spore, 0 for grow. */
   readonly childSize: number;
-  /** A swarm now standing on the target, which would block it. */
+  /** The swarm that will stand on the target once `orders` move, which blocks it. */
   readonly blockedBy: SwarmId | null;
 }
 
-export function telegraph(battle: BattleState): TelegraphMark[] {
+/**
+ * The marks to draw, as they will resolve if the turn ends with `orders`. Uses the same move
+ * code as resolveTurn, so a preview block is a real block. Invalid orders are ignored here.
+ */
+export function telegraph(
+  current: BattleState,
+  orders: readonly Order[] = [],
+): TelegraphMark[] {
+  const battle = applyMoves(current, orders).state;
   return battle.intents.flatMap((i): TelegraphMark[] => {
     const p = battle.pathogens.find((q) => q.id === i.pathogenId);
     if (!p) return [];
