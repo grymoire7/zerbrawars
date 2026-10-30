@@ -14,6 +14,7 @@ const SPREAD_COLOR = 0xffd23f;
 const SPORE_COLOR = 0x6fb8ff;
 const GROW_COLOR = 0xf2f2f2;
 const BLOCKED_COLOR = 0xff5040;
+const CANCELLED_COLOR = 0x8a8f9a;
 
 const LIFT = 0.5;
 const MAX_PIPS = 8;
@@ -40,6 +41,12 @@ export function createTelegraphView(
     spore: mat(SPORE_COLOR),
     grow: mat(GROW_COLOR),
     blocked: mat(BLOCKED_COLOR),
+    cancelled: new THREE.MeshBasicMaterial({
+      color: CANCELLED_COLOR,
+      depthTest: false,
+      transparent: true,
+      opacity: 0.55,
+    }),
   };
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
   const coneGeo = new THREE.ConeGeometry(0.18, 0.34, 3);
@@ -138,6 +145,38 @@ export function createTelegraphView(
     }
   };
 
+  /** An engulfed pathogen's intent: faint dashes, no arrowhead, a small x where it would land. */
+  const drawCancelled = (m: TelegraphMark) => {
+    const a = tileY(m.from, LIFT);
+    const mid = m.to
+      ? a.clone().lerp(tileY(m.to, LIFT), 0.55)
+      : a.clone().add(new THREE.Vector3(0, 0.45, 0));
+    if (m.to) {
+      const b = tileY(m.to, LIFT);
+      const dir = b.clone().sub(a).setY(0).normalize();
+      const from = a.clone().addScaledVector(dir, 0.3);
+      const to = b.clone().addScaledVector(dir, -0.3);
+      const n = Math.max(2, Math.round(from.distanceTo(to) / 0.3));
+      for (let i = 0; i < n; i++) {
+        segment(
+          from.clone().lerp(to, (i + 0.1) / n),
+          from.clone().lerp(to, (i + 0.6) / n),
+          0.05,
+          mats.cancelled,
+        );
+      }
+    }
+    const r = 0.14;
+    for (const s of [-1, 1]) {
+      segment(
+        mid.clone().add(new THREE.Vector3(-r, 0, -r * s)),
+        mid.clone().add(new THREE.Vector3(r, 0, r * s)),
+        0.06,
+        mats.cancelled,
+      );
+    }
+  };
+
   const drawSpread = (m: TelegraphMark, to: Coord) => {
     const a = tileY(m.from, LIFT);
     const b = tileY(to, LIFT);
@@ -193,7 +232,8 @@ export function createTelegraphView(
     update(state, marks = telegraph(state)) {
       group.clear();
       for (const m of marks) {
-        if (m.type === "grow" || !m.to) drawGrow(m);
+        if (m.cancelledBy) drawCancelled(m);
+        else if (m.type === "grow" || !m.to) drawGrow(m);
         else if (m.type === "spread") drawSpread(m, m.to);
         else drawSpore(m, m.to);
       }

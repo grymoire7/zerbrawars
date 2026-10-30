@@ -73,7 +73,7 @@ function refresh(s: typeof state) {
   pathogenView.update(s);
   swarmView.update(s);
   telegraphView.update(s, controller.marks());
-  orderView.update(s, controller.orders());
+  orderView.update(s, controller.orders(), controller.targets());
   const sel = s.swarms.find((w) => w.id === controller.selected());
   view.setSelected(sel?.at ?? null);
   view.setOptions(controller.options());
@@ -86,6 +86,7 @@ function refresh(s: typeof state) {
     canEndTurn: controller.canEndTurn(),
     log: controller.lastEvents().map(describeEvent),
     orders: controller.pending(),
+    odds: controller.odds(),
     problems: controller.problems(),
   });
 }
@@ -111,10 +112,12 @@ canvas.addEventListener("pointermove", (e) => {
   hovered = pickAt(e);
   view.setHover(hovered);
   updateReadout();
+  controller.hover(hovered);
 });
 canvas.addEventListener("pointerdown", (e) => {
   hovered = pickAt(e);
   view.setHover(hovered);
+  controller.hover(hovered);
   controller.tap(hovered);
 });
 window.addEventListener("keydown", (e) => {
@@ -131,6 +134,7 @@ canvas.addEventListener("pointerleave", () => {
   hovered = null;
   view.setHover(null);
   updateReadout();
+  controller.hover(null);
 });
 
 let last = performance.now();

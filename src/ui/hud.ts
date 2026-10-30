@@ -5,6 +5,15 @@ export interface HudOrder {
   readonly selected: boolean;
 }
 
+export interface HudOdds {
+  readonly title: string;
+  readonly organism: string;
+  readonly text: string;
+  readonly killChance: number;
+  readonly pending: boolean;
+  readonly valid: boolean;
+}
+
 export interface HudModel {
   readonly turn: number;
   readonly maxTurns: number;
@@ -12,6 +21,7 @@ export interface HudModel {
   readonly canEndTurn: boolean;
   readonly log: readonly string[];
   readonly orders: readonly HudOrder[];
+  readonly odds: readonly HudOdds[];
   readonly problems: readonly string[];
 }
 
@@ -47,6 +57,11 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
     "border-color:#ff5040;color:#ffb4aa;";
   problems.setAttribute("role", "alert");
 
+  const odds = document.createElement("div");
+  odds.style.cssText =
+    "display:flex;flex-direction:column;gap:6px;align-items:stretch;pointer-events:auto;" +
+    "max-width:min(92vw,520px);box-sizing:border-box;";
+
   const orders = document.createElement("div");
   orders.style.cssText =
     "display:flex;gap:6px;flex-wrap:wrap;justify-content:center;pointer-events:auto;font:12px monospace;";
@@ -74,7 +89,7 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
   const endTurn = button("End Turn", handlers.onEndTurn);
   const reset = button("Reset", handlers.onReset);
   row.append(stats, endTurn, reset);
-  bar.append(log, problems, orders, row);
+  bar.append(log, problems, odds, orders, row);
   root.appendChild(bar);
 
   let canEnd = true;
@@ -114,8 +129,45 @@ export function createHud(root: HTMLElement, handlers: HudHandlers): Hud {
     return chip;
   };
 
+  const oddsCard = (o: HudOdds) => {
+    const card = document.createElement("div");
+    card.style.cssText =
+      panel +
+      "padding:8px 10px;box-sizing:border-box;font:13px sans-serif;" +
+      (o.pending ? "border:2px solid #d05cff;" : "border-style:dashed;");
+    card.title = o.organism;
+    const head = document.createElement("div");
+    head.style.cssText = "font-weight:600;";
+    head.textContent = `Engulf ${o.title}`;
+    const sub = document.createElement("div");
+    sub.style.cssText = "font-size:11px;opacity:0.65;";
+    sub.textContent = o.organism;
+    const text = document.createElement("div");
+    text.textContent = o.text;
+    if (!o.valid) text.style.color = "#ffb4aa";
+    const pct = Math.round(o.killChance * 100);
+    const meter = document.createElement("div");
+    meter.style.cssText =
+      "display:flex;align-items:center;gap:8px;margin-top:4px;font:12px monospace;";
+    meter.setAttribute("role", "img");
+    meter.setAttribute("aria-label", `Kill chance ${pct}%`);
+    const track = document.createElement("div");
+    track.style.cssText =
+      "flex:1;height:8px;border-radius:4px;background:#3a3f4a;overflow:hidden;";
+    const fill = document.createElement("div");
+    fill.style.cssText = `width:${pct}%;height:100%;background:#d05cff;`;
+    track.append(fill);
+    const label = document.createElement("span");
+    label.textContent = `kill ${pct}%`;
+    meter.append(track, label);
+    card.append(head, sub, text, meter);
+    return card;
+  };
+
   return {
     update(m) {
+      odds.style.display = m.odds.length > 0 ? "flex" : "none";
+      odds.replaceChildren(...m.odds.map(oddsCard));
       orders.style.display = m.orders.length > 0 ? "flex" : "none";
       orders.replaceChildren(...m.orders.map(orderChip));
       problems.style.display = m.problems.length > 0 ? "block" : "none";

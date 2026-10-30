@@ -1,7 +1,17 @@
 import { sameCoord } from "../sim/board";
 import { telegraph, type TelegraphMark } from "../sim/battle/intents";
-import { moveOptions, orderProblems, withOrder } from "../sim/battle/orders";
+import {
+  engulfPreview,
+  engulfTargets,
+  moveOptions,
+  moveRange,
+  orderProblems,
+  withOrder,
+  type EngulfTarget,
+} from "../sim/battle/orders";
+import { PARAMS } from "../sim/params";
 import { resolveTurn } from "../sim/battle/resolve";
+import { pathogenKind } from "../sim/pathogens";
 import type {
   BattleState,
   Coord,
@@ -28,6 +38,24 @@ export function orderOptions(
     .filter((c) => !battle.swarms.some((s) => sameCoord(s.at, c)));
 }
 
+/** Engulf targets for the selected swarm, given the other swarms' pending orders. */
+export function orderTargets(
+  battle: BattleState,
+  ui: OrderUi,
+): readonly EngulfTarget[] {
+  if (!ui.selected) return [];
+  return engulfTargets(battle, ui.selected, ui.orders);
+}
+
+const targetAt = (
+  battle: BattleState,
+  ui: OrderUi,
+  at: Coord,
+): EngulfTarget | undefined => {
+  const p = battle.pathogens.find((q) => sameCoord(q.at, at));
+  return p && orderTargets(battle, ui).find((t) => t.pathogenId === p.id);
+};
+
 const swarmAt = (battle: BattleState, at: Coord) =>
   battle.swarms.find((s) => sameCoord(s.at, at));
 
@@ -35,6 +63,7 @@ const swarmAt = (battle: BattleState, at: Coord) =>
  * What a tap on a tile (null = off the board) does:
  * - own tile of the selected swarm: queue hold (cancels a move);
  * - an option tile: queue the move, or clear it if that move is already queued;
+ * - an engulf target's tile: queue the engulf, or clear it if already queued;
  * - another swarm: select it; anything else: deselect.
  */
 export function tapTile(
@@ -52,6 +81,22 @@ export function tapTile(
     };
   }
   if (here) return { ...ui, selected: here.id };
+  const target = sel && targetAt(battle, ui, at);
+  if (sel && target) {
+    const cur = ui.orders.find((o) => o.swarmId === sel.id);
+    if (cur?.type === "engulf" && cur.pathogenId === target.pathogenId) {
+      return { ...ui, orders: clearOrder(ui.orders, sel.id) };
+    }
+    return {
+      ...ui,
+      orders: withOrder(ui.orders, {
+        type: "engulf",
+        swarmId: sel.id,
+        pathogenId: target.pathogenId,
+        from: target.from,
+      }),
+    };
+  }
   if (sel && orderOptions(battle, ui).some((c) => sameCoord(c, at))) {
     const cur = ui.orders.find((o) => o.swarmId === sel.id);
     if (cur?.type === "move" && sameCoord(cur.to, at)) {
@@ -91,6 +136,10 @@ export function describeOrder(o: Order): string {
       return `${o.swarmId} -> ${xy(o.to)}`;
     case "hold":
       return `${o.swarmId} hold`;
+    case "engulf":
+      return o.from
+        ? `${o.swarmId} -> ${xy(o.from)}, engulf ${o.pathogenId}`
+        : `${o.swarmId} engulf ${o.pathogenId}`;
     default:
       return `${o.swarmId} ${o.type}`;
   }
@@ -103,6 +152,63 @@ export interface PendingEntry {
   readonly selected: boolean;
 }
 
+/** One engulf's odds, ready for the HUD. */
+export interface OddsEntry {
+  readonly swarmId: SwarmId;
+  /** Generic label, e.g. "bacteria p2". */
+  readonly title: string;
+  /** Organism name, for the secondary line and tooltip. */
+  readonly organism: string;
+  readonly text: string;
+  /** 0..1 chance the pathogen dies. */
+  readonly killChance: number;
+  /** A queued order (otherwise a hover/target preview). */
+  readonly pending: boolean;
+  readonly valid: boolean;
+}
+
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+
+/** Odds for engulfing `target` with `swarmId` given `orders`; null if the pair does not exist. */
+export function oddsFor(
+  battle: BattleState,
+  orders: readonly Order[],
+  swarmId: SwarmId,
+  pathogenId: string,
+  from: Coord | null,
+  pending: boolean,
+): OddsEntry | null {
+  const swarm = battle.swarms.find((s) => s.id === swarmId);
+  const p = battle.pathogens.find((q) => q.id === pathogenId);
+  if (!swarm || !p) return null;
+  const pv = engulfPreview(battle, orders, {
+    type: "engulf",
+    swarmId,
+    pathogenId,
+    from,
+  });
+  if (!pv) return null;
+  const kind = pathogenKind(p.kind);
+  const range = `Move range ${moveRange(swarm)} -> ${pv.moveRangeIfLoaded}.`;
+  let text: string;
+  if (pv.reason !== null) text = `Cannot engulf: ${pv.reason}.`;
+  else if (pv.outcome === "kills") text = "Kills it.";
+  else if (pv.outcome === "loads") {
+    text = `Loads ${swarmId} (can't kill it). Residual kill chance ${pct(pv.killChance)}. ${range}`;
+  } else {
+    text = `Loads ${swarmId} unless the residual kill succeeds. Residual kill chance ${pct(pv.killChance)}. ${range}`;
+  }
+  return {
+    swarmId,
+    title: `${kind.label} ${p.id}`,
+    organism: kind.organism,
+    text,
+    killChance: pv.killChance,
+    pending,
+    valid: pv.reason === null,
+  };
+}
+
 export interface Controller {
   state(): BattleState;
   /** Events from the most recent resolve; empty after a reset. */
@@ -112,6 +218,12 @@ export interface Controller {
   selected(): SwarmId | null;
   /** Legal destinations for the selected swarm. */
   options(): readonly Coord[];
+  /** Pathogens the selected swarm can engulf, with the tile to engulf from. */
+  targets(): readonly EngulfTarget[];
+  /** Odds for the hovered target, else the selected swarm's engulf order, else all engulf orders. */
+  odds(): OddsEntry[];
+  /** Pointer tile (null = off the board); only changes the odds panel. */
+  hover(at: Coord | null): void;
   /** Telegraph marks as they will resolve with the pending orders. */
   marks(): TelegraphMark[];
   /** Order list plus the selected swarm if it has no order yet. */
@@ -137,6 +249,9 @@ export function createController(
   let events: readonly SimEvent[] = [];
   let ui: OrderUi = NONE;
   let problems: readonly string[] = [];
+  let hovered: Coord | null = null;
+  const hoverTarget = () =>
+    hovered ? targetAt(state, ui, hovered) : undefined;
   const set = (next: OrderUi) => {
     ui = next;
     problems = [];
@@ -149,6 +264,37 @@ export function createController(
     orders: () => ui.orders,
     selected: () => ui.selected,
     options: () => orderOptions(state, ui),
+    targets: () => orderTargets(state, ui),
+    odds() {
+      const sel = ui.selected;
+      const ht = hoverTarget();
+      if (sel && ht) {
+        const e = oddsFor(state, ui.orders, sel, ht.pathogenId, ht.from, false);
+        return e ? [e] : [];
+      }
+      const engulfs = ui.orders.flatMap((o) =>
+        o.type === "engulf" ? [o] : [],
+      );
+      const shown = engulfs.some((o) => o.swarmId === sel)
+        ? engulfs.filter((o) => o.swarmId === sel)
+        : engulfs;
+      return shown.flatMap((o) => {
+        const e = oddsFor(
+          state,
+          ui.orders,
+          o.swarmId,
+          o.pathogenId,
+          o.from,
+          true,
+        );
+        return e ? [e] : [];
+      });
+    },
+    hover(at) {
+      const before = hoverTarget()?.pathogenId;
+      hovered = at;
+      if (hoverTarget()?.pathogenId !== before) onChange(c);
+    },
     marks: () => telegraph(state, ui.orders),
     pending() {
       const list = ui.orders.map((o) => ({
@@ -213,7 +359,17 @@ export function describeEvent(e: SimEvent): string {
       return `${e.pathogenId} ${e.intent} blocked at ${xy(e.at)} by ${e.swarmId}`;
     case "TissueDamaged":
       return `tissue -${e.amount} (${e.tissueHealth})`;
+    case "SwarmMoved":
+      return `${e.swarmId} moved to ${xy(e.path[e.path.length - 1]!)}`;
+    case "Engulfed":
+      return `${e.swarmId} engulfed ${e.pathogenId} (${e.wall})`;
+    case "Killed":
+      return `${e.pathogenId} killed at ${xy(e.at)}`;
+    case "ResidualKill":
+      return `${e.swarmId} residual kill: ${e.success ? "succeeded" : "failed"} (${pct(e.chance)})`;
+    case "Loaded":
+      return `${e.swarmId} loaded (${e.load.length}/${PARAMS.loadCap})`;
     default:
-      return e.type;
+      return "Something happened";
   }
 }

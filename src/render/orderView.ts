@@ -1,18 +1,26 @@
 import * as THREE from "three";
-import { movePath } from "../sim/battle/orders";
+import { movePath, type EngulfTarget } from "../sim/battle/orders";
 import type { BattleState, Coord, Order } from "../sim/types";
 import { ORDER_COLOR } from "./boardView";
 
 export interface OrderView {
   readonly group: THREE.Group;
-  /** Redraws ghosts for the pending orders. Reads only; never mutates state. */
-  update(state: BattleState, orders: readonly Order[]): void;
+  /**
+   * Redraws ghosts for the pending orders and a reticle on each engulf target. Reads only; never
+   * mutates state.
+   */
+  update(
+    state: BattleState,
+    orders: readonly Order[],
+    targets?: readonly EngulfTarget[],
+  ): void;
 }
 
 const LIFT = 0.1;
 const GHOST_CELLS = 20;
 const GHOST_RADIUS = 0.3;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
+const UP = new THREE.Vector3(0, 1, 0);
 
 export function createOrderView(
   scene: THREE.Scene,
@@ -37,6 +45,8 @@ export function createOrderView(
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
   const ringGeo = new THREE.RingGeometry(0.34, 0.44, 24);
   const dotGeo = new THREE.CircleGeometry(0.1, 12);
+  const reticleGeo = new THREE.RingGeometry(0.47, 0.51, 32);
+  const coneGeo = new THREE.ConeGeometry(0.16, 0.3, 3);
   const cellGeo = new THREE.SphereGeometry(1, 8, 6);
 
   // Fixed scatter so the ghost cluster does not shimmer between redraws.
@@ -103,10 +113,57 @@ export function createOrderView(
     }
   };
 
+  // Crosshair: a thin circle with four ticks crossing it, unlike the telegraph's squares and the
+  // move discs. The queued target also gets a heavier inner ring.
+  const drawReticle = (c: Coord, queued: boolean) => {
+    const o = at(c, 0.04);
+    flat(reticleGeo, o);
+    for (const [dx, dz] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ] as const) {
+      const m = place(new THREE.Mesh(boxGeo, solid), o);
+      m.position.x += dx * 0.45;
+      m.position.z += dz * 0.45;
+      m.scale.set(dx ? 0.2 : 0.05, 0.05, dz ? 0.2 : 0.05);
+    }
+    if (queued) flat(ringGeo, at(c, 0.05));
+  };
+
+  const drawEngulf = (from: Coord, to: Coord) => {
+    const a = at(from, 0.5);
+    const b = at(to, 0.5);
+    const dir = b.clone().sub(a).setY(0).normalize();
+    const start = a.clone().addScaledVector(dir, 0.3);
+    const tip = b.clone().addScaledVector(dir, -0.45);
+    const seg = tip.clone().sub(start);
+    const len = Math.max(seg.length(), 0.05);
+    const body = place(
+      new THREE.Mesh(boxGeo, solid),
+      start.clone().add(tip).multiplyScalar(0.5),
+    );
+    body.scale.set(len, 0.08, 0.08);
+    body.quaternion.setFromUnitVectors(X_AXIS, dir);
+    const head = place(
+      new THREE.Mesh(coneGeo, solid),
+      b.clone().addScaledVector(dir, -0.4),
+    );
+    head.quaternion.setFromUnitVectors(UP, dir);
+  };
+
   return {
     group,
-    update(state, orders) {
+    update(state, orders, targets = []) {
       group.clear();
+      const queued = new Set(
+        orders.flatMap((o) => (o.type === "engulf" ? [o.pathogenId] : [])),
+      );
+      for (const t of targets) {
+        const p = state.pathogens.find((q) => q.id === t.pathogenId);
+        if (p) drawReticle(p.at, queued.has(p.id));
+      }
       for (const o of orders) {
         const swarm = state.swarms.find((s) => s.id === o.swarmId);
         if (!swarm) continue;
@@ -114,6 +171,18 @@ export function createOrderView(
         else if (o.type === "move") {
           const path = movePath(state, swarm.id, o.to);
           if (path) drawMove(path);
+        } else if (o.type === "engulf") {
+          const p = state.pathogens.find((q) => q.id === o.pathogenId);
+          if (!p) continue;
+          let end = swarm.at;
+          if (o.from) {
+            const path = movePath(state, swarm.id, o.from);
+            if (path) {
+              drawMove(path);
+              end = o.from;
+            }
+          }
+          drawEngulf(end, p.at);
         }
       }
     },
