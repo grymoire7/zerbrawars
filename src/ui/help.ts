@@ -4,11 +4,18 @@ export interface Help {
   isOpen(): boolean;
   /** Opens once per browser; remembers it in localStorage when that works. */
   showFirstTime(): void;
+  /** Removes the key listener (the screen is being torn down). */
+  dispose(): void;
+}
+
+export interface HelpOptions {
+  readonly lines?: readonly (readonly [string, string])[];
+  readonly seenKey?: string;
 }
 
 const SEEN_KEY = "zebrawars.help.seen";
 
-const LINES: readonly (readonly [string, string])[] = [
+export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ["Your goal", "Clear the germs from the board before the tissue wears out."],
   [
     "Orders",
@@ -52,24 +59,61 @@ const LINES: readonly (readonly [string, string])[] = [
   ],
 ];
 
-function readSeen(): boolean {
+export const LIFE_LINES: readonly (readonly [string, string])[] = [
+  [
+    "Your week",
+    "Plan three days, two slots each: daytime and evening. Hit the goal by saying yes to the people who ask. A slot with nothing in it is a rest.",
+  ],
+  [
+    "Placing a card",
+    "Tap a card, then tap a slot. Tap a card on your calendar to take it back off. Each card can be used once. Slots that cannot take it are dimmed and say why.",
+  ],
+  [
+    "The odds are real",
+    "Every card shows its chance of an exposure. When a day is played, each card rolls once. Look at the body view: more drifting dots means better odds.",
+  ],
+  [
+    "Easier versions",
+    "Most cards have an alternative that keeps the plan and the people, but brings fewer germs. Tap it on the card to swap. It often scores a bit less.",
+  ],
+  [
+    "Medication",
+    "Tap Take meds each morning to keep your streak. Your medication level is your doses over the last three days, and it shows as the green glow. Skip a dose and the glow dims for a few days. A day with no tap counts as taken.",
+  ],
+  [
+    "Sleepovers",
+    "Your pills end up in the other bag. Pack them (costs a little energy) or tomorrow's dose is missed. The week view shows which day.",
+  ],
+  [
+    "Energy",
+    "Energy is just a game resource for planning, not a measure of your health. Cards spend it, rests give a little back, and a plan can never go below zero.",
+  ],
+  [
+    "After the week",
+    "If something landed, you head into a battle with what you brought in and the medication you kept up. If nothing landed, it was a quiet week.",
+  ],
+];
+
+function readSeen(seenKey: string): boolean {
   try {
-    return window.localStorage.getItem(SEEN_KEY) === "1";
+    return window.localStorage.getItem(seenKey) === "1";
   } catch {
     return false;
   }
 }
 
-function writeSeen(): void {
+function writeSeen(seenKey: string): void {
   try {
-    window.localStorage.setItem(SEEN_KEY, "1");
+    window.localStorage.setItem(seenKey, "1");
   } catch {
     // Storage may be blocked; the guide just shows again next time.
   }
 }
 
 /** The "How to play" dialog. Escape, the Close button or a click outside dismisses it. */
-export function createHelp(root: HTMLElement): Help {
+export function createHelp(root: HTMLElement, opts: HelpOptions = {}): Help {
+  const lines = opts.lines ?? BATTLE_LINES;
+  const seenKey = opts.seenKey ?? SEEN_KEY;
   const backdrop = document.createElement("div");
   backdrop.style.cssText =
     "position:absolute;inset:0;display:none;align-items:center;justify-content:center;" +
@@ -91,7 +135,7 @@ export function createHelp(root: HTMLElement): Help {
   title.textContent = "How to play";
   title.style.cssText = "margin:0;font:600 22px sans-serif;";
   card.append(title);
-  for (const [head, body] of LINES) {
+  for (const [head, body] of lines) {
     const p = document.createElement("p");
     p.style.cssText = "margin:0;line-height:1.4;";
     const b = document.createElement("strong");
@@ -122,12 +166,13 @@ export function createHelp(root: HTMLElement): Help {
       if (!isOpen) return;
       isOpen = false;
       backdrop.style.display = "none";
-      writeSeen();
+      writeSeen(seenKey);
       returnTo?.focus?.();
     },
     isOpen: () => isOpen,
+    dispose: () => window.removeEventListener("keydown", onKey),
     showFirstTime() {
-      if (!readSeen()) api.open();
+      if (!readSeen(seenKey)) api.open();
     },
   };
 
@@ -136,7 +181,7 @@ export function createHelp(root: HTMLElement): Help {
     if (e.target === backdrop) api.close();
   });
   // The dialog holds one control, so Tab just stays on it.
-  window.addEventListener("keydown", (e) => {
+  const onKey = (e: KeyboardEvent) => {
     if (!isOpen) return;
     if (e.key === "Escape") {
       e.preventDefault();
@@ -145,6 +190,7 @@ export function createHelp(root: HTMLElement): Help {
       e.preventDefault();
       close.focus();
     }
-  });
+  };
+  window.addEventListener("keydown", onKey);
   return api;
 }

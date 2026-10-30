@@ -44,6 +44,11 @@
         min-height: 300px;
         min-width: 0;
       }
+      /* Life phase: the calendar needs the room, so the body inset shrinks on a phone. */
+      #app.life #board {
+        flex-basis: 30%;
+        min-height: 190px;
+      }
       #scene {
         position: absolute;
         inset: 0;
@@ -84,7 +89,8 @@
         #app {
           flex-direction: row;
         }
-        #board {
+        #board,
+        #app.life #board {
           flex: 1 1 0;
           min-height: 0;
         }

@@ -9,15 +9,21 @@ export interface DebugLoadout {
   readonly residual: number;
 }
 
+export type DebugMode = "battle" | "life";
+
 export interface DebugPanelOptions {
+  /** Which screen this panel sits on; "life" hides the battle-only levers. */
+  readonly mode?: DebugMode;
+  /** Switches screens (the campaign loop will do this itself later). */
+  onMode?(mode: DebugMode): void;
   readonly scenario: string;
   readonly seed: number;
   /** Skip turn playback (starts from prefers-reduced-motion). */
-  readonly skipPlayback: boolean;
-  onSkipPlayback(on: boolean): void;
-  readonly loadout: DebugLoadout;
+  readonly skipPlayback?: boolean;
+  onSkipPlayback?(on: boolean): void;
+  readonly loadout?: DebugLoadout;
   /** Restart the battle with these levers (the caller also updates the URL). */
-  onRestart(loadout: DebugLoadout): void;
+  onRestart?(loadout: DebugLoadout): void;
 }
 
 export interface DebugPanel {
@@ -69,11 +75,25 @@ export function createDebugPanel(
   seed.value = String(opts.seed);
   seed.style.cssText = control + "width:8em;";
 
+  const mode = opts.mode ?? "battle";
+  const modeSelect = document.createElement("select");
+  modeSelect.style.cssText = control;
+  for (const m of ["battle", "life"] as const) {
+    const o = document.createElement("option");
+    o.value = m;
+    o.textContent = m === "life" ? "Life phase (calendar)" : "Battle";
+    modeSelect.appendChild(o);
+  }
+  modeSelect.value = mode;
+  modeSelect.addEventListener("change", () =>
+    opts.onMode?.(modeSelect.value as DebugMode),
+  );
+
   const apply = () => {
     const n = Number(seed.value);
     if (seed.value.trim() === "" || !Number.isFinite(n)) return;
     const url = new URL(window.location.href);
-    url.searchParams.set("scenario", select.value);
+    if (mode === "battle") url.searchParams.set("scenario", select.value);
     url.searchParams.set("seed", String(n));
     window.location.assign(url);
   };
@@ -82,9 +102,9 @@ export function createDebugPanel(
 
   const skip = document.createElement("input");
   skip.type = "checkbox";
-  skip.checked = opts.skipPlayback;
+  skip.checked = opts.skipPlayback ?? false;
   skip.style.cssText = "width:20px;height:20px;margin:0;";
-  skip.addEventListener("change", () => opts.onSkipPlayback(skip.checked));
+  skip.addEventListener("change", () => opts.onSkipPlayback?.(skip.checked));
   const skipRow = document.createElement("label");
   skipRow.style.cssText =
     "display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;";
@@ -114,11 +134,11 @@ export function createDebugPanel(
     l.append(head, r);
     return l;
   };
-  const med = slider(opts.loadout.med);
-  const residual = slider(opts.loadout.residual);
+  const med = slider(opts.loadout?.med ?? 1);
+  const residual = slider(opts.loadout?.residual ?? 0);
   const doctor = document.createElement("input");
   doctor.type = "checkbox";
-  doctor.checked = opts.loadout.doctor;
+  doctor.checked = opts.loadout?.doctor ?? false;
   doctor.style.cssText = "width:20px;height:20px;margin:0;";
   const doctorRow = document.createElement("label");
   doctorRow.style.cssText =
@@ -129,7 +149,7 @@ export function createDebugPanel(
   restart.textContent = "Restart battle with this loadout";
   restart.style.cssText = control;
   restart.addEventListener("click", () =>
-    opts.onRestart({
+    opts.onRestart?.({
       med: Number(med.value) / 100,
       doctor: doctor.checked,
       residual: Number(residual.value) / 100,
@@ -139,15 +159,17 @@ export function createDebugPanel(
   const stats = document.createElement("div");
   stats.style.cssText = "font:11px monospace;opacity:0.8;padding:0 4px;";
 
-  body.append(
-    label("Scenario", select),
-    label("Seed", seed),
-    sliderRow("Medication level", med),
-    doctorRow,
-    sliderRow("Residual kill chance", residual),
-    restart,
-    skipRow,
-  );
+  body.append(label("Screen", modeSelect), label("Seed", seed));
+  if (mode === "battle") {
+    body.prepend(label("Scenario", select));
+    body.append(
+      sliderRow("Medication level", med),
+      doctorRow,
+      sliderRow("Residual kill chance", residual),
+      restart,
+      skipRow,
+    );
+  }
 
   let open = false;
   const sync = () => {
