@@ -18,7 +18,9 @@ import {
 } from "./cards";
 import type { CarriedReservoir } from "./loadout";
 import { medLevelOf, preWeekDoses, streakOf } from "./meds";
+import type { BattleKind } from "../types";
 import type {
+  Aftermath,
   BattleReason,
   CardId,
   Dose,
@@ -42,6 +44,8 @@ export interface LifeOptions {
   readonly reservoirs?: readonly CarriedReservoir[];
   /** Dose history carried from an earlier week; defaults to a full window of taken doses. */
   readonly doses?: readonly Dose[];
+  /** Last week's skirmish ended with loose germs: the week opens with its aftermath. */
+  readonly aftermath?: Aftermath["kind"];
 }
 
 /** Week 1 rolls from the seed itself; later weeks mix the week in so their dice differ. */
@@ -53,7 +57,8 @@ export function lifeRngSeed(seed: number, week: number): number {
 
 /**
  * A fresh week. Carried reservoirs come in with their symptom day set; symptoms due on day 0
- * show at once (see weekStartEvents), and tiredness takes its energy now.
+ * show at once (see weekStartEvents), and tiredness and a skirmish aftermath take their energy
+ * now.
  */
 export function createLife(opts: LifeOptions): LifeState {
   const week = opts.week ?? 1;
@@ -65,6 +70,9 @@ export function createLife(opts: LifeOptions): LifeState {
   const tired = symptoms.some((s) => s.kind === "tired")
     ? C.symptoms.tiredEnergy
     : 0;
+  const aftermath: Aftermath | null = opts.aftermath
+    ? { kind: opts.aftermath, energy: C.skirmish.aftermathEnergy }
+    : null;
   return {
     schema: 1,
     seed: opts.seed,
@@ -80,23 +88,31 @@ export function createLife(opts: LifeOptions): LifeState {
     goal: { points: 0, target: L.goalTarget },
     energy: Math.max(
       0,
-      Math.min(L.maxEnergy, opts.energy ?? L.startEnergy) - tired,
+      Math.min(L.maxEnergy, opts.energy ?? L.startEnergy) -
+        tired -
+        (aftermath?.energy ?? 0),
     ),
     rolls: [],
     exposures: [],
     reservoirs,
     symptoms,
+    aftermath,
     doctor: null,
     flags: { frictionFired: false, doctorVisit: false },
     rng: rngFromSeed(lifeRngSeed(opts.seed, week)),
   };
 }
 
-/** The events a fresh week opens with: day 0's symptoms. */
+/** The events a fresh week opens with: a skirmish aftermath, then day 0's symptoms. */
 export function weekStartEvents(life: LifeState): LifeEvent[] {
-  return life.symptoms
-    .filter((s) => s.day === 0)
-    .map((symptom) => ({ type: "SymptomAppeared", symptom }));
+  return [
+    ...(life.aftermath
+      ? [{ type: "SkirmishAftermath" as const, aftermath: life.aftermath }]
+      : []),
+    ...life.symptoms
+      .filter((s) => s.day === 0)
+      .map((symptom) => ({ type: "SymptomAppeared" as const, symptom })),
+  ];
 }
 
 export const weekOver = (life: LifeState) => life.day >= L.days;
@@ -470,9 +486,11 @@ export function advanceDay(life: LifeState): LifeStep {
   };
 
   if (weekOver(s)) {
+    const battleKind = battleKindOf(s);
     events.push({
       type: "WeekEnded",
-      battleDue: battleDueReasons(s).length > 0,
+      battleDue: battleKind !== null,
+      battleKind,
     });
     return { state: s, events };
   }
@@ -505,9 +523,9 @@ export function advanceDay(life: LifeState): LifeStep {
 }
 
 /**
- * Why a battle follows this week: an exposure landed, a carried reservoir flared, or the doctor
- * found a reservoir (the visit turns it into a fight on the player's terms). A viral visit adds
- * no reason.
+ * Why a full battle follows this week: an exposure landed, a carried reservoir flared, or the
+ * doctor found a reservoir (the visit turns it into a fight on the player's terms). A viral visit
+ * adds no reason.
  */
 export function battleDueReasons(life: LifeState): BattleReason[] {
   const reasons: BattleReason[] = [];
@@ -515,6 +533,20 @@ export function battleDueReasons(life: LifeState): BattleReason[] {
   if (life.reservoirs.some((r) => r.flared)) reasons.push("reservoir");
   if (life.doctor?.finding === "reservoir") reasons.push("doctor");
   return reasons;
+}
+
+/**
+ * The week's battle as it stands: full with any reason, otherwise a skirmish (the body is always
+ * on patrol), except after a viral doctor visit, which was the week's beat: null, no battle.
+ */
+export function battleKindOf(life: LifeState): BattleKind | null {
+  if (battleDueReasons(life).length > 0) return "full";
+  return life.doctor?.finding === "viral" ? null : "skirmish";
+}
+
+/** Which of last week's lost-skirmish aftermaths `week` opens with, fixed by seed and week. */
+export function aftermathKind(seed: number, week: number): Aftermath["kind"] {
+  return bodyRoll(seed, week, -2, 0) < 0.5 ? "wornOut" : "flareUp";
 }
 
 export interface DoseForecast {

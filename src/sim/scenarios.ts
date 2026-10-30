@@ -1,6 +1,7 @@
 import { battleFromLoadout } from "./battle/setup";
-import type { Loadout } from "./life/loadout";
+import { skirmishExposures, type Loadout } from "./life/loadout";
 import { PARAMS } from "./params";
+import { rngFromSeed } from "./rng";
 import type { BattleState } from "./types";
 
 /**
@@ -59,11 +60,22 @@ export function lakeWeekLoadout(seed: number, medLevel = 1): Loadout {
   };
 }
 
+/** A patrol skirmish, its threats drawn from the seed as a campaign draws them from the week. */
+export function skirmishLoadout(seed: number, medLevel = 1): Loadout {
+  return {
+    ...firstBoardLoadout(seed, medLevel),
+    scenario: "skirmish",
+    kind: "skirmish",
+    exposures: skirmishExposures(rngFromSeed(seed)),
+  };
+}
+
 /** Each named scenario's loadout, for the debug panel to start from. */
 export const SCENARIO_LOADOUTS = {
   "first-board": firstBoardLoadout,
   duel: duelLoadout,
   "lake-week": lakeWeekLoadout,
+  skirmish: skirmishLoadout,
 } as const satisfies Record<
   string,
   (seed: number, medLevel?: number) => Loadout

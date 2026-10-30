@@ -7,15 +7,24 @@ import { battleDue, loadoutFromLife } from "./loadout";
 
 // Headless life-to-battle balance: each life strategy plays the same seeded weeks; any battle that
 // follows is played by bestPlay (below). See the table with
-// `npx vitest run src/sim/life/balance.test.ts --silent=false`. "score" counts a quiet week as
-// 3 (no fight at all), cleared 2, contained 1, backup 0; "tissue" is the mean tissue lost.
+// `npx vitest run src/sim/life/balance.test.ts --silent=false`. With nothing landed the week
+// skirmishes ("skirm" cleared, "loose" not); "score" counts a cleared skirmish 3 (dodging the
+// exposure stays the best week), a loose one 1, a full battle cleared 2, contained 1, backup 0;
+// "tissue" is the mean tissue lost.
 // The thresholds are the design targets.
 
 const SEEDS = 400;
-type Result = BattleGrade | "quiet";
-const RESULTS: Result[] = ["quiet", "cleared", "contained", "neededBackup"];
+type Result = BattleGrade | "skirmish" | "loose";
+const RESULTS: Result[] = [
+  "skirmish",
+  "loose",
+  "cleared",
+  "contained",
+  "neededBackup",
+];
 const SCORE: Record<Result, number> = {
-  quiet: 3,
+  skirmish: 3,
+  loose: 1,
   cleared: 2,
   contained: 1,
   neededBackup: 0,
@@ -55,7 +64,13 @@ function survey(name: string): Row {
     goal: 0,
     pathogens: 0,
     med: 0,
-    results: { quiet: 0, cleared: 0, contained: 0, neededBackup: 0 },
+    results: {
+      skirmish: 0,
+      loose: 0,
+      cleared: 0,
+      contained: 0,
+      neededBackup: 0,
+    },
     score: 0,
     tissueLost: 0,
   };
@@ -65,12 +80,15 @@ function survey(name: string): Row {
     if (life.goal.points >= life.goal.target) row.goal += 1 / SEEDS;
     row.pathogens += life.exposures.length / SEEDS;
     row.med += life.medLevel / SEEDS;
-    let result: Result = "quiet";
-    if (battleDue(life).due) {
-      const outcome = bestPlay(battleFromLoadout(loadoutFromLife(life)), seed);
-      result = outcome.grade;
-      row.tissueLost += outcome.tissue.lost / SEEDS;
-    }
+    const kind = battleDue(life).battleKind;
+    const outcome = bestPlay(battleFromLoadout(loadoutFromLife(life)), seed);
+    const result: Result =
+      kind === "skirmish"
+        ? outcome.grade === "cleared"
+          ? "skirmish"
+          : "loose"
+        : outcome.grade;
+    row.tissueLost += outcome.tissue.lost / SEEDS;
     row.results[result] += 1;
     row.score += SCORE[result] / SEEDS;
   }
@@ -86,7 +104,7 @@ describe("life strategies into battle", () => {
 
   it("prints the table", () => {
     const lines = [
-      "strategy         pts  goal  path   med quiet clear  cont  back score tissue",
+      "strategy         pts  goal  path   med skirm loose clear  cont  back score tissue",
       ...Object.entries(rows).map(
         ([n, r]) =>
           n.padEnd(15) +
@@ -104,9 +122,11 @@ describe("life strategies into battle", () => {
     ).console.log(lines.join("\n"));
   });
 
-  it("scores nothing for staying home, and the most for every risk", () => {
+  it("scores nothing for staying home, which still skirmishes, and the most for every risk", () => {
     expect(rows.home.points).toBe(0);
-    expect(rows.home.results.quiet).toBe(SEEDS);
+    expect(rows.home.results.skirmish + rows.home.results.loose).toBe(SEEDS);
+    // Skirmishes are easy: the thoughtful player clears nearly all of them.
+    expect(share(rows.home, "loose")).toBeLessThan(0.05);
     const best = Math.max(...Object.values(rows).map((r) => r.points));
     expect(rows.risky.points).toBe(best);
     expect(rows.smarter.points).toBeLessThan(rows.risky.points);
@@ -119,7 +139,7 @@ describe("life strategies into battle", () => {
     expect(bad(rows.smarter)).toBeLessThan(bad(rows.risky) / 2);
     expect(rows.smarter.tissueLost).toBeLessThan(rows.risky.tissueLost);
     // Honest odds: the risky week often gets away with it.
-    expect(share(rows.risky, "quiet")).toBeGreaterThan(0.2);
+    expect(share(rows.risky, "skirmish")).toBeGreaterThan(0.2);
   });
 
   it("makes the risky week suffer the worst battles of the full-meds plays", () => {

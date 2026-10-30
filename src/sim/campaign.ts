@@ -1,7 +1,12 @@
 import { battleStatus, gradeOutcome } from "./battle/outcome";
 import { resolveTurn, turnProblems } from "./battle/resolve";
 import { battleFromLoadout } from "./battle/setup";
-import { createLife, weekOver, weekStartEvents } from "./life/calendar";
+import {
+  aftermathKind,
+  createLife,
+  weekOver,
+  weekStartEvents,
+} from "./life/calendar";
 import {
   battleDue,
   loadoutFromLife,
@@ -19,6 +24,7 @@ import type {
 import { PARAMS } from "./params";
 import type {
   BattleGrade,
+  BattleKind,
   BattleOutcome,
   BattleState,
   Contained,
@@ -27,18 +33,21 @@ import type {
   SupportOrder,
 } from "./types";
 
-// The campaign (T13): life week -> battle (only if one is due) -> outcome -> next week, for
-// PARAMS.campaign.cycles weeks. Plain JSON like everything in the sim; every step returns the new
+// The campaign (T13): life week -> battle (full, or a skirmish when nothing landed) -> outcome ->
+// next week, for PARAMS.campaign.cycles weeks. Plain JSON like everything in the sim; every step returns the new
 // state and the events to play. Rules and numbers are on PARAMS.campaign.
 
 const C = PARAMS.campaign;
 
 export type CampaignMode = "life" | "battle" | "outcome" | "done";
 
+/** "quiet": the only week with no battle, a viral doctor visit with nothing landed. */
 export type CycleResult =
   | { readonly kind: "quiet" }
   | {
       readonly kind: "battle";
+      readonly battleKind: BattleKind;
+      /** Empty for a skirmish. */
       readonly reasons: readonly BattleReason[];
       readonly outcome: BattleOutcome;
     };
@@ -75,6 +84,8 @@ export interface Campaign {
   readonly life: LifeState;
   /** The battle's loadout, from the week that just ended; null in life mode. */
   readonly loadout: Loadout | null;
+  /** The kind of the battle in play or just finished; null without one. */
+  readonly battleKind: BattleKind | null;
   /** The battle in play, or as it ended (outcome mode); null without one. */
   readonly battle: BattleState | null;
   /** Set in outcome mode (and kept in done mode for the last week). */
@@ -95,15 +106,22 @@ export type CampaignEvent =
     }
   | {
       readonly type: "BattleStarted";
+      readonly battleKind: BattleKind;
+      /** Empty for a skirmish. */
       readonly reasons: readonly BattleReason[];
       readonly hiddenTokens: number;
     }
   | {
-      /** Nothing landed, flared or needed the doctor: no battle this week. */
+      /** The doctor found only a virus and nothing landed: the one week with no battle. */
       readonly type: "QuietWeek";
       readonly cycle: number;
+      readonly reason: "viral";
     }
-  | { readonly type: "BattleEnded"; readonly outcome: BattleOutcome }
+  | {
+      readonly type: "BattleEnded";
+      readonly battleKind: BattleKind;
+      readonly outcome: BattleOutcome;
+    }
   | {
       readonly type: "Carried";
       readonly kept: readonly CarriedReservoir[];
@@ -157,6 +175,7 @@ export function createCampaign(opts: CampaignOptions): CampaignStep {
       energy: opts.energy,
     }),
     loadout: null,
+    battleKind: null,
     battle: null,
     result: null,
     history: [],
@@ -178,7 +197,10 @@ export function lifeAction(
   return { state: { ...c, life: r.state }, events: lifeEvents(r.events) };
 }
 
-/** Once the week is over: the battle if one is due, else straight to a quiet outcome. */
+/**
+ * Once the week is over: the full battle or the skirmish, or straight to a quiet outcome after a
+ * viral doctor visit with nothing landed.
+ */
 export function endWeek(c: Campaign): CampaignStep {
   expectMode(c, "life");
   if (!weekOver(c.life)) throw new Error("the week is not over");
@@ -186,7 +208,7 @@ export function endWeek(c: Campaign): CampaignStep {
   if (!due.due) {
     return {
       state: { ...c, mode: "outcome", result: { kind: "quiet" } },
-      events: [{ type: "QuietWeek", cycle: c.cycle }],
+      events: [{ type: "QuietWeek", cycle: c.cycle, reason: "viral" }],
     };
   }
   const loadout: Loadout = {
@@ -195,10 +217,11 @@ export function endWeek(c: Campaign): CampaignStep {
   };
   const battle = battleFromLoadout(loadout);
   return {
-    state: { ...c, mode: "battle", loadout, battle },
+    state: { ...c, mode: "battle", loadout, battleKind: battle.kind, battle },
     events: [
       {
         type: "BattleStarted",
+        battleKind: battle.kind,
         reasons: due.reasons,
         hiddenTokens: battle.pathogens.filter((p) => p.hidden).length,
       },
@@ -219,9 +242,12 @@ function withBattle(
       ...c,
       battle,
       mode: "outcome",
-      result: { kind: "battle", reasons, outcome },
+      result: { kind: "battle", battleKind: battle.kind, reasons, outcome },
     },
-    events: [...events, { type: "BattleEnded", outcome }],
+    events: [
+      ...events,
+      { type: "BattleEnded", battleKind: battle.kind, outcome },
+    ],
   };
 }
 
@@ -285,11 +311,15 @@ export interface CarryPreview {
   };
 }
 
-/** What the outcome hands to the next week: reservoirs and energy (outcome or done mode). */
+/**
+ * What the outcome hands to the next week: reservoirs and energy (outcome or done mode). `next` is
+ * before tiredness or a lost skirmish's aftermath, which the new week takes at its start.
+ */
 export function carryPreview(c: Campaign): CarryPreview {
   if (!c.result) throw new Error("no outcome yet");
+  // A skirmish's board never holds a reservoir: the week's own carry on as they are.
   const found: readonly Contained[] =
-    c.result.kind === "battle"
+    c.result.kind === "battle" && c.result.battleKind === "full"
       ? c.result.outcome.reservoirs
       : c.life.reservoirs;
   const outcome =
@@ -305,6 +335,12 @@ export function carryPreview(c: Campaign): CarryPreview {
     },
   };
 }
+
+/** A skirmish that ended with loose germs: the next week opens with its aftermath. */
+const lostSkirmish = (r: CycleResult | null) =>
+  r?.kind === "battle" &&
+  r.battleKind === "skirmish" &&
+  r.outcome.grade !== "cleared";
 
 /** From the outcome: record the week, then start the next one with the carry, or finish. */
 export function nextCycle(c: Campaign): CampaignStep {
@@ -352,8 +388,12 @@ export function nextCycle(c: Campaign): CampaignStep {
       energy: carry.energy.next,
       reservoirs: carry.kept,
       doses: life.doses,
+      aftermath: lostSkirmish(c.result)
+        ? aftermathKind(c.seed, life.week + 1)
+        : undefined,
     }),
     loadout: null,
+    battleKind: null,
     battle: null,
     result: null,
     history,
@@ -363,8 +403,11 @@ export function nextCycle(c: Campaign): CampaignStep {
 
 export interface CampaignSummary {
   readonly weeks: number;
+  /** Weeks with no battle (a viral doctor visit, nothing landed). */
   readonly quietWeeks: number;
+  /** Full battles by grade. */
   readonly grades: Readonly<Record<BattleGrade, number>>;
+  readonly skirmishes: { readonly cleared: number; readonly loose: number };
   readonly tissueLost: number;
   readonly points: number;
   readonly goalsMet: number;
@@ -381,10 +424,13 @@ export function campaignSummary(c: Campaign): CampaignSummary {
     contained: 0,
     neededBackup: 0,
   };
+  const skirmishes = { cleared: 0, loose: 0 };
   let tissueLost = 0;
   for (const h of c.history) {
     if (h.result.kind !== "battle") continue;
-    grades[h.result.outcome.grade]++;
+    if (h.result.battleKind === "skirmish")
+      skirmishes[h.result.outcome.grade === "cleared" ? "cleared" : "loose"]++;
+    else grades[h.result.outcome.grade]++;
     tissueLost += h.result.outcome.tissue.lost;
   }
   const visits = c.history.filter((h) => h.doctor);
@@ -392,6 +438,7 @@ export function campaignSummary(c: Campaign): CampaignSummary {
     weeks: c.history.length,
     quietWeeks: c.history.filter((h) => h.result.kind === "quiet").length,
     grades,
+    skirmishes,
     tissueLost,
     points: c.history.reduce((n, h) => n + h.points, 0),
     goalsMet: c.history.filter((h) => h.goalMet).length,

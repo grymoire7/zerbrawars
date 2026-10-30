@@ -6,6 +6,7 @@ import { loadScenario } from "../scenarios";
 import type { BattleState, Pathogen, SimEvent } from "../types";
 import { validateBattle } from "../validate";
 import { generateIntents, telegraph } from "./intents";
+import { battleStatus } from "./outcome";
 import { resolveTurn } from "./resolve";
 
 const SEEDS = 1000;
@@ -59,14 +60,24 @@ const TICK: readonly SimEvent["type"][] = [
   "TissueDamaged",
 ];
 
-describe.each(["duel", "first-board", "lake-week"])(
+// Each board must exercise these pathogen actions. A skirmish is size-1 strep for maxTurns turns,
+// too short and too far from the swarms to spore or be blocked.
+const ACTIONS: Record<string, string[]> = {
+  duel: ["Blocked", "Grew", "Spored", "Spread"],
+  "first-board": ["Blocked", "Grew", "Spored", "Spread"],
+  "lake-week": ["Blocked", "Grew", "Spored", "Spread"],
+  skirmish: ["Grew", "Spread"],
+};
+
+describe.each(Object.keys(ACTIONS))(
   "zero orders equals telegraph on %s",
   (scenario) => {
-    it(`holds for ${SEEDS} seeds over ${TURNS} turns`, () => {
+    it(`holds for ${SEEDS} seeds over up to ${TURNS} turns`, () => {
       const seen = new Set<string>();
       for (let seed = 1; seed <= SEEDS; seed++) {
         let battle = loadScenario(scenario, seed) as BattleState;
-        for (let t = 0; t < TURNS; t++) {
+        for (let t = 0; t < Math.min(TURNS, battle.maxTurns); t++) {
+          if (battleStatus(battle).over) break;
           const expected = promise(battle);
           const { state, events } = resolveTurn(battle, []);
           expect(state.pathogens).toEqual(expected.pathogens);
@@ -88,8 +99,7 @@ describe.each(["duel", "first-board", "lake-week"])(
           battle = state;
         }
       }
-      // The board must actually exercise every pathogen action, including a block.
-      expect([...seen].sort()).toEqual(["Blocked", "Grew", "Spored", "Spread"]);
+      expect([...seen].sort()).toEqual(ACTIONS[scenario]);
     });
 
     it("matches the telegraph marks the renderer draws", () => {

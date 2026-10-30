@@ -70,9 +70,9 @@ export interface WeekPreview {
   /** Chance at least one more exposure lands. */
   readonly chanceAnyExposure: number;
   /**
-   * Chance the week ends in a battle, from what the player can know: exposures landed or still to
-   * roll, a reservoir that flared, or a doctor visit that found one. Hidden reservoirs that have
-   * not flared are left out, so the number never gives them away.
+   * Chance the week ends in a full battle rather than a skirmish, from what the player can know:
+   * exposures landed or still to roll, a reservoir that flared, or a doctor visit that found one.
+   * Hidden reservoirs that have not flared are left out, so the number never gives them away.
    */
   readonly chanceBattle: number;
   readonly expectedPathogens: Readonly<Record<PathogenKindId, number>>;

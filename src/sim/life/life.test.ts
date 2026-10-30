@@ -419,25 +419,35 @@ describe("determinism and serialization", () => {
 });
 
 describe("loadoutFromLife and battleDue", () => {
-  it("is a quiet week when nothing lands and no reservoir is carried", () => {
+  it("skirmishes when nothing lands and no reservoir is carried", () => {
     const home = finish(createLife({ seed: 1 }));
     expect(battleDue(home)).toEqual({
-      due: false,
+      due: true,
+      battleKind: "skirmish",
       reasons: [],
-      quietWeek: true,
     });
-    expect(loadoutFromLife(home)).toMatchObject({
+    const loadout = loadoutFromLife(home);
+    expect(loadout).toMatchObject({
+      kind: "skirmish",
       medLevel: 1,
-      exposures: [],
       reservoirs: [],
       doctorVisit: false,
       energy: home.energy,
       load: 0,
     });
+    expect(loadout.exposures.length).toBeGreaterThan(0);
   });
 
-  it("is not a quiet week before the dice are rolled", () => {
-    expect(battleDue(createLife({ seed: 1 })).quietWeek).toBe(false);
+  it("reads as a skirmish before the dice are rolled, with the full loadout mid-week", () => {
+    const life = createLife({ seed: 1 });
+    expect(battleDue(life)).toMatchObject({
+      due: true,
+      battleKind: "skirmish",
+    });
+    expect(loadoutFromLife(life)).toMatchObject({
+      kind: "full",
+      exposures: [],
+    });
   });
 
   it("calls a battle for a flared reservoir, which starts visible", () => {
@@ -449,13 +459,14 @@ describe("loadoutFromLife and battleDue", () => {
       const life = finish(createLife({ seed, reservoirs }));
       const flared = life.reservoirs[0].flared;
       expect(battleDue(life)).toEqual({
-        due: flared,
+        due: true,
+        battleKind: flared ? "full" : "skirmish",
         reasons: flared ? ["reservoir"] : [],
-        quietWeek: !flared,
       });
-      expect(loadoutFromLife(life).reservoirs).toEqual([
-        { kind: "aspergillus", size: 3, hidden: !flared },
-      ]);
+      // A skirmish leaves the carried reservoir off its board.
+      expect(loadoutFromLife(life).reservoirs).toEqual(
+        flared ? [{ kind: "aspergillus", size: 3, hidden: false }] : [],
+      );
       checked += flared ? 1 : 0;
     }
     expect(checked).toBeGreaterThan(0);
@@ -467,8 +478,10 @@ describe("loadoutFromLife and battleDue", () => {
     for (let seed = 1; seed <= 300; seed++) {
       const life = playWeek(LIFE_BOTS.risky, seed);
       const due = battleDue(life);
-      expect(due.due).toBe(life.exposures.length > 0);
-      if (!due.due) continue;
+      expect(due.battleKind).toBe(
+        life.exposures.length > 0 ? "full" : "skirmish",
+      );
+      if (due.battleKind !== "full") continue;
       battles++;
       const loadout = loadoutFromLife(life);
       expect(loadout.seed).toBe(battleSeed(life));

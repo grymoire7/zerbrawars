@@ -273,7 +273,7 @@ export const PARAMS = {
     battleSeedSalt: 0x5bd1e995,
   },
   /**
-   * The campaign (T13): life week, a battle only if one is due, the outcome, then the next week.
+   * The campaign (T13): life week, a battle (full or skirmish), the outcome, then the next week.
    * - cycles: weeks in a campaign.
    * - carry: at the carry, unkilled sealed pathogens (swarm loads, granuloma contents, hidden
    *   tokens) become reservoirs. Biggest first (ties keep load, granuloma, hidden order), at most
@@ -281,7 +281,19 @@ export const PARAMS = {
    *   is cut to `maxSize`: a reservoir is a smouldering remnant, not a full infection. Free
    *   pathogens never carry: "needed backup" means help arrived and dealt with them.
    * - energy: next week starts with what was left + `weekRecovery` + the outcome's energy
-   *   (PARAMS.outcome.energy, or `quietWeekEnergy` with no battle), capped at life.maxEnergy.
+   *   (PARAMS.outcome.energy, skirmish.energy, or `quietWeekEnergy` with no battle), capped at
+   *   life.maxEnergy.
+   * - skirmish: the body is always on patrol. A week with no exposure, no flare and no doctor
+   *   finding still ends in a short battle: `threats.min`..`threats.max` leaky `threats.kind` of
+   *   `threats.size` on distinct `tiles` (count and tiles rolled from the week-end life rng),
+   *   over `maxTurns` turns. No sealed threat (it could only load or carry) and carried reservoirs
+   *   stay off its board, so a skirmish never creates or touches a reservoir. Clearing it pays
+   *   `energy.cleared` (below a full clear's 3); loose germs at the end pay `energy.loose` and
+   *   the next week opens with a flavor aftermath (worn out, or a spot flaring up) that takes
+   *   `aftermathEnergy` energy. The aftermath is not a symptom: it never brings the doctor.
+   * - quietWeekEnergy: the one week with no battle left, a doctor visit that found only a virus
+   *   (and nothing landed). The visit already was the week's beat, so it gets no skirmish; it
+   *   pays the same as a cleared skirmish, so checking a fever never costs the week's reward.
    * - symptoms: each carried reservoir surfaces on the morning of day `earlyDay` if its size is at
    *   least `earlySize`, else on day `lateDay`, as a low fever (mold) or a sore spot (bacteria).
    *   Carrying a total size of `tiredTotal`+ also starts the week tired: `tiredEnergy` less energy.
@@ -291,8 +303,9 @@ export const PARAMS = {
    *   its symptom shows + doctor.earlyDays). A doctor visit by then stops it.
    * - flare: at each day end an unflared reservoir flares with chance
    *   `flare.perDay` * (day + 1) + `flare.perSize` * (size - 1), until the doctor is seen. A flare
-   *   makes a battle due and that token starts visible; unflared ones start hidden. A week with no
-   *   exposure, no flare and no doctor visit is quiet, and its reservoirs carry on (grown).
+   *   makes a full battle due and that token starts visible; unflared ones start hidden. A week
+   *   with no exposure, no flare and no doctor finding skirmishes, and its reservoirs carry on
+   *   (grown).
    * - doctor: the doctor card comes into hand with the first symptom and takes a slot. Within
    *   `earlyDays` of that symptom it is early and costs `earlyEnergy` (-1: as restful as the rest
    *   it replaces, so an early visit costs only the slot); later it costs `lateEnergy` and the
@@ -307,7 +320,21 @@ export const PARAMS = {
     cycles: 2,
     carry: { maxReservoirs: 2, maxSize: 2 },
     weekRecovery: 4,
-    quietWeekEnergy: 3,
+    quietWeekEnergy: 2,
+    skirmish: {
+      maxTurns: 3,
+      threats: { min: 1, max: 2, kind: "strep", size: 1 },
+      tiles: [
+        { x: 1, y: 2 },
+        { x: 5, y: 2 },
+        { x: 3, y: 2 },
+        { x: 0, y: 4 },
+        { x: 6, y: 4 },
+        { x: 3, y: 1 },
+      ],
+      energy: { cleared: 2, loose: 1 },
+      aftermathEnergy: 1,
+    },
     symptoms: {
       earlySize: 2,
       earlyDay: 0,

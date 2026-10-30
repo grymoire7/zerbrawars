@@ -1,8 +1,9 @@
 import { sameCoord } from "../board";
 import { PARAMS } from "../params";
 import type { PathogenKindId } from "../pathogens";
-import type { Coord } from "../types";
-import { battleDueReasons, weekOver } from "./calendar";
+import { rngInt, type RngState } from "../rng";
+import type { BattleKind, Coord } from "../types";
+import { battleDueReasons, battleKindOf, weekOver } from "./calendar";
 import { cardDef } from "./cards";
 import type { BattleReason, LifeState } from "./types";
 
@@ -32,6 +33,8 @@ export interface Loadout {
   readonly schema: 1;
   /** Label carried into BattleState.scenario. */
   readonly scenario: string;
+  /** Omitted = "full". A skirmish plays PARAMS.campaign.skirmish.maxTurns turns. */
+  readonly kind?: BattleKind;
   readonly seed: number;
   /** 0..1 adherence over the last days; sets the aura and the support charges. */
   readonly medLevel: number;
@@ -58,12 +61,46 @@ export function battleSeed(life: LifeState): number {
 }
 
 /**
+ * A skirmish's threats: PARAMS.campaign.skirmish.threats, count and distinct tiles drawn from
+ * `rng` (the week-end life rng in a campaign, the seed in the named scenario).
+ */
+export function skirmishExposures(rng: RngState): Exposure[] {
+  const S = PARAMS.campaign.skirmish;
+  let r = rngInt(rng, S.threats.max - S.threats.min + 1);
+  const count = S.threats.min + r.value;
+  const tiles: Coord[] = [...S.tiles];
+  const out: Exposure[] = [];
+  for (let i = 0; i < count; i++) {
+    r = rngInt(r.rng, tiles.length);
+    const [at] = tiles.splice(r.value, 1);
+    out.push({ kind: S.threats.kind, size: S.threats.size, at });
+  }
+  return out;
+}
+
+/**
  * Builds the battle's loadout from the life phase as it stands (normally once the week is over):
  * the week-end med level, every pathogen that landed, the carried reservoirs, the doctor flag and
- * the energy left. Flared reservoirs start visible. Each exposure takes the first tile of its card's `at` list not yet taken, else
- * the setup default. `load` stays 0.
+ * the energy left. Flared reservoirs start visible. Each exposure takes the first tile of its
+ * card's `at` list not yet taken, else the setup default. `load` stays 0. Once the week is over
+ * with a skirmish due, it is the skirmish's instead: its threats only, carried reservoirs left off
+ * the board (they carry on as they are).
  */
 export function loadoutFromLife(life: LifeState): Loadout {
+  if (weekOver(life) && battleKindOf(life) === "skirmish") {
+    return {
+      schema: 1,
+      scenario: `life-week-${life.week}-skirmish`,
+      kind: "skirmish",
+      seed: battleSeed(life),
+      medLevel: life.medLevel,
+      exposures: skirmishExposures(life.rng),
+      load: 0,
+      reservoirs: [],
+      doctorVisit: false,
+      energy: life.energy,
+    };
+  }
   const taken: Coord[] = [];
   const exposures = life.exposures.map((e): Exposure => {
     const at = cardDef(e.card).exposure.at.find(
@@ -81,6 +118,7 @@ export function loadoutFromLife(life: LifeState): Loadout {
   return {
     schema: 1,
     scenario: `life-week-${life.week}`,
+    kind: "full",
     seed: battleSeed(life),
     medLevel: life.medLevel,
     exposures: exposures.map((e) =>
@@ -102,17 +140,19 @@ export function loadoutFromLife(life: LifeState): Loadout {
 }
 
 export interface BattleDue {
+  /** Always, except a viral doctor visit in a week where nothing landed (see battleKindOf). */
   readonly due: boolean;
+  /** Full with any reason, else a skirmish; null when not due. Mid-week, as it stands so far. */
+  readonly battleKind: BattleKind | null;
+  /** Why it is a full battle; empty for a skirmish. */
   readonly reasons: readonly BattleReason[];
-  /** Every die is rolled and nothing landed or flared. */
-  readonly quietWeek: boolean;
 }
 
 export function battleDue(life: LifeState): BattleDue {
-  const reasons = battleDueReasons(life);
+  const battleKind = battleKindOf(life);
   return {
-    due: reasons.length > 0,
-    reasons,
-    quietWeek: weekOver(life) && reasons.length === 0,
+    due: battleKind !== null,
+    battleKind,
+    reasons: battleDueReasons(life),
   };
 }

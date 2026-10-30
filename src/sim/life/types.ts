@@ -1,5 +1,6 @@
 import type { PathogenKindId } from "../pathogens";
 import type { RngState } from "../rng";
+import type { BattleKind } from "../types";
 import type { CarriedReservoir } from "./loadout";
 
 // Life-phase state is plain JSON, like the battle: no classes, Maps or functions.
@@ -69,6 +70,16 @@ export interface LifeReservoir extends CarriedReservoir {
   readonly grown: boolean;
 }
 
+/**
+ * How a lost skirmish (loose germs at its end) shows the next week: flavor only, not a symptom.
+ * It never brings the doctor and says nothing about reservoirs.
+ */
+export interface Aftermath {
+  readonly kind: "wornOut" | "flareUp";
+  /** Energy it took at the week's start. */
+  readonly energy: number;
+}
+
 export type DoctorTiming = "early" | "late";
 
 /** A doctor visit that has happened this week. */
@@ -106,6 +117,8 @@ export interface LifeState {
   readonly reservoirs: readonly LifeReservoir[];
   /** Symptoms that have shown so far this week, in order. */
   readonly symptoms: readonly Symptom[];
+  /** Left by last week's lost skirmish, or null. */
+  readonly aftermath: Aftermath | null;
   readonly doctor: DoctorVisit | null;
   readonly flags: {
     readonly frictionFired: boolean;
@@ -182,6 +195,11 @@ export type LifeEvent =
       readonly target: number;
     }
   | { readonly type: "SymptomAppeared"; readonly symptom: Symptom }
+  | {
+      /** Last week's skirmish ended with loose germs: flavor, not a symptom (see Aftermath). */
+      readonly type: "SkirmishAftermath";
+      readonly aftermath: Aftermath;
+    }
   | ({ readonly type: "DoctorVisited" } & DoctorVisit & {
         /** Tokens the visit revealed. */
         readonly revealed: number;
@@ -202,7 +220,9 @@ export type LifeEvent =
     }
   | {
       readonly type: "WeekEnded";
+      /** Always true, except a viral doctor visit in a week where nothing landed. */
       readonly battleDue: boolean;
+      readonly battleKind: BattleKind | null;
     };
 
 export type BattleReason = "exposure" | "reservoir" | "doctor";

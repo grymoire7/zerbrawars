@@ -163,8 +163,12 @@ export interface BattleRng {
   readonly resolution: RngState;
 }
 
+/** A full battle (something landed, flared or was found), or the always-on patrol's skirmish. */
+export type BattleKind = "full" | "skirmish";
+
 export interface BattleState {
   readonly scenario: string;
+  readonly kind: BattleKind;
   /** 1-based. */
   readonly turn: number;
   readonly maxTurns: number;

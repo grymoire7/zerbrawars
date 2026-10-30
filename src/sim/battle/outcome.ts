@@ -54,6 +54,7 @@ export function reservoirs(battle: BattleState): Reservoir[] {
  * - neededBackup: tissue health at or below `outcome.backupTissueHealth`, or free pathogens left.
  * - contained: otherwise, if any reservoir is left (load, granuloma or hidden token).
  * - cleared: nothing left at all.
+ * Energy follows the grade (PARAMS.outcome.energy); a skirmish pays its own, cleared or loose.
  */
 export function gradeOutcome(battle: BattleState): BattleOutcome {
   const free = freePathogens(battle);
@@ -79,7 +80,12 @@ export function gradeOutcome(battle: BattleState): BattleOutcome {
       max: PARAMS.maxTissueHealth,
       lost: PARAMS.maxTissueHealth - battle.tissueHealth,
     },
-    energy: PARAMS.outcome.energy[grade],
+    energy:
+      battle.kind === "skirmish"
+        ? PARAMS.campaign.skirmish.energy[
+            grade === "cleared" ? "cleared" : "loose"
+          ]
+        : PARAMS.outcome.energy[grade],
     turnsPlayed: Math.min(battle.turn, battle.maxTurns + 1) - 1,
   };
 }

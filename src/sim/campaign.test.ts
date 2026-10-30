@@ -14,9 +14,15 @@ import {
   syncBattle,
   type Campaign,
   type CampaignEvent,
+  type CampaignOptions,
   type CampaignStep,
 } from "./campaign";
-import { CAMPAIGN_BOTS, playCampaign, playLifeWeek } from "./campaignBots";
+import {
+  CAMPAIGN_BOTS,
+  playCampaign,
+  playLifeWeek,
+  thoughtfulPlay,
+} from "./campaignBots";
 import {
   doctorCost,
   doctorPreview,
@@ -37,6 +43,7 @@ import {
 } from "./life/loadout";
 import type { LifeEvent, LifeState } from "./life/types";
 import { PARAMS } from "./params";
+import { wallOf } from "./pathogens";
 import {
   appendEntry,
   createSessionLog,
@@ -176,8 +183,11 @@ describe("growth and flares", () => {
       const life = finish(createLife({ seed, reservoirs: [MOLD2] }));
       const r = life.reservoirs[0];
       if (r.flared) flared++;
-      expect(battleDue(life).due).toBe(r.flared);
-      expect(loadoutFromLife(life).reservoirs[0].hidden).toBe(!r.flared);
+      expect(battleDue(life).battleKind).toBe(r.flared ? "full" : "skirmish");
+      // A skirmish leaves it off the board, still hidden, to carry on.
+      if (r.flared)
+        expect(loadoutFromLife(life).reservoirs[0].hidden).toBe(false);
+      else expect(life.reservoirs[0].hidden).toBe(true);
     }
     expect(flared / N).toBeCloseTo(expected, 1);
   });
@@ -236,7 +246,7 @@ describe("the doctor", () => {
     expect(doctorCost(placed, 2)).toBeGreaterThan(doctorCost(placed, 0));
   });
 
-  it("viral: says so, gives energy back and calls no battle", () => {
+  it("viral: says so, gives energy back and calls no battle, not even a skirmish", () => {
     let s = 1;
     while (viralFeverDay(s, 1) !== 0) s++;
     const life = createLife({ seed: s, energy: 3 });
@@ -291,20 +301,23 @@ describe("campaign transitions", () => {
     expect(() => battleTurn(c, [])).toThrow(/battle mode/);
   });
 
-  it("skips the battle in a quiet week and carries the energy", () => {
-    let c = check(createCampaign({ seed: 1 }));
-    c = playLifeWeek(
-      c,
-      CAMPAIGN_BOTS.home(() => 0),
-    );
+  it("goes quiet only after a viral doctor visit, and carries the energy", () => {
+    let seed = 1;
+    while (viralFeverDay(seed, 1) !== 0) seed++;
+    let c = check(createCampaign({ seed }));
+    c = check(lifeAction(c, (l) => placeCard(l, 0, 0, "doctor")));
+    while (!weekOver(c.life)) c = check(lifeAction(c, advanceDay));
     const left = c.life.energy;
     const quiet = endWeek(c);
     c = check(quiet);
-    expect(types(quiet.events)).toEqual(["QuietWeek"]);
+    expect(quiet.events).toEqual([
+      { type: "QuietWeek", cycle: 1, reason: "viral" },
+    ]);
     expect(c).toMatchObject({
       mode: "outcome",
       result: { kind: "quiet" },
       battle: null,
+      battleKind: null,
     });
     expect(carryPreview(c).energy.next).toBe(
       Math.min(
@@ -315,7 +328,7 @@ describe("campaign transitions", () => {
     const next = nextCycle(c);
     c = check(next);
     expect(types(next.events).slice(0, 2)).toEqual(["Carried", "WeekStarted"]);
-    expect(c).toMatchObject({ mode: "life", cycle: 2 });
+    expect(c).toMatchObject({ mode: "life", cycle: 2, battleKind: null });
     expect(c.life.week).toBe(2);
     expect(c.history[0].result).toEqual({ kind: "quiet" });
   });
@@ -328,7 +341,7 @@ describe("campaign transitions", () => {
         createCampaign({ seed, cycles: 1 }).state,
         CAMPAIGN_BOTS.risky(() => 0),
       );
-      if (battleDue(c.life).due) break;
+      if (battleDue(c.life).battleKind === "full") break;
       seed++;
     }
     const start = endWeek(c);
@@ -336,8 +349,10 @@ describe("campaign transitions", () => {
     expect(c.mode).toBe("battle");
     expect(start.events[0]).toMatchObject({
       type: "BattleStarted",
+      battleKind: "full",
       reasons: ["exposure"],
     });
+    expect(c.battleKind).toBe("full");
     expect(() => lifeAction(c, advanceDay)).toThrow(/life mode/);
     let ended: CampaignStep | null = null;
     while (c.mode === "battle") {
@@ -345,7 +360,10 @@ describe("campaign transitions", () => {
       c = check(step);
       if (c.mode === "outcome") ended = step;
     }
-    expect(ended?.events.at(-1)).toMatchObject({ type: "BattleEnded" });
+    expect(ended?.events.at(-1)).toMatchObject({
+      type: "BattleEnded",
+      battleKind: "full",
+    });
     expect(c.result?.kind).toBe("battle");
     const done = nextCycle(c);
     c = check(done);
@@ -387,7 +405,8 @@ describe("campaign transitions", () => {
         CAMPAIGN_BOTS.riskyNoDoctor(() => 0),
       );
       const due = battleDue(c.life);
-      if (!due.due || due.reasons.includes("reservoir")) continue;
+      if (due.battleKind !== "full" || due.reasons.includes("reservoir"))
+        continue;
       c = check(endWeek(c));
       const tokens = (c.battle as BattleState).pathogens.filter(
         (p) => p.hidden,
@@ -429,6 +448,191 @@ describe("campaign transitions", () => {
     const a = createLife({ seed: 5, week: 1 });
     const b = createLife({ seed: 5, week: 2 });
     expect(a.rng).not.toEqual(b.rng);
+  });
+});
+
+/** Week 1 at home (nothing placed, no doctor): always a skirmish. */
+function homeSkirmish(seed: number, opts: Partial<CampaignOptions> = {}) {
+  let c = createCampaign({ seed, ...opts }).state;
+  c = playLifeWeek(c, { ...CAMPAIGN_BOTS.home(() => 0), doctor: "never" });
+  return { before: c, step: endWeek(c) };
+}
+
+/** Ends the skirmish with zero orders (germs left loose) or the thoughtful player (cleared). */
+function finishSkirmish(c: Campaign, seed: number, clear: boolean): Campaign {
+  const battle = c.battle as BattleState;
+  if (clear) return check(syncBattle(c, thoughtfulPlay(battle, seed).final));
+  while (c.mode === "battle") c = check(battleTurn(c, []));
+  return c;
+}
+
+describe("skirmishes", () => {
+  it("is always due unless a viral visit took the week", () => {
+    for (let seed = 1; seed <= 300; seed++) {
+      for (const bot of ["home", "smarter", "riskyNoDoctor", "mixed"]) {
+        const c = playLifeWeek(
+          createCampaign({ seed }).state,
+          CAMPAIGN_BOTS[bot](() => 0.5),
+        );
+        const due = battleDue(c.life);
+        const viral =
+          c.life.doctor?.finding === "viral" && due.reasons.length === 0;
+        expect(due.due).toBe(!viral);
+        expect(due.battleKind).toBe(
+          viral ? null : due.reasons.length > 0 ? "full" : "skirmish",
+        );
+      }
+    }
+  });
+
+  it("starts a short, small, leaky battle and says it is a skirmish", () => {
+    const S = C.skirmish;
+    for (let seed = 1; seed <= 200; seed++) {
+      const { step } = homeSkirmish(seed);
+      const c = check(step);
+      expect(step.events).toEqual([
+        {
+          type: "BattleStarted",
+          battleKind: "skirmish",
+          reasons: [],
+          hiddenTokens: 0,
+        },
+      ]);
+      const b = c.battle as BattleState;
+      expect(c).toMatchObject({ mode: "battle", battleKind: "skirmish" });
+      expect(b).toMatchObject({ kind: "skirmish", maxTurns: S.maxTurns });
+      expect(b.pathogens.length).toBeGreaterThanOrEqual(S.threats.min);
+      expect(b.pathogens.length).toBeLessThanOrEqual(S.threats.max);
+      for (const p of b.pathogens) {
+        expect(p).toMatchObject({
+          kind: S.threats.kind,
+          size: S.threats.size,
+          hidden: false,
+        });
+        expect(wallOf(p)).toBe("leaky");
+      }
+    }
+  });
+
+  it("is deterministic per seed and week, and varies across seeds", () => {
+    expect(homeSkirmish(5).step).toEqual(homeSkirmish(5).step);
+    const layouts = new Set(
+      Array.from({ length: 30 }, (_, i) =>
+        JSON.stringify(
+          (homeSkirmish(i + 1).step.state.battle as BattleState).pathogens.map(
+            (p) => p.at,
+          ),
+        ),
+      ),
+    );
+    expect(layouts.size).toBeGreaterThan(5);
+  });
+
+  it("pays a small bonus when cleared, and is winnable by the thoughtful player", () => {
+    let cleared = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      let c = check(homeSkirmish(seed).step);
+      c = finishSkirmish(c, seed, true);
+      expect(c.result).toMatchObject({
+        kind: "battle",
+        battleKind: "skirmish",
+      });
+      if (c.result?.kind !== "battle" || c.result.outcome.grade !== "cleared")
+        continue;
+      cleared++;
+      expect(c.result.outcome.energy).toBe(C.skirmish.energy.cleared);
+      const left = c.life.energy;
+      expect(carryPreview(c).energy.next).toBe(
+        Math.min(
+          PARAMS.life.maxEnergy,
+          left + C.weekRecovery + C.skirmish.energy.cleared,
+        ),
+      );
+      const next = check(nextCycle(c));
+      expect(next.life.aftermath).toBeNull();
+    }
+    expect(cleared / 200).toBeGreaterThan(0.95);
+  });
+
+  it("costs energy and leaves a flavor aftermath, not a symptom, when germs stay loose", () => {
+    let loose = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      let c = check(homeSkirmish(seed).step);
+      c = finishSkirmish(c, seed, false);
+      if (c.result?.kind !== "battle" || c.result.outcome.grade === "cleared")
+        continue;
+      loose++;
+      expect(c.result.outcome.energy).toBe(C.skirmish.energy.loose);
+      expect(C.skirmish.energy.loose).toBeLessThan(C.skirmish.energy.cleared);
+      const carry = carryPreview(c);
+      const step = nextCycle(c);
+      const next = check(step);
+      const aftermath = next.life.aftermath;
+      expect(aftermath).toMatchObject({ energy: C.skirmish.aftermathEnergy });
+      expect(next.life.energy).toBe(
+        Math.max(0, carry.energy.next - C.skirmish.aftermathEnergy) -
+          (next.life.symptoms.some((s) => s.kind === "tired")
+            ? C.symptoms.tiredEnergy
+            : 0),
+      );
+      expect(step.events).toContainEqual({
+        type: "Life",
+        event: { type: "SkirmishAftermath", aftermath },
+      });
+      // Flavor only: no symptom, no doctor, no reservoir.
+      if (viralFeverDay(seed, 2) === null) {
+        expect(next.life.symptoms).toEqual([]);
+        expect(next.life.hand).not.toContain("doctor");
+      }
+      expect(next.life.reservoirs).toEqual([]);
+      expect(carry.kept).toEqual([]);
+      // It does not snowball: the next week's aftermath depends only on that week's skirmish.
+      let d = playLifeWeek(next, {
+        ...CAMPAIGN_BOTS.home(() => 0),
+        doctor: "never",
+      });
+      d = check(endWeek(d));
+      expect(d.battleKind).toBe("skirmish");
+    }
+    expect(loose).toBeGreaterThan(50);
+  });
+
+  it("never touches or creates a carried reservoir", () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const { before, step } = homeSkirmish(seed, { reservoirs: [STAPH1] });
+      if (step.state.mode !== "battle" || step.state.battleKind !== "skirmish")
+        continue;
+      checked++;
+      let c = check(step);
+      expect(
+        (c.battle as BattleState).pathogens.every((p) => p.kind === "strep"),
+      ).toBe(true);
+      c = finishSkirmish(c, seed, seed % 2 === 0);
+      const kept = carryPreview(c).kept;
+      expect(kept).toEqual(carryReservoirs(before.life.reservoirs).kept);
+    }
+    expect(checked).toBeGreaterThan(50);
+  });
+
+  it("survives JSON and validates at every step, aftermath included", () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      let c = check(homeSkirmish(seed).step);
+      c = finishSkirmish(c, seed, false);
+      c = check(nextCycle(c));
+      expect(JSON.parse(JSON.stringify(c))).toEqual(c);
+      expect(validateCampaign(c)).toEqual([]);
+    }
+    const c = check(homeSkirmish(1).step);
+    expect(validateCampaign({ ...c, battleKind: "full" })).toContain(
+      "battleKind and battle disagree",
+    );
+    expect(
+      validateCampaign({
+        ...c,
+        life: { ...c.life, aftermath: { kind: "wornOut", energy: 9 } },
+      }),
+    ).toContain("life: invalid skirmish aftermath");
   });
 });
 

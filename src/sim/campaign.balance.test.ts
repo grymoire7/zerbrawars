@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { campaignSummary } from "./campaign";
+import { campaignSummary, type CycleRecord } from "./campaign";
 import {
   CAMPAIGN_BOTS,
   playCampaign,
@@ -11,18 +11,38 @@ import { validateCampaign } from "./validate";
 
 // Whole-campaign balance: each strategy plays the same seeded two-week campaigns, every battle by
 // the thoughtful player. See the table with
-// `npx vitest run src/sim/campaign.balance.test.ts --silent=false`. Per week a quiet week scores
-// 3, cleared 2, contained 1, backup 0; "score" is the campaign total minus 1 per reservoir still
-// carried at the end. "res2" is the share of campaigns that start week 2 with a reservoir.
-// The thresholds are the design targets.
+// `npx vitest run src/sim/campaign.balance.test.ts --silent=false`. Every week battles: a full
+// battle, or a skirmish when nothing landed ("skirm" cleared, "loose" not), except a viral doctor
+// week ("quiet"). Per week a quiet week or cleared skirmish scores 3, a loose skirmish 1, a full
+// battle cleared 2, contained 1, backup 0; "score" is the campaign total plus GOAL_SCORE per goal
+// met, minus 1 per reservoir still carried at the end. "res2" is the share of campaigns that
+// start week 2 with a reservoir. The thresholds are the design targets.
 
 const SEEDS = 400;
-const WEEK_SCORE = { quiet: 3, cleared: 2, contained: 1, neededBackup: 0 };
+const WEEK_SCORE = {
+  quiet: 3,
+  skirmish: 3,
+  loose: 1,
+  cleared: 2,
+  contained: 1,
+  neededBackup: 0,
+};
+const GOAL_SCORE = 1;
+
+/** A finished week's WEEK_SCORE key. */
+function weekResult(h: CycleRecord): keyof typeof WEEK_SCORE {
+  if (h.result.kind === "quiet") return "quiet";
+  if (h.result.battleKind === "skirmish")
+    return h.result.outcome.grade === "cleared" ? "skirmish" : "loose";
+  return h.result.outcome.grade;
+}
 
 interface Row {
   points: number;
   goals: number;
   quiet: number;
+  skirm: number;
+  loose: number;
   cleared: number;
   contained: number;
   backup: number;
@@ -42,6 +62,8 @@ function survey(name: string): Row {
     points: 0,
     goals: 0,
     quiet: 0,
+    skirm: 0,
+    loose: 0,
     cleared: 0,
     contained: 0,
     backup: 0,
@@ -62,6 +84,8 @@ function survey(name: string): Row {
     r.points += s.points / SEEDS;
     r.goals += s.goalsMet / weeks / SEEDS;
     r.quiet += s.quietWeeks / weeks / SEEDS;
+    r.skirm += s.skirmishes.cleared / weeks / SEEDS;
+    r.loose += s.skirmishes.loose / weeks / SEEDS;
     r.cleared += s.grades.cleared / weeks / SEEDS;
     r.contained += s.grades.contained / weeks / SEEDS;
     r.backup += s.grades.neededBackup / weeks / SEEDS;
@@ -70,14 +94,9 @@ function survey(name: string): Row {
     r.doctor += s.doctorVisits / SEEDS;
     r.early += s.earlyVisits / SEEDS;
     const score =
-      c.history.reduce(
-        (n, h) =>
-          n +
-          WEEK_SCORE[
-            h.result.kind === "quiet" ? "quiet" : h.result.outcome.grade
-          ],
-        0,
-      ) - s.reservoirsLeft;
+      c.history.reduce((n, h) => n + WEEK_SCORE[weekResult(h)], 0) +
+      GOAL_SCORE * s.goalsMet -
+      s.reservoirsLeft;
     r.score += score / SEEDS;
     if (c.history[1].reservoirsIn > 0) {
       r.res2 += 1 / SEEDS;
@@ -98,13 +117,15 @@ describe("campaign strategies", () => {
 
   it("prints the table", () => {
     const lines = [
-      "strategy           pts  goal quiet clear  cont  back tissue  res2  left  doc early score w/res",
+      "strategy           pts  goal quiet skirm loose clear  cont  back tissue  res2  left  doc early score w/res",
       ...Object.entries(rows).map(
         ([n, r]) =>
           n.padEnd(16) +
           num(r.points, 1) +
           pct(r.goals) +
           pct(r.quiet) +
+          pct(r.skirm) +
+          pct(r.loose) +
           pct(r.cleared) +
           pct(r.contained) +
           pct(r.backup) +
@@ -124,9 +145,24 @@ describe("campaign strategies", () => {
 
   const goalMeeters = Object.entries(rows).filter(([, r]) => r.goals >= 0.95);
 
-  it("keeps staying home pointless and safe", () => {
+  it("keeps staying home pointless, and it still skirmishes", () => {
     expect(rows.home.points).toBe(0);
-    expect(rows.home.quiet).toBeCloseTo(1, 9);
+    expect(rows.home.skirm + rows.home.loose).toBeGreaterThan(0.6);
+    expect(rows.home.quiet).toBeLessThan(0.4);
+    expect(rows.home.left).toBe(0);
+  });
+
+  it("makes the smarter weeks the best overall", () => {
+    for (const [n, r] of Object.entries(rows))
+      if (n !== "smarter")
+        expect(rows.smarter.score, n).toBeGreaterThan(r.score);
+  });
+
+  it("never carries a reservoir out of a skirmish-only campaign", () => {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const c = playCampaign(CAMPAIGN_BOTS.home, seed);
+      expect(c.history.every((h) => h.carried.length === 0)).toBe(true);
+    }
   });
 
   it("makes the smarter weeks the best play of those that meet the goal", () => {
@@ -178,7 +214,7 @@ function doctorSurvey(
   for (let seed = 1; seed <= DOCTOR_SEEDS; seed++) {
     const c = playCampaign(bot, seed, { cycles: 1, reservoirs, energy: 6 });
     const h = c.history[0];
-    const grade = h.result.kind === "quiet" ? "quiet" : h.result.outcome.grade;
+    const grade = weekResult(h);
     out.score += (WEEK_SCORE[grade] - h.carried.length) / DOCTOR_SEEDS;
     out.points += h.points / DOCTOR_SEEDS;
     out.left += h.carried.length / DOCTOR_SEEDS;

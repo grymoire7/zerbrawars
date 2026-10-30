@@ -7,7 +7,7 @@ import type {
   Symptom,
 } from "./life/types";
 import type { PathogenKindId } from "./pathogens";
-import type { BattleGrade, Order, SupportOrder } from "./types";
+import type { BattleGrade, BattleKind, Order, SupportOrder } from "./types";
 
 // The playtest session log (T14): plain JSON entries, appended in order, exported as a file. No
 // names, dates or device data: `t` is milliseconds since the session started, supplied by the UI
@@ -55,6 +55,11 @@ export type SessionEntry =
       readonly kind: Symptom["kind"];
     })
   | (InCycle & {
+      /** Last week's lost skirmish: flavor, not a symptom. */
+      readonly type: "aftermath";
+      readonly kind: "wornOut" | "flareUp";
+    })
+  | (InCycle & {
       readonly type: "doctor";
       readonly day: number;
       readonly timing: DoctorTiming;
@@ -71,6 +76,7 @@ export type SessionEntry =
     })
   | (InCycle & {
       readonly type: "battleStarted";
+      readonly battleKind: BattleKind;
       readonly reasons: readonly BattleReason[];
       readonly hiddenTokens: number;
     })
@@ -97,6 +103,7 @@ export type SessionEntry =
     })
   | (InCycle & {
       readonly type: "outcome";
+      readonly battleKind: BattleKind | null;
       readonly result: BattleGrade | "quiet";
       readonly tissueLost: number;
       readonly reservoirs: number;
@@ -128,6 +135,7 @@ const TYPES: readonly SessionEntryType[] = [
   "meds",
   "friction",
   "symptom",
+  "aftermath",
   "doctor",
   "exposure",
   "battleStarted",
@@ -201,6 +209,8 @@ export function entriesFor(step: CampaignStep, t: number): SessionEntry[] {
             day: v.symptom.day,
             kind: v.symptom.kind,
           });
+        } else if (v.type === "SkirmishAftermath") {
+          out.push({ t, cycle, type: "aftermath", kind: v.aftermath.kind });
         } else if (v.type === "DoctorVisited") {
           out.push({
             t,
@@ -233,6 +243,7 @@ export function entriesFor(step: CampaignStep, t: number): SessionEntry[] {
           t,
           cycle,
           type: "battleStarted",
+          battleKind: e.battleKind,
           reasons: e.reasons,
           hiddenTokens: e.hiddenTokens,
         });
@@ -242,6 +253,7 @@ export function entriesFor(step: CampaignStep, t: number): SessionEntry[] {
           t,
           cycle,
           type: "outcome",
+          battleKind: null,
           result: "quiet",
           tissueLost: 0,
           reservoirs: 0,
@@ -252,6 +264,7 @@ export function entriesFor(step: CampaignStep, t: number): SessionEntry[] {
           t,
           cycle,
           type: "outcome",
+          battleKind: e.battleKind,
           result: e.outcome.grade,
           tissueLost: e.outcome.tissue.lost,
           reservoirs: e.outcome.reservoirs.length,

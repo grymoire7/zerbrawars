@@ -94,6 +94,14 @@ export function validateBattle(battle: BattleState): string[] {
     place(p.id, p.at, "pathogen");
     checkKindAndSize(p.id, p);
   }
+  if (battle.kind !== "full" && battle.kind !== "skirmish")
+    problems.push(`unknown battle kind ${String(battle.kind)}`);
+  const turns =
+    battle.kind === "skirmish"
+      ? PARAMS.campaign.skirmish.maxTurns
+      : PARAMS.maxTurns;
+  if (battle.maxTurns !== turns)
+    problems.push(`a ${battle.kind} battle with ${battle.maxTurns} turns`);
   const chance = battle.residualKillChance;
   if (!(chance >= 0 && chance <= 1))
     problems.push(`residualKillChance ${chance} is outside 0..1`);
@@ -165,6 +173,13 @@ export function validateLife(life: LifeState): string[] {
     problems.push(
       "the doctor is in hand without a symptom, or missing with one",
     );
+  const a = life.aftermath;
+  if (
+    a &&
+    ((a.kind !== "wornOut" && a.kind !== "flareUp") ||
+      a.energy !== PARAMS.campaign.skirmish.aftermathEnergy)
+  )
+    problems.push("invalid skirmish aftermath");
   if ((life.doctor !== null) !== life.flags.doctorVisit)
     problems.push("doctor visit and flag disagree");
   return problems;
@@ -180,6 +195,12 @@ export function validateCampaign(c: Campaign): string[] {
     problems.push(`${c.history.length} weeks recorded, expected ${finished}`);
   if (c.battle)
     problems.push(...validateBattle(c.battle).map((p) => `battle: ${p}`));
+  if ((c.battle?.kind ?? null) !== c.battleKind)
+    problems.push("battleKind and battle disagree");
+  if (c.result?.kind === "battle" && c.result.battleKind !== c.battleKind)
+    problems.push("result and battleKind disagree");
+  if (c.battle?.kind === "skirmish" && c.loadout?.reservoirs.length)
+    problems.push("a skirmish with reservoirs on its board");
   switch (c.mode) {
     case "life":
       if (c.battle || c.loadout || c.result)

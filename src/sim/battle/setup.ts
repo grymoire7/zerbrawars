@@ -78,10 +78,13 @@ export function battleFromLoadout(loadout: Loadout): BattleState {
     });
   }
 
+  const kind = loadout.kind ?? "full";
   const battle: BattleState = {
     scenario: loadout.scenario,
+    kind,
     turn: 1,
-    maxTurns: PARAMS.maxTurns,
+    maxTurns:
+      kind === "skirmish" ? PARAMS.campaign.skirmish.maxTurns : PARAMS.maxTurns,
     board: createBoard(PARAMS.boardWidth, PARAMS.boardHeight),
     swarms,
     pathogens,

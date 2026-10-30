@@ -86,6 +86,30 @@ describe("duel", () => {
   });
 });
 
+describe("skirmish", () => {
+  it("is a short battle of 1-2 size-1 leaky threats, mostly reachable on turn 1", () => {
+    const S = PARAMS.campaign.skirmish;
+    let reachable = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const battle = loadScenario("skirmish", seed) as BattleState;
+      expect(battle).toMatchObject({ kind: "skirmish", maxTurns: S.maxTurns });
+      expect(battle.pathogens.length).toBeGreaterThanOrEqual(S.threats.min);
+      expect(battle.pathogens.length).toBeLessThanOrEqual(S.threats.max);
+      expect(battle.pathogens.every((p) => wallOf(p) === "leaky")).toBe(true);
+      if (turnOneTargets(battle).length > 0) reachable++;
+    }
+    expect(reachable).toBeGreaterThan(150);
+  });
+
+  it("keeps every other scenario a full battle", () => {
+    for (const name of SCENARIO_NAMES.filter((n) => n !== "skirmish"))
+      expect(loadScenario(name)).toMatchObject({
+        kind: "full",
+        maxTurns: PARAMS.maxTurns,
+      });
+  });
+});
+
 describe("loadScenario", () => {
   it("returns null for an unknown name", () => {
     expect(loadScenario("nope")).toBeNull();
