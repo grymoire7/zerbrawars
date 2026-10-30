@@ -1,4 +1,5 @@
 import { SCENARIO_NAMES } from "../sim/scenarios";
+import { copyText, downloadText } from "./download";
 
 /** The loadout levers (see app/loadoutOptions). */
 export interface DebugLoadout {
@@ -9,7 +10,17 @@ export interface DebugLoadout {
   readonly residual: number;
 }
 
-export type DebugMode = "battle" | "life";
+export type DebugMode = "campaign" | "battle" | "life";
+
+/** Facilitator switches and the session-log export (campaign runs only). */
+export interface SessionDebug {
+  readonly brought: boolean;
+  readonly probe: boolean;
+  onBrought(on: boolean): void;
+  onProbe(on: boolean): void;
+  exportJson(): string;
+  readonly fileName: string;
+}
 
 export interface DebugPanelOptions {
   /** Which screen this panel sits on; "life" hides the battle-only levers. */
@@ -22,6 +33,7 @@ export interface DebugPanelOptions {
   readonly skipPlayback?: boolean;
   onSkipPlayback?(on: boolean): void;
   readonly loadout?: DebugLoadout;
+  readonly session?: SessionDebug;
   /** Restart the battle with these levers (the caller also updates the URL). */
   onRestart?(loadout: DebugLoadout): void;
 }
@@ -78,10 +90,15 @@ export function createDebugPanel(
   const mode = opts.mode ?? "battle";
   const modeSelect = document.createElement("select");
   modeSelect.style.cssText = control;
-  for (const m of ["battle", "life"] as const) {
+  for (const m of ["campaign", "life", "battle"] as const) {
     const o = document.createElement("option");
     o.value = m;
-    o.textContent = m === "life" ? "Life phase (calendar)" : "Battle";
+    o.textContent =
+      m === "campaign"
+        ? "Campaign"
+        : m === "life"
+          ? "Life phase only (calendar)"
+          : "Battle only";
     modeSelect.appendChild(o);
   }
   modeSelect.value = mode;
@@ -156,10 +173,62 @@ export function createDebugPanel(
     }),
   );
 
+  const sessionRows: HTMLElement[] = [];
+  if (opts.session) {
+    const session = opts.session;
+    const check = (text: string, on: boolean, change: (v: boolean) => void) => {
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = on;
+      cb.style.cssText = "width:20px;height:20px;margin:0;";
+      cb.addEventListener("change", () => change(cb.checked));
+      const row = document.createElement("label");
+      row.style.cssText =
+        "display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;";
+      row.append(cb, text);
+      return row;
+    };
+    const status = document.createElement("div");
+    status.setAttribute("role", "status");
+    status.style.cssText = "font-size:12px;min-height:1.2em;";
+    const exportBtn = document.createElement("button");
+    exportBtn.type = "button";
+    exportBtn.textContent = "Export session JSON";
+    exportBtn.style.cssText = control;
+    exportBtn.addEventListener("click", () => {
+      downloadText(session.fileName, session.exportJson());
+      status.textContent = "Saved a file.";
+    });
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.textContent = "Copy session JSON";
+    copyBtn.style.cssText = control;
+    copyBtn.addEventListener("click", () => {
+      void copyText(session.exportJson()).then((ok) => {
+        status.textContent = ok ? "Copied." : "Copy was blocked. Use Export.";
+      });
+    });
+    sessionRows.push(
+      check(
+        "Show the 'you brought' strip at battle start",
+        session.brought,
+        session.onBrought,
+      ),
+      check(
+        "Prediction probe on turns 2, 4 and 6",
+        session.probe,
+        session.onProbe,
+      ),
+      exportBtn,
+      copyBtn,
+      status,
+    );
+  }
+
   const stats = document.createElement("div");
   stats.style.cssText = "font:11px monospace;opacity:0.8;padding:0 4px;";
 
-  body.append(label("Screen", modeSelect), label("Seed", seed));
+  body.append(label("Screen", modeSelect), label("Seed", seed), ...sessionRows);
   if (mode === "battle") {
     body.prepend(label("Scenario", select));
     body.append(

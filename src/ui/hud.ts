@@ -1,3 +1,4 @@
+import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 export interface HudOrder {
   readonly swarmId: string;
   /** Status chip text: "no order", "move", "hold", "engulf", "wall off", "busy". */
@@ -54,6 +55,8 @@ export interface HudKey {
   readonly aura: boolean;
   /** At least one charge is left. */
   readonly charges: boolean;
+  /** Germ kinds on the board right now (hidden ones left out), for the shape and rim key. */
+  readonly kinds: readonly PathogenKindId[];
 }
 
 export interface HudOdds {
@@ -359,7 +362,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   };
   let keyText = "";
   const updateKey = (k: HudKey) => {
-    const sig = `${k.heatLevels.join()}|${k.forecast}|${k.aura}|${k.charges}`;
+    const sig = `${k.heatLevels.join()}|${k.forecast}|${k.aura}|${k.charges}|${k.kinds.join()}`;
     if (sig === keyText) return;
     keyText = sig;
     const heat = [
@@ -373,8 +376,32 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
           ]
         : []),
     ];
+    const germRows = k.kinds.map((id) => {
+      const def = PATHOGEN_KINDS[id];
+      const body =
+        def.form === "mold"
+          ? "background:#6f4fb8;clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);"
+          : "background:#e8a33d;border-radius:50%;";
+      const sealed = def.wall === "sealed";
+      const mark = el(
+        "span",
+        `display:inline-block;width:16px;height:16px;flex:none;box-sizing:border-box;${body}` +
+          (sealed ? "outline:2px solid #f4efe0;outline-offset:1px;" : ""),
+      );
+      mark.setAttribute("aria-hidden", "true");
+      return keyRow(
+        mark,
+        `${def.organism}: ${def.form === "mold" ? "spiky mold" : "round bacterium"}` +
+          (sealed
+            ? ", pale ring = sealed shell. Engulfing loads a swarm, it does not kill."
+            : ". Engulfing kills it."),
+      );
+    });
     keyBody.replaceChildren(
-      line("What germs will do next turn", "font-weight:600;"),
+      ...(germRows.length > 0
+        ? [line("Germs", "font-weight:600;"), ...germRows]
+        : []),
+      line("What germs will do next turn", "font-weight:600;margin-top:4px;"),
       keyRow(glyph("→", "#ffd23f"), "Yellow arrow: spread"),
       keyRow(glyph("···", "#6fb8ff"), "Blue dotted arc: spore"),
       keyRow(

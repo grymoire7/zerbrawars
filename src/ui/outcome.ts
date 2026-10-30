@@ -5,10 +5,25 @@ export interface OutcomeHandlers {
   onPlayAgain(): void;
   onNewSeed(): void;
   onReplay(): void;
+  /** Campaign only: on to the next week (or the summary). */
+  onNext?(): void;
+}
+
+/** Campaign context for the overlay: what carries into next week and what it may mean. */
+export interface OutcomeExtra {
+  readonly nextLabel: string;
+  readonly kept: number;
+  readonly dropped: number;
+  readonly energyNext: number;
+  readonly lastWeek: boolean;
 }
 
 export interface OutcomeOverlay {
-  show(outcome: BattleOutcome, status: BattleStatus): void;
+  show(
+    outcome: BattleOutcome,
+    status: BattleStatus,
+    extra?: OutcomeExtra,
+  ): void;
   hide(): void;
 }
 
@@ -93,7 +108,8 @@ export function createOutcomeOverlay(
   const fresh = button("New seed", handlers.onNewSeed);
   const replay = button("Replay last turn", handlers.onReplay);
   const peek = button("Look at the board", () => setCollapsed(true));
-  buttons.append(again, fresh, replay, peek);
+  const next = button("Next", () => handlers.onNext?.(), true);
+  buttons.append(next, again, fresh, replay, peek);
   card.append(title, summary, reasons, carry, stats, buttons);
   backdrop.append(card);
 
@@ -115,6 +131,32 @@ export function createOutcomeOverlay(
     if (e.key === "Escape" && open) setCollapsed(true);
   };
   window.addEventListener("keydown", keys);
+
+  const meaning = (extra: OutcomeExtra) => {
+    const box = document.createElement("div");
+    box.style.cssText =
+      "margin-top:8px;padding:8px 10px;border-radius:6px;background:#2c2f38;line-height:1.4;font-size:14px;";
+    if (extra.kept === 0) {
+      box.textContent = extra.lastWeek
+        ? "Nothing is left over to carry forward."
+        : "Nothing is left over, so next week starts clear.";
+      return box;
+    }
+    const lines = [
+      `${extra.kept} will ride along into ${extra.lastWeek ? "the days after" : "next week"}, hidden again.`,
+      "What that means: they may show up as symptoms, like a low fever, a sore spot, or feeling tired. If you notice one, the doctor can take a look.",
+    ];
+    if (extra.dropped > 0)
+      lines.push(`${extra.dropped} more settle on their own.`);
+    box.replaceChildren(
+      ...lines.map((t) => {
+        const p = document.createElement("div");
+        p.textContent = t;
+        return p;
+      }),
+    );
+    return box;
+  };
 
   const rows = (outcome: BattleOutcome) => {
     const head = document.createElement("div");
@@ -140,7 +182,7 @@ export function createOutcomeOverlay(
   };
 
   return {
-    show(outcome, status) {
+    show(outcome, status, extra) {
       const g = GRADE[outcome.grade];
       title.textContent = g.title;
       summary.textContent = g.summary;
@@ -156,12 +198,22 @@ export function createOutcomeOverlay(
         }),
       );
       reasons.style.display = lines.length > 0 ? "" : "none";
-      carry.replaceChildren(...rows(outcome));
+      carry.replaceChildren(
+        ...rows(outcome),
+        ...(extra ? [meaning(extra)] : []),
+      );
+      next.style.display = extra ? "" : "none";
+      again.style.display = extra ? "none" : "";
+      fresh.style.display = extra ? "none" : "";
+      if (extra) next.textContent = extra.nextLabel;
       const { tissue } = outcome;
       stats.textContent =
         `Tissue ${tissue.health} of ${tissue.max}` +
         (tissue.lost > 0 ? ` (${tissue.lost} lost)` : " (unharmed)") +
-        `. Energy carried forward: ${outcome.energy}. Turns played: ${outcome.turnsPlayed}.`;
+        `. Energy carried forward: ${outcome.energy}. Turns played: ${outcome.turnsPlayed}.` +
+        (extra && !extra.lastWeek
+          ? ` You start next with ${extra.energyNext} energy.`
+          : "");
       open = true;
       setCollapsed(false);
     },

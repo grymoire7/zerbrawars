@@ -7,6 +7,7 @@ import {
 } from "../sim/life/calendar";
 import { cardDef } from "../sim/life/cards";
 import type { CardId, LifeEvent, LifeState } from "../sim/life/types";
+import { bodyBeats } from "./campaignModel";
 import { PARAMS } from "../sim/params";
 import { pathogenKind, type PathogenKindId } from "../sim/pathogens";
 
@@ -186,6 +187,7 @@ export function lifeBeats(events: readonly LifeEvent[]): string[] {
         out.push("The week is over.");
         break;
       default:
+        out.push(...bodyBeats([e]));
         break;
     }
   }

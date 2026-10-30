@@ -35,7 +35,7 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Charges",
-    "Medication also gives you charges: antibacterial kills a round bacterium, antifungal kills a shelled fungus, and a strong charge (from a doctor visit) kills either. A charge only works on small germs (size 2 or less, strong up to 4). Once a turn, pick a charge in the side panel, then tap a green diamond: a germ, or a loaded swarm (which clears one carried germ). No dice are rolled, and a hit germ does nothing that turn. Tap the diamond again, or press Clear, to take it back.",
+    "Medication also gives you charges: antibacterial kills a bacterium (shelled or not), antifungal kills a mold, and a strong charge (from a doctor visit) kills either. A charge only works on small germs (size 2 or less, strong up to 4). Once a turn, pick a charge in the side panel, then tap a green diamond: a germ, or a loaded swarm (which clears one carried germ). No dice are rolled, and a hit germ does nothing that turn. Tap the diamond again, or press Clear, to take it back.",
   ],
   [
     "Hidden germs",
@@ -47,7 +47,7 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Engulfing",
-    "Round bacteria are killed when engulfed. Shelled fungus is not: it loads your swarm instead. Loaded swarms move slower.",
+    "Round bacteria without a shell are killed when engulfed. A germ with a pale ring (a shell) is not: engulfing it loads your swarm instead, whether it is a mold or Staphylococcus aureus, a round bacterium that wears a shell. Loaded swarms move slower.",
   ],
   [
     "Wall off",

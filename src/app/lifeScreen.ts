@@ -10,16 +10,30 @@ import {
   todayDose,
   unplaceCard,
   weekOver,
-  createLife,
 } from "../sim/life/calendar";
+import { doctorPreview } from "../sim/life/body";
 import { cardDef, versionsOf } from "../sim/life/cards";
 import { battleDue, loadoutFromLife } from "../sim/life/loadout";
 import { cardPreview, exposurePreview } from "../sim/life/preview";
-import type { CardId, HandCardId, LifeState } from "../sim/life/types";
+import type {
+  CardId,
+  HandCardId,
+  LifeEvent,
+  LifeState,
+  LifeStep,
+} from "../sim/life/types";
 import { battleFromLoadout } from "../sim/battle/setup";
 import { PARAMS } from "../sim/params";
 import { createDebugPanel } from "../ui/debugPanel";
+import { sessionOptions } from "./sessionOptions";
 import { createHelp, LIFE_LINES } from "../ui/help";
+import {
+  doctorLines,
+  DOCTOR_NUDGE,
+  symptomText,
+  weekOpening,
+} from "./campaignModel";
+import type { Run } from "./run";
 import {
   createLifePanel,
   type LifePanelModel,
@@ -40,23 +54,25 @@ import type { Screen, ScreenEnv } from "./screen";
 const L = PARAMS.life;
 
 /** The calendar screen: the body inset on the board canvas, the week planner in the side panel. */
-export function mountLife(env: ScreenEnv): Screen {
+export function mountLife(env: ScreenEnv, run: Run): Screen {
   const { canvas, root, panels, ui } = env;
   document.getElementById("app")?.classList.add("life");
   const ac = new AbortController();
   const { signal } = ac;
-  const params = new URLSearchParams(window.location.search);
-  const seedParam = Number(params.get("seed"));
-  const seed =
-    params.get("seed") !== null && Number.isFinite(seedParam)
-      ? seedParam
-      : PARAMS.defaultSeed;
-
-  let life: LifeState = createLife({ seed });
+  let life: LifeState = run.campaign().life;
   let sel: HandCardId | "rest" | null = null;
   let hover: CardId | null = null;
   let message = "";
-  let beats: { day: string; lines: string[] }[] = [];
+  const opening = weekOpening(run.lastEvents());
+  let beats: { day: string; lines: string[] }[] =
+    run.campaign().cycle > 1 || opening.length > 0
+      ? [
+          {
+            day: `Week ${life.week} begins`,
+            lines: [`You start with ${life.energy} energy.`, ...opening],
+          },
+        ]
+      : [];
   const chosen = new Map<HandCardId, CardId>();
   let packed = false;
 
@@ -76,12 +92,15 @@ export function mountLife(env: ScreenEnv): Screen {
     lines: LIFE_LINES,
     seenKey: "zebrawars.help.life.seen",
   });
-  const apply = (fn: () => { state: LifeState }) => {
+  const apply = (fn: (l: LifeState) => LifeStep): LifeEvent[] => {
     try {
-      life = fn().state;
+      const step = run.life(fn);
+      life = run.campaign().life;
       message = "";
+      return step.events.flatMap((e) => (e.type === "Life" ? [e.event] : []));
     } catch (err) {
       message = err instanceof Error ? err.message : String(err);
+      return [];
     }
   };
 
@@ -103,14 +122,16 @@ export function mountLife(env: ScreenEnv): Screen {
 
   const showInset = () => {
     inset.setAura(life.medLevel);
-    inset.setReservoirs(life.reservoirs);
+    // Only what the doctor found (or a flare) shows; hidden ones stay hidden.
+    inset.setReservoirs(life.reservoirs.filter((r) => !r.hidden || r.flared));
     const card = previewCard();
     let label = `Body view: medication shield ${pct(life.medLevel)}.`;
-    if (card) {
+    if (card && !cardDef(card).doctor) {
       const p = cardPreview(life, card);
       const entry = cardDef(card).exposure.at[0] ?? { x: 3, y: 2 };
       inset.setPreview({
         kind: p.kind,
+        kinds: p.kinds,
         count: particleCount(p.expectedPathogens),
         entry,
       });
@@ -180,7 +201,11 @@ export function mountLife(env: ScreenEnv): Screen {
       const pv = cardPreview(life, version);
       const at = placed(base);
       const other = pv.otherVersion ? cardPreview(life, pv.otherVersion) : null;
+      const isDoctor = cardDef(version).doctor === true;
       return {
+        doctor: isDoctor
+          ? doctorLines(doctorPreview(life, at ? at.day : life.day))
+          : null,
         base,
         version,
         label: pv.label,
@@ -209,7 +234,20 @@ export function mountLife(env: ScreenEnv): Screen {
     });
     const due = battleDue(life);
     const s = weekSummary(life);
-    const reservoir = due.reasons.includes("reservoir");
+    const reasons = due.reasons;
+    const symptomLines = life.symptoms.map(symptomText);
+    const notes: string[] = [];
+    if (life.doctor) {
+      notes.push(
+        life.doctor.finding === "reservoir"
+          ? `You saw the doctor (${life.doctor.timing}) and they found something. It goes into the battle out in the open, with strong backup.`
+          : `You saw the doctor (${life.doctor.timing}). It was only a virus.`,
+      );
+    } else if (symptomLines.length > 0) {
+      notes.push(
+        "Symptoms showed up this week, and you did not see the doctor.",
+      );
+    }
     const hintBase =
       sel === "rest"
         ? "Tap a slot to clear it for a rest."
@@ -267,15 +305,17 @@ export function mountLife(env: ScreenEnv): Screen {
             streak: s.streak,
             goalText: `${s.points} of ${s.target} points.`,
             metGoal: s.metGoal,
+            notes,
             battle: due.due
               ? {
                   due: true,
-                  line:
-                    reservoir && !due.reasons.includes("exposure")
+                  line: reasons.includes("exposure")
+                    ? "Something came home with you. A battle is next, with your medication at " +
+                      pct(s.medLevel) +
+                      "."
+                    : reasons.includes("reservoir")
                       ? "Something left over is flaring up. A battle is next."
-                      : "Something came home with you. A battle is next, with your medication at " +
-                        pct(s.medLevel) +
-                        ".",
+                      : "The doctor found something, and now it is out in the open. A battle is next, with strong backup on your side.",
                 }
               : {
                   due: false,
@@ -285,6 +325,15 @@ export function mountLife(env: ScreenEnv): Screen {
         : null,
       playLabel:
         life.day === 0 ? "Play day 1" : `Next day: play day ${life.day + 1}`,
+      feel: {
+        lines: symptomLines,
+        nudge:
+          life.hand.includes("doctor") && !life.doctor && !over
+            ? DOCTOR_NUDGE
+            : null,
+      },
+      endLabel: due.due ? "Start the battle" : run.standalone ? "" : "Continue",
+      canAgain: run.standalone,
     };
   };
 
@@ -368,12 +417,7 @@ export function mountLife(env: ScreenEnv): Screen {
     },
     onPlay: () => {
       const day = life.day;
-      let events: Parameters<typeof lifeBeats>[0] = [];
-      apply(() => {
-        const step = advanceDay(life);
-        events = step.events;
-        return step;
-      });
+      const events = apply(() => advanceDay(life));
       beats = [
         { day: `Day ${day + 1}`, lines: lifeBeats(events) },
         ...beats,
@@ -381,20 +425,22 @@ export function mountLife(env: ScreenEnv): Screen {
       sel = null;
       draw();
     },
-    onStartBattle: () =>
-      env.go({
-        mode: "battle",
-        battle: battleFromLoadout(loadoutFromLife(life)),
-      }),
-    onAgain: () => {
-      life = createLife({ seed });
-      sel = null;
-      beats = [];
-      chosen.clear();
-      packed = false;
-      message = "";
-      draw();
+    onStartBattle: () => {
+      if (run.standalone) {
+        env.go({
+          mode: "battle",
+          battle: battleFromLoadout(loadoutFromLife(life)),
+        });
+        return;
+      }
+      run.endWeek();
+      env.go(
+        run.campaign().mode === "battle"
+          ? { mode: "battle", run }
+          : { mode: "quiet", run },
+      );
     },
+    onAgain: () => env.go({ mode: "life" }),
     onPreview: (version) => {
       hover = version as CardId | null;
       showInset();
@@ -402,10 +448,12 @@ export function mountLife(env: ScreenEnv): Screen {
   });
 
   const debug = createDebugPanel(panels.scroll, {
-    mode: "life",
-    onMode: (m) => env.go({ mode: m }),
+    mode: run.standalone ? "life" : "campaign",
+    onMode: (m) =>
+      env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
     scenario: "",
-    seed,
+    seed: run.seed,
+    session: sessionOptions(run),
   });
 
   function draw() {

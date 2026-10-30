@@ -13,9 +13,22 @@ import { DEFAULT_SCENARIO, isScenarioName } from "../sim/scenarios";
 import { stallChance } from "../sim/battle/intents";
 import { battleStatus } from "../sim/battle/outcome";
 import { PARAMS } from "../sim/params";
-import { pathogenKind } from "../sim/pathogens";
+import {
+  pathogenKind,
+  PATHOGEN_KINDS,
+  type PathogenKindId,
+} from "../sim/pathogens";
+
+const PATHOGEN_ORDER = Object.keys(PATHOGEN_KINDS) as PathogenKindId[];
 import type { BattleState, ChargeKind, Coord } from "../sim/types";
 import type { Screen, ScreenEnv } from "./screen";
+import { carryPreview } from "../sim/campaign";
+import { battleDueReasons } from "../sim/life/calendar";
+import { createBroughtStrip } from "../ui/broughtStrip";
+import { createProbe } from "../ui/probe";
+import { broughtItems, probeDue, reasonText } from "./campaignModel";
+import { settings, type Run } from "./run";
+import { sessionOptions } from "./sessionOptions";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
@@ -35,7 +48,13 @@ import {
 } from "./loadoutOptions";
 
 /** The battle screen: the board canvas, the orders panel and the turn controls. */
-export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
+export function mountBattle(
+  env: ScreenEnv,
+  given?: BattleState,
+  run?: Run,
+): Screen {
+  // In a campaign the Campaign owns the battle; the controller plays it and hands it back.
+  const start = run ? (run.campaign().battle ?? undefined) : given;
   const { canvas, camera, root: scene, ui, panels } = env;
   const ac = new AbortController();
   const { signal } = ac;
@@ -96,18 +115,113 @@ export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
   const help = createHelp(ui);
   const hud = createHud(panels, {
     onHelp: () => help.open(),
-    onEndTurn: () => controller.endTurn(),
-    onSkip: () => controller.skip(),
-    onReplay: () => controller.replay(),
+    onEndTurn: () => endTurn(),
+    onSkip: () => {
+      if (controller.mode() === "playback") {
+        if (turnLog) turnLog.skipped = true;
+        run?.ui("skip", `turn ${turnLog?.turn ?? "?"}`);
+      }
+      controller.skip();
+    },
+    onReplay: () => {
+      if (controller.canReplay()) {
+        if (turnLog) turnLog.replays++;
+        run?.ui("replay", `turn ${turnLog?.turn ?? "?"}`);
+      }
+      controller.replay();
+    },
     onSpeed: (speed) => controller.setSpeed(speed),
-    onReset: () => controller.reset(),
+    onReset: () => {
+      if (run && run.campaign().mode !== "battle") return;
+      run?.ui("reset", "battle");
+      controller.reset();
+    },
     onSelect: (id) => controller.select(id),
     onClearOrder: (id) => controller.clearOrder(id),
     onWallOff: () => controller.wallOff(),
     onPickCharge: (charge) => controller.pickCharge(charge as ChargeKind),
     onClearSupport: () => controller.clearSupport(),
   });
+  const strip = createBroughtStrip(ui, () => {
+    strip.hide();
+    run?.ui("dismiss", "brought strip");
+  });
+  const probe = createProbe(ui);
+  const probed = new Set<number>();
+  let planStart = run?.elapsed() ?? 0;
+  interface TurnLog {
+    turn: number;
+    orders: ReturnType<typeof controller.orders>;
+    support: ReturnType<typeof controller.supportOrder>;
+    planningMs: number;
+    startedAt: number;
+    doneAt: number | null;
+    skipped: boolean;
+    replays: number;
+    speed: number;
+  }
+  let turnLog: TurnLog | null = null;
+  const flushTurn = () => {
+    if (!run || !turnLog) return;
+    const t = turnLog;
+    turnLog = null;
+    run.turn({
+      turn: t.turn,
+      orders: t.orders,
+      support: t.support,
+      planningMs: t.planningMs,
+      playbackMs: (t.doneAt ?? run.elapsed()) - t.startedAt,
+      skipped: t.skipped || controller.reducedMotion(),
+      replays: t.replays,
+      speed: t.speed,
+    });
+  };
+  const resolveTurn = () => {
+    const turn = controller.state().turn;
+    const orders = controller.orders();
+    const support = controller.supportOrder();
+    const now = run?.elapsed() ?? 0;
+    flushTurn();
+    controller.endTurn();
+    if (run && controller.state().turn !== turn) {
+      turnLog = {
+        turn,
+        orders,
+        support,
+        planningMs: now - planStart,
+        startedAt: now,
+        doneAt: null,
+        skipped: false,
+        replays: 0,
+        speed: controller.speed(),
+      };
+      strip.hide();
+    }
+  };
+  function endTurn() {
+    if (!controller.canEndTurn() || probe.isOpen()) return;
+    flushTurn();
+    const turn = controller.state().turn;
+    if (run && probeDue(turn, settings.probe) && !probed.has(turn)) {
+      probe.ask(turn, (answer) => {
+        probed.add(turn);
+        run.probe(turn, answer ?? "(skipped)");
+        resolveTurn();
+      });
+      return;
+    }
+    resolveTurn();
+  }
   const outcomeOverlay = createOutcomeOverlay(ui, {
+    onNext: () => {
+      if (!run) return;
+      run.next();
+      env.go(
+        run.campaign().mode === "done"
+          ? { mode: "summary", run }
+          : { mode: "life", run },
+      );
+    },
     onPlayAgain: () => controller.reset(),
     onNewSeed: () => {
       validSeed = Math.floor(Math.random() * 1_000_000);
@@ -154,6 +268,10 @@ export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
     if (playing && (playing.done || playing !== pb)) {
       snap = playing.skipped || playing !== pb;
       playing = null;
+      if (run) {
+        planStart = run.elapsed();
+        if (turnLog) turnLog.doneAt = planStart;
+      }
       playbackView.end();
       shown = null;
     }
@@ -224,7 +342,25 @@ export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
     if (outcome && !playing) {
       if (!outcomeShown) {
         outcomeShown = true;
-        outcomeOverlay.show(outcome, battleStatus(controller.state()));
+        let extra;
+        if (run) {
+          flushTurn();
+          if (run.campaign().mode === "battle")
+            run.finishBattle(controller.state());
+          const c = run.campaign();
+          const carry = carryPreview(c);
+          extra = {
+            nextLabel:
+              c.cycle >= c.cycles
+                ? "See your summary"
+                : `Start week ${c.life.week + 1}`,
+            kept: carry.kept.length,
+            dropped: carry.dropped.length,
+            energyNext: carry.energy.next,
+            lastWeek: c.cycle >= c.cycles,
+          };
+        }
+        outcomeOverlay.show(outcome, battleStatus(controller.state()), extra);
       }
     } else if (outcomeShown) {
       outcomeShown = false;
@@ -266,6 +402,9 @@ export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
       key: {
         aura: s.meds.aura > 0,
         charges: controller.charges().length > 0,
+        kinds: PATHOGEN_ORDER.filter((k) =>
+          s.pathogens.some((p) => !p.hidden && p.kind === k),
+        ),
         heatLevels: heatKey(s, forecast?.rising.length ?? 0).levels,
         forecast: (forecast?.rising.length ?? 0) > 0,
       },
@@ -304,11 +443,23 @@ export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
     },
     skipPlayback: controller.reducedMotion(),
     onSkipPlayback: (on) => controller.setReducedMotion(on),
-    mode: "battle",
-    onMode: (m) => env.go({ mode: m }),
+    mode: run ? "campaign" : "battle",
+    onMode: (m) =>
+      env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
+    session: run ? sessionOptions(run) : undefined,
   });
   panels.scroll.append(readout);
   help.showFirstTime();
+  if (run && settings.brought) {
+    const c = run.campaign();
+    const why = reasonText(c.result ? [] : dueReasons(run));
+    strip.show(
+      why
+        ? `You brought this fight: ${why}`
+        : "What you brought into this fight",
+      broughtItems(c),
+    );
+  }
 
   // Pointer events (not mouse) so touch works; the canvas must not pan or zoom on touch.
   canvas.style.touchAction = "none";
@@ -345,7 +496,7 @@ export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
   window.addEventListener(
     "keydown",
     (e) => {
-      if (help.isOpen()) return;
+      if (help.isOpen() || probe.isOpen()) return;
       const t = e.target as HTMLElement | null;
       if (t && ["INPUT", "SELECT", "TEXTAREA"].includes(t.tagName)) return;
       // A focused, enabled button already turns Enter and Space into a click.
@@ -354,7 +505,7 @@ export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
       if ((e.key === "Enter" || e.key === " ") && !e.repeat && !onButton) {
         e.preventDefault();
         if (controller.mode() === "playback") controller.skip();
-        else if (e.key === "Enter") controller.endTurn();
+        else if (e.key === "Enter") endTurn();
       } else if (e.key === "Tab") {
         e.preventDefault();
         controller.cycle(e.shiftKey ? -1 : 1);
@@ -399,10 +550,18 @@ export function mountBattle(env: ScreenEnv, start?: BattleState): Screen {
     },
     dispose() {
       ac.abort();
+      flushTurn();
+      strip.dispose();
+      probe.dispose();
       help.dispose();
       panels.scroll.replaceChildren();
       panels.bar.replaceChildren();
       ui.replaceChildren();
     },
   };
+}
+
+function dueReasons(run: Run) {
+  const life = run.campaign().life;
+  return battleDueReasons(life);
 }

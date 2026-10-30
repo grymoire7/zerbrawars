@@ -15,6 +15,8 @@ export interface InsetView {
   setPreview(
     p: {
       readonly kind: PathogenKindId;
+      /** Each dot cycles through these (the lake brings two kinds); defaults to `kind`. */
+      readonly kinds?: readonly PathogenKindId[];
       readonly count: number;
       readonly entry: Coord;
     } | null,
@@ -113,8 +115,7 @@ export function createInsetView(
   }
 
   let preview: {
-    form: "bacterium" | "mold";
-    sealed: boolean;
+    dots: readonly { form: "bacterium" | "mold"; sealed: boolean }[];
     count: number;
     from: THREE.Vector3;
     to: THREE.Vector3;
@@ -141,20 +142,22 @@ export function createInsetView(
   const draw = () => {
     for (const m of [bodies.bacterium, bodies.mold, rims]) m.count = 0;
     if (!preview) return;
-    const body = bodies[preview.form];
-    body.count = preview.count;
-    rims.count = preview.sealed ? preview.count : 0;
+    const used = { bacterium: 0, mold: 0, rims: 0 };
     for (let i = 0; i < preview.count; i++) {
+      const dot = preview.dots[i % preview.dots.length];
       // Reduced motion: dots sit evenly along the path instead of drifting.
       const t = calm.matches
         ? (i + 0.5) / preview.count
         : (i / preview.count + clock * DRIFT_SPEED) % 1;
       place(t, i, 1);
-      body.setMatrixAt(i, dummy.matrix);
-      if (preview.sealed) rims.setMatrixAt(i, dummy.matrix);
+      bodies[dot.form].setMatrixAt(used[dot.form]++, dummy.matrix);
+      if (dot.sealed) rims.setMatrixAt(used.rims++, dummy.matrix);
     }
-    body.instanceMatrix.needsUpdate = true;
-    rims.instanceMatrix.needsUpdate = true;
+    bodies.bacterium.count = used.bacterium;
+    bodies.mold.count = used.mold;
+    rims.count = used.rims;
+    for (const m of [bodies.bacterium, bodies.mold, rims])
+      m.instanceMatrix.needsUpdate = true;
   };
 
   const markers = new THREE.Group();
@@ -179,7 +182,10 @@ export function createInsetView(
         draw();
         return;
       }
-      const kind = pathogenKind(p.kind);
+      const dots = (p.kinds?.length ? p.kinds : [p.kind]).map((k) => {
+        const def = pathogenKind(k);
+        return { form: def.form, sealed: def.wall === "sealed" };
+      });
       const to = board3.tilePosition(p.entry).clone();
       const toLeft = p.entry.x;
       const toRight = board.width - 1 - p.entry.x;
@@ -194,8 +200,7 @@ export function createInsetView(
       else from.z += out;
       const along = to.clone().sub(from).normalize();
       preview = {
-        form: kind.form,
-        sealed: kind.wall === "sealed",
+        dots,
         count: Math.min(MAX_DOTS, p.count),
         from,
         to,

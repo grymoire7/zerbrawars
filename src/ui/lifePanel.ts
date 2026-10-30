@@ -23,6 +23,8 @@ export interface LifeCardModel {
   /** Overnight cards: what leaving or packing the pills means. */
   readonly pills: { readonly packed: boolean; readonly extra: number } | null;
   readonly placedAt: string | null;
+  /** The doctor card's body; replaces the odds, since a visit brings nothing in. */
+  readonly doctor: readonly string[] | null;
   readonly selected: boolean;
   readonly played: boolean;
 }
@@ -50,6 +52,8 @@ export interface LifeSummaryModel {
   readonly goalText: string;
   readonly metGoal: boolean;
   readonly battle: { readonly due: boolean; readonly line: string };
+  /** How the body went this week: symptoms and the doctor visit. */
+  readonly notes: readonly string[];
 }
 
 export interface LifePanelModel {
@@ -85,6 +89,15 @@ export interface LifePanelModel {
   }[];
   readonly summary: LifeSummaryModel | null;
   readonly playLabel: string;
+  /** How you feel this week, in plain words; the nudge is a gentle pointer to the doctor card. */
+  readonly feel: {
+    readonly lines: readonly string[];
+    readonly nudge: string | null;
+  };
+  /** The button that ends a finished week: the battle, or on to the next beat. */
+  readonly endLabel: string;
+  /** Standalone debug entry only: replan the same week. */
+  readonly canAgain: boolean;
 }
 
 export interface LifePanelHandlers {
@@ -193,6 +206,12 @@ export function createLifePanel(
     "div",
     PANEL + "padding:8px 10px;display:flex;flex-direction:column;gap:6px;",
   );
+  const feelBox = el(
+    "div",
+    "background:#2f2a22;border:1px solid #6b5a3a;border-radius:6px;padding:8px 10px;" +
+      "display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.35;",
+  );
+  feelBox.setAttribute("role", "status");
   const handBox = el("div", "display:flex;flex-direction:column;gap:8px;");
   const beatsBox = el("details", PANEL) as HTMLDetailsElement;
   beatsBox.open = true;
@@ -252,12 +271,21 @@ export function createLifePanel(
     ),
     keyRow(
       dot("border-radius:50%;border:2px dashed #b9a7e8;"),
-      "Faint rings on the body: something carried over that is not found yet.",
+      "Rings on the body: something the doctor found that is still there.",
     ),
   );
   key.append(keyBody);
 
-  mounts.scroll.append(top, metersBox, medsBox, calBox, handBox, beatsBox, key);
+  mounts.scroll.append(
+    top,
+    feelBox,
+    metersBox,
+    medsBox,
+    calBox,
+    handBox,
+    beatsBox,
+    key,
+  );
 
   const playBtn = button(
     "",
@@ -266,7 +294,7 @@ export function createLifePanel(
     "play",
   );
   const battleBtn = button(
-    "Start battle",
+    "Start the battle",
     h.onStartBattle,
     "min-height:52px;width:100%;font-weight:700;font-size:16px;",
     "battle",
@@ -474,13 +502,23 @@ export function createLifePanel(
       pick.append(
         el("span", "font-weight:700;font-size:15px;", c.label),
         el("span", "line-height:1.3;", c.people),
-        el("span", "font-size:13px;opacity:0.8;line-height:1.3;", c.blurb),
-        el(
-          "span",
-          "font-size:13px;display:flex;gap:10px;flex-wrap:wrap;",
-          `+${c.points} points · ${c.energy} energy`,
-        ),
-        el("span", "font-size:13px;font-weight:600;", c.odds),
+        ...(c.doctor
+          ? c.doctor.map((t) =>
+              el("span", "font-size:13px;opacity:0.9;line-height:1.3;", t),
+            )
+          : [
+              el(
+                "span",
+                "font-size:13px;opacity:0.8;line-height:1.3;",
+                c.blurb,
+              ),
+              el(
+                "span",
+                "font-size:13px;display:flex;gap:10px;flex-wrap:wrap;",
+                `+${c.points} points · ${c.energy} energy`,
+              ),
+              el("span", "font-size:13px;font-weight:600;", c.odds),
+            ]),
         el(
           "span",
           "font-size:12px;opacity:0.75;",
@@ -564,6 +602,7 @@ export function createLifePanel(
       el("div", "", `Goal: ${s.goalText}${s.metGoal ? " You made it." : ""}`),
       el("div", "", `Medication level: ${s.medPct} (streak ${s.streak}).`),
     );
+    for (const n of s.notes) box.append(el("div", "", n));
     if (s.landed.length > 0) {
       box.append(el("div", "font-weight:600;", "What landed"));
       for (const t of s.landed) box.append(el("div", "", `• ${t}`));
@@ -596,6 +635,14 @@ export function createLifePanel(
     update(m) {
       const focus = activeKey();
       title.textContent = m.title;
+      feelBox.style.display = m.feel.lines.length > 0 ? "flex" : "none";
+      feelBox.replaceChildren(
+        el("div", "font-weight:700;", "How you feel"),
+        ...m.feel.lines.map((t) => el("div", "", t)),
+        ...(m.feel.nudge
+          ? [el("div", "font-size:13px;opacity:0.85;", m.feel.nudge)]
+          : []),
+      );
       renderMeters(m);
       renderMeds(m);
       renderCalendar(m);
@@ -613,9 +660,9 @@ export function createLifePanel(
       }
       playBtn.style.display = m.over ? "none" : "";
       playBtn.textContent = m.playLabel;
-      const due = m.summary?.battle.due === true;
-      battleBtn.style.display = m.over && due ? "" : "none";
-      againBtn.style.display = m.over ? "" : "none";
+      battleBtn.style.display = m.over && m.endLabel ? "" : "none";
+      battleBtn.textContent = m.endLabel;
+      againBtn.style.display = m.over && m.canAgain ? "" : "none";
       if (focus) {
         const target = mounts.scroll.parentElement?.querySelector<HTMLElement>(
           `[data-key="${focus}"]`,
