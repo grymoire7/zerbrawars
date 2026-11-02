@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 49 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,100 tokens. Without it, AI exploration would cost ~21,800 tokens. **Saves ~17,800 tokens per conversation.**
-> **Last scanned:** 2026-11-02 21:31 — re-run after significant changes
+> **Last scanned:** 2026-11-02 22:03 — re-run after significant changes
 
 ---
 
@@ -246,6 +246,7 @@
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
 - `src/ui/interlude.ts`
   - function createInterlude: (root) => Interlude
+  - interface ScoreCardModel
   - interface InterludeModel
   - interface Interlude
 - `src/ui/lifePanel.ts`
@@ -286,7 +287,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/sim/params.ts` — imported by **44** files
+- `src/sim/params.ts` — imported by **45** files
 - `src/sim/types.ts` — imported by **44** files
 - `src/sim/pathogens.ts` — imported by **21** files
 - `src/sim/rng.ts` — imported by **18** files
@@ -309,7 +310,7 @@
 
 ## Import Map (who imports what)
 
-- `src/sim/params.ts` ← `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts` +39 more
+- `src/sim/params.ts` ← `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts` +40 more
 - `src/sim/types.ts` ← `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +39 more
 - `src/sim/pathogens.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/render/insetView.ts`, `src/sim/battle/bots.ts` +16 more
 - `src/sim/rng.ts` ← `src/sim/battle/bots.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/intents.ts`, `src/sim/battle/orders.test.ts` +13 more
@@ -325,7 +326,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 29 test files found
+> 31 test files found
 
 ---
 

@@ -21,6 +21,8 @@ export interface OutcomeExtra {
   readonly dropped: number;
   readonly energyNext: number;
   readonly lastWeek: boolean;
+  /** One plain line with the week's score and its Choices and Outcome parts. */
+  readonly scoreLine?: string;
 }
 
 export interface OutcomeOverlay {
@@ -109,6 +111,8 @@ export function createOutcomeOverlay(
   const carry = document.createElement("div");
   const stats = document.createElement("p");
   stats.style.cssText = "margin:0;line-height:1.4;";
+  const score = document.createElement("p");
+  score.style.cssText = "margin:0;line-height:1.4;font-weight:600;";
 
   const buttons = document.createElement("div");
   buttons.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;";
@@ -128,7 +132,7 @@ export function createOutcomeOverlay(
   const peek = button("Look at the board", () => setCollapsed(true));
   const next = button("Next", () => handlers.onNext?.(), true);
   buttons.append(next, again, fresh, replay, peek);
-  card.append(title, summary, reasons, carry, stats, buttons);
+  card.append(title, summary, reasons, carry, stats, score, buttons);
   backdrop.append(card);
 
   // A small tab to bring the card back after looking at the final board.
@@ -241,6 +245,8 @@ export function createOutcomeOverlay(
           (extra && !extra.lastWeek
             ? ` You start next with ${extra.energyNext} energy.`
             : "");
+      score.textContent = extra?.scoreLine ?? "";
+      score.style.display = extra?.scoreLine ? "" : "none";
       open = true;
       setCollapsed(false);
     },

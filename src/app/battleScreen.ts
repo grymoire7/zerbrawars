@@ -38,7 +38,8 @@ import { createDebugPanel } from "../ui/debugPanel";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { createStatusStrip } from "../ui/statusStrip";
-import { weekChoices } from "../sim/score";
+import { weekChoices, weekScore } from "../sim/score";
+import { weekScoreLine } from "./summaryModel";
 import { battleStatusModel, type BattleStatusInput } from "./battleModel";
 import { createOutcomeOverlay } from "../ui/outcome";
 import {
@@ -375,6 +376,9 @@ export function mountBattle(
             dropped: carry.dropped.length,
             energyNext: carry.energy.next,
             lastWeek: c.cycle >= c.cycles,
+            scoreLine: c.result
+              ? weekScoreLine(weekScore(c.life, c.result, carry.kept.length))
+              : undefined,
           };
         }
         outcomeOverlay.show(

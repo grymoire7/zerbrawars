@@ -55,8 +55,8 @@
 - `src/ui/statusStrip.ts` — createStatusStrip, cellLabel, StatusCell, StatusModel, StatusStrip, StatusBar
 - `src/ui/help.ts` — createHelp, Help, HelpOptions, BATTLE_LINES, LIFE_LINES
 - `src/ui/outcome.ts` — createOutcomeOverlay, OutcomeHandlers, OutcomeExtra, OutcomeOverlay, SKIRMISH_COPY
+- `src/ui/interlude.ts` — createInterlude, ScoreCardModel, InterludeModel, Interlude
 - `src/ui/broughtStrip.ts` — createBroughtStrip, BroughtView, BroughtStrip
-- `src/ui/interlude.ts` — createInterlude, InterludeModel, Interlude
 - `src/ui/download.ts` — downloadText, copyText
 - `src/ui/index.ts` — getUiRoot, getPanels
 - `src/ui/probe.ts` — createProbe, Probe

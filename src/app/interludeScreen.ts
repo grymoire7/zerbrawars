@@ -1,13 +1,34 @@
 import { createInsetView } from "../render/insetView";
 import { battleFromLoadout } from "../sim/battle/setup";
 import { campaignSummary, carryPreview } from "../sim/campaign";
+import { PARAMS } from "../sim/params";
 import { loadoutFromLife } from "../sim/life/loadout";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createInterlude, type InterludeModel } from "../ui/interlude";
+import { bestId, recordRun, type RecordResult } from "./bestScores";
+import { scoreCard } from "./summaryModel";
 import { weekLine } from "./campaignModel";
 import type { Run } from "./run";
 import type { Screen, ScreenEnv } from "./screen";
 import { sessionOptions } from "./sessionOptions";
+
+/** Each finished run is recorded once, however often its summary is mounted. */
+const recorded = new WeakMap<Run, RecordResult>();
+
+function recordOnce(run: Run, total: number, choices: number, outcome: number) {
+  const done = recorded.get(run);
+  if (done) return done;
+  const c = run.campaign();
+  const id = bestId({
+    scoreVersion: c.history[0]?.score.version ?? PARAMS.score.version,
+    arc: "summer",
+    variant: "xl",
+    seed: run.seed,
+  });
+  const rec = recordRun(id, { total, choices, outcome });
+  recorded.set(run, rec);
+  return rec;
+}
 
 /** The beats between weeks that have no board: a viral week, and the campaign summary. */
 export function mountInterlude(
@@ -64,8 +85,15 @@ export function mountInterlude(
     const battles = g.cleared + g.contained + g.neededBackup;
     const sk = sum.skirmishes;
     const skirmishes = sk.cleared + sk.loose;
+    const s = sum.score;
+    const rec = recordOnce(run, s.total, s.choices, s.outcome);
     model = {
-      title: `Your ${c.cycles} weeks`,
+      title: `Your ${c.cycles} weeks: ${s.total}`,
+      score: scoreCard(
+        c.history.map((h) => h.score),
+        s,
+        rec,
+      ),
       lead:
         `${sum.points} points across ${sum.weeks} weeks (${sum.goalsMet} goal${sum.goalsMet === 1 ? "" : "s"} met). ` +
         `${battles} ${battles === 1 ? "battle" : "battles"}, ${skirmishes} ${skirmishes === 1 ? "skirmish" : "skirmishes"}` +

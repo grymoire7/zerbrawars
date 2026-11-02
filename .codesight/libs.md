@@ -236,6 +236,7 @@
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
 - `src/ui/interlude.ts`
   - function createInterlude: (root) => Interlude
+  - interface ScoreCardModel
   - interface InterludeModel
   - interface Interlude
 - `src/ui/lifePanel.ts`

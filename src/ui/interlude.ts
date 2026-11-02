@@ -1,6 +1,20 @@
+/** The campaign score: a card per week, a total line, the best lines and a framing line. */
+export interface ScoreCardModel {
+  readonly weeks: readonly {
+    readonly head: string;
+    readonly choices: string;
+    readonly outcome: string;
+  }[];
+  readonly total: string;
+  readonly best: readonly string[];
+  readonly framing: string;
+}
+
 export interface InterludeModel {
   readonly title: string;
   readonly lead: string;
+  /** The campaign summary's score block, under the lead. */
+  readonly score?: ScoreCardModel;
   /** Paragraphs under the lead. */
   readonly notes: readonly string[];
   /** Titled groups of short lines (a week each, in the summary). */
@@ -18,6 +32,32 @@ export interface InterludeModel {
 export interface Interlude {
   show(model: InterludeModel): void;
   dispose(): void;
+}
+
+function scoreView(s: ScoreCardModel): HTMLElement[] {
+  const line = (text: string, css = "") => {
+    const d = document.createElement("div");
+    d.style.cssText = css;
+    d.textContent = text;
+    return d;
+  };
+  const box = (css: string, ...kids: HTMLElement[]) => {
+    const b = document.createElement("div");
+    b.style.cssText =
+      "padding:8px 10px;border-radius:6px;background:var(--zw-control);display:flex;flex-direction:column;gap:2px;font-size:14px;" +
+      css;
+    b.append(...kids);
+    return b;
+  };
+  const weeks = s.weeks.map((w) =>
+    box("", line(w.head, "font-weight:600;"), line(w.choices), line(w.outcome)),
+  );
+  const total = box("", line(s.total, "font-weight:700;"));
+  const best = s.best.map((t, i) =>
+    line(t, i === 0 ? "font-weight:700;" : "opacity:0.9;"),
+  );
+  const framing = line(s.framing, "font-size:13px;opacity:0.8;");
+  return [...weeks, total, ...best, framing];
 }
 
 /** A calm card over the body view: the quiet-week beat and the campaign summary. */
@@ -48,6 +88,7 @@ export function createInterlude(root: HTMLElement): Interlude {
       const lead = document.createElement("p");
       lead.style.cssText = "margin:0;";
       lead.textContent = m.lead;
+      const scoreBlock = m.score ? scoreView(m.score) : [];
       const notes = m.notes.map((t) => {
         const p = document.createElement("p");
         p.style.cssText = "margin:0;opacity:0.9;";
@@ -81,7 +122,14 @@ export function createInterlude(root: HTMLElement): Interlude {
         btn.addEventListener("click", b.onClick);
         row.append(btn);
       }
-      card.replaceChildren(title, lead, ...notes, ...groups, row);
+      card.replaceChildren(
+        title,
+        lead,
+        ...scoreBlock,
+        ...notes,
+        ...groups,
+        row,
+      );
       backdrop.style.display = "flex";
       card.focus();
     },
