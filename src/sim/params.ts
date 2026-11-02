@@ -349,5 +349,29 @@ export const PARAMS = {
     bodySalt: 0x27d4eb2f,
     weekSalt: 0x165667b1,
   },
+  /**
+   * Score (B1a, docs/specs/b1a-design.md section 1). Two parts per week, never negative, nothing
+   * subtracted. Choices (no luck): `perPoint` per life point, `perDodgedPercent` per percentage
+   * point of landing chance a smarter card avoids against its base card (the numbers printed on
+   * the card faces), `perDose` per dose taken this week, and `checked` for seeing the doctor when
+   * a symptom showed (a viral visit pays the same, so checking a fever is never wasted). Outcome
+   * (luck plays a part): `perTissue` per tissue health kept (a quiet week counts as full), the
+   * fight by result (`fight` by grade for a full battle, `skirmish` cleared or loose, `quiet`),
+   * and `carryClear` minus `perCarried` per reservoir carried on. Bump `version` whenever a
+   * weight or tuning that moves the measured ranges changes, so best scores stay comparable.
+   */
+  score: {
+    version: 1,
+    perPoint: 10,
+    perDodgedPercent: 1,
+    perDose: 10,
+    checked: { early: 20, late: 10 },
+    perTissue: 2,
+    fight: { cleared: 40, contained: 20, neededBackup: 10 },
+    skirmish: { cleared: 40, loose: 20 },
+    quiet: 40,
+    carryClear: 20,
+    perCarried: 10,
+  },
   defaultSeed: 1,
 } as const;

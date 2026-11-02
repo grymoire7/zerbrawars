@@ -22,6 +22,12 @@ import type {
   Symptom,
 } from "./life/types";
 import { PARAMS } from "./params";
+import {
+  campaignScore,
+  weekScore,
+  type CampaignScore,
+  type WeekScore,
+} from "./score";
 import type {
   BattleGrade,
   BattleKind,
@@ -70,6 +76,8 @@ export interface CycleRecord {
   readonly dropped: readonly Contained[];
   /** Energy the next week starts with, before any tiredness. */
   readonly energyNext: number;
+  /** The week's score with every part named (see score.ts). */
+  readonly score: WeekScore;
 }
 
 export interface Campaign {
@@ -347,6 +355,7 @@ export function nextCycle(c: Campaign): CampaignStep {
   expectMode(c, "outcome");
   const carry = carryPreview(c);
   const life = c.life;
+  const result = c.result as CycleResult;
   const record: CycleRecord = {
     cycle: c.cycle,
     week: life.week,
@@ -356,10 +365,11 @@ export function nextCycle(c: Campaign): CampaignStep {
     symptoms: life.symptoms,
     doctor: life.doctor,
     reservoirsIn: life.reservoirs.length,
-    result: c.result as CycleResult,
+    result,
     carried: carry.kept,
     dropped: carry.dropped,
     energyNext: carry.energy.next,
+    score: weekScore(life, result, carry.kept.length),
   };
   const history = [...c.history, record];
   const carried: CampaignEvent = {
@@ -415,6 +425,8 @@ export interface CampaignSummary {
   readonly earlyVisits: number;
   /** Reservoirs still carried after the last finished week. */
   readonly reservoirsLeft: number;
+  /** Choices and Outcome totals over the finished weeks. */
+  readonly score: CampaignScore;
 }
 
 /** Totals over the finished weeks. */
@@ -445,5 +457,6 @@ export function campaignSummary(c: Campaign): CampaignSummary {
     doctorVisits: visits.length,
     earlyVisits: visits.filter((h) => h.doctor?.timing === "early").length,
     reservoirsLeft: c.history.at(-1)?.carried.length ?? 0,
+    score: campaignScore(c.history.map((h) => h.score)),
   };
 }

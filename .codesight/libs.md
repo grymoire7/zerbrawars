@@ -182,6 +182,14 @@
   - function isScenarioName: (name) => name is ScenarioName
   - function loadScenario: (name, seed) => BattleState | null
   - _...5 more_
+- `src/sim/score.ts`
+  - function weekChoices: (life) => ChoicesParts
+  - function weekOutcome: (result, carriedCount) => OutcomeParts
+  - function weekScore: (life, result, carriedCount) => WeekScore
+  - function campaignScore: (weeks) => CampaignScore
+  - interface ChoicesParts
+  - interface OutcomeParts
+  - _...2 more_
 - `src/sim/sessionLog.ts`
   - function createSessionLog: (seed, cycles, t) => SessionLog
   - function appendEntry: (log, entry) => SessionLog
