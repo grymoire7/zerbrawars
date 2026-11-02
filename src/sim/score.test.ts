@@ -14,6 +14,7 @@ import { PARAMS } from "./params";
 import type { BattleGrade, BattleKind } from "./types";
 import {
   campaignScore,
+  cardChoices,
   plannedChoices,
   weekChoices,
   weekOutcome,
@@ -242,9 +243,38 @@ describe("plannedChoices", () => {
   it("matches weekChoices once nothing is left to play", () => {
     const done = week({
       day: PARAMS.life.days,
-      goal: { points: 9, target: 10 },
+      goal: { points: 11, target: PARAMS.life.goalTarget },
       doses: [dose(0, true), dose(1, false), dose(2, true)],
     });
     expect(plannedChoices(done)).toEqual(weekChoices(done));
+  });
+});
+
+describe("cardChoices", () => {
+  it("is points only for a base card", () => {
+    expect(cardChoices("yard")).toEqual({ living: 40, dodged: 0, total: 40 });
+    expect(cardChoices("lake")).toEqual({ living: 50, dodged: 0, total: 50 });
+  });
+
+  it("adds the landing chance a smarter version avoids", () => {
+    expect(cardChoices("yardIndoor")).toEqual({
+      living: 30,
+      dodged: 35,
+      total: 65,
+    });
+    expect(cardChoices("beach")).toEqual({ living: 40, dodged: 30, total: 70 });
+  });
+
+  it("keeps the risky version's life points above the smarter one's", () => {
+    expect(cardChoices("yard").living).toBeGreaterThan(
+      cardChoices("yardIndoor").living,
+    );
+    expect(cardChoices("lake").living).toBeGreaterThan(
+      cardChoices("beach").living,
+    );
+  });
+
+  it("is nothing for the doctor card", () => {
+    expect(cardChoices("doctor").total).toBe(0);
   });
 });

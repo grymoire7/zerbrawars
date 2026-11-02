@@ -176,8 +176,9 @@ export const PARAMS = {
   /**
    * The life phase (T11): three days of two slots (day, evening) and a hand of four cards, each
    * played at most once, in its own or its smarter version. An empty slot is rest.
-   * - goalTarget: points that fill the goal meter. The smarter week (12) fills it only with the
-   *   sleepover, so the friction event is part of the route; the all-risky week scores 14.
+   * - goalTarget: points that fill the goal meter. The smarter week scores exactly 12 (all four
+   *   activities, the sleepover included), so the friction event
+   *   is part of the route; the all-risky week scores 14.
    * - Energy (game-only, labelled as such): cards cost it when their day ends, rest refunds
    *   `restEnergy`, packing the pills costs `packPillsEnergy`. The plan's running balance may never
    *   go below 0, so a low-energy week has to rest a slot it would have filled. What is left
@@ -202,7 +203,7 @@ export const PARAMS = {
   life: {
     days: 3,
     slotsPerDay: 2,
-    goalTarget: 10,
+    goalTarget: 12,
     startEnergy: 5,
     maxEnergy: 6,
     restEnergy: 1,
@@ -323,7 +324,7 @@ export const PARAMS = {
     quietWeekEnergy: 2,
     skirmish: {
       maxTurns: 3,
-      threats: { min: 1, max: 2, kind: "strep", size: 1 },
+      threats: { min: 2, max: 3, kind: "strep", size: 1 },
       tiles: [
         { x: 1, y: 2 },
         { x: 5, y: 2 },
@@ -361,7 +362,7 @@ export const PARAMS = {
    * weight or tuning that moves the measured ranges changes, so best scores stay comparable.
    */
   score: {
-    version: 1,
+    version: 2,
     perPoint: 10,
     perDodgedPercent: 1,
     perDose: 10,

@@ -12,6 +12,8 @@ export interface LifeCardModel {
   readonly blurb: string;
   readonly points: number;
   readonly energy: number;
+  /** What choosing this version adds to the Choices score. */
+  readonly choices: number;
   readonly odds: string;
   readonly chance: number;
   /** The other version, offered as an easy swap. */
@@ -80,6 +82,8 @@ export interface LifePanelModel {
   }[];
   readonly summary: LifeSummaryModel | null;
   readonly playLabel: string;
+  /** The one-day button's label, or null when only one day is left (the week button does it). */
+  readonly playDayLabel: string | null;
   /** How you feel this week, in plain words; the nudge is a gentle pointer to the doctor card. */
   readonly feel: {
     readonly lines: readonly string[];
@@ -102,7 +106,10 @@ export interface LifePanelHandlers {
   onSlot(day: number, slot: number): void;
   onTakeMeds(): void;
   onSkipMeds(): void;
+  /** Plays the rest of the week, stopping on a symptom or a missed-dose morning. */
   onPlay(): void;
+  /** Plays just today. */
+  onPlayDay(): void;
   onStartBattle(): void;
   onAgain(): void;
   /** An activity is hovered or focused (null: left). Preview only; no re-render. */
@@ -261,6 +268,12 @@ export function createLifePanel(
     "min-height:52px;width:100%;font-weight:700;font-size:16px;",
     "play",
   );
+  const playDayBtn = button(
+    "",
+    h.onPlayDay,
+    "min-height:44px;width:100%;font-size:14px;",
+    "play-day",
+  );
   const battleBtn = button(
     "",
     h.onStartBattle,
@@ -273,7 +286,7 @@ export function createLifePanel(
     "min-height:52px;width:100%;font-weight:700;font-size:16px;",
     "again",
   );
-  mounts.bar.append(playBtn, battleBtn, againBtn);
+  mounts.bar.append(playBtn, playDayBtn, battleBtn, againBtn);
 
   const activeKey = () =>
     (document.activeElement as HTMLElement | null)?.dataset?.key ?? null;
@@ -488,7 +501,7 @@ export function createLifePanel(
               el(
                 "span",
                 "font-size:13px;display:flex;gap:10px;flex-wrap:wrap;",
-                `+${c.points} points · ${c.energy} energy`,
+                `+${c.points} points · ${c.energy} energy · Choices +${c.choices}`,
               ),
               el("span", "font-size:13px;font-weight:600;", c.odds),
             ]),
@@ -632,7 +645,7 @@ export function createLifePanel(
       beatsBody.replaceChildren();
       if (m.beats.length === 0) {
         beatsBody.append(
-          el("div", "opacity:0.7;", "Play a day to see what happens."),
+          el("div", "opacity:0.7;", "Play the week to see what happens."),
         );
       }
       for (const b of m.beats) {
@@ -641,6 +654,8 @@ export function createLifePanel(
       }
       playBtn.style.display = m.over ? "none" : "";
       playBtn.textContent = m.playLabel;
+      playDayBtn.style.display = m.over || !m.playDayLabel ? "none" : "";
+      playDayBtn.textContent = m.playDayLabel ?? "";
       battleBtn.style.display = m.over && m.endLabel ? "" : "none";
       battleBtn.textContent = m.endLabel;
       againBtn.style.display = m.over && m.canAgain ? "" : "none";

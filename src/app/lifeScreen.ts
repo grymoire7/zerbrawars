@@ -23,6 +23,7 @@ import type {
 } from "../sim/life/types";
 import { battleFromLoadout } from "../sim/battle/setup";
 import { PARAMS } from "../sim/params";
+import { cardChoices } from "../sim/score";
 import { createDebugPanel } from "../ui/debugPanel";
 import { sessionOptions } from "./sessionOptions";
 import { createHelp, LIFE_LINES } from "../ui/help";
@@ -58,6 +59,7 @@ import {
   tapSlot,
   type Pending,
   type PickEffect,
+  weekPlayStops,
   weekSummary,
 } from "./lifeModel";
 import { createStatusStrip } from "../ui/statusStrip";
@@ -230,6 +232,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         blurb: pv.blurb,
         points: pv.points,
         energy: pv.energy,
+        choices: cardChoices(version).total,
         odds: oddsText(pv.chance, pv.kind),
         chance: pv.chance,
         alt: other
@@ -238,7 +241,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
               text: pv.smarter
                 ? `Back to: ${other.label}`
                 : `Try instead: ${other.label}`,
-              odds: `${oddsText(other.chance, other.kind)} · +${other.points} points`,
+              odds: `${oddsText(other.chance, other.kind)} · +${other.points} points · Choices +${cardChoices(other.card).total}`,
             }
           : null,
         pills: pv.friction
@@ -314,8 +317,9 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
             battle: { due: end.due, line: end.line },
           }
         : null,
-      playLabel:
-        life.day === 0 ? "Play day 1" : `Next day: play day ${life.day + 1}`,
+      playLabel: life.day === 0 ? "Play the week" : "Play the rest of the week",
+      playDayLabel:
+        L.days - life.day > 1 ? `Play day ${life.day + 1} only` : null,
       feel: {
         lines: symptomLines,
         nudge:
@@ -334,6 +338,18 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       canAgain: run.standalone,
     };
   };
+
+  /** Plays today and logs its beats; null when the day could not be played. */
+  function playOneDay(): LifeEvent[] | null {
+    const day = life.day;
+    const events = apply(() => advanceDay(life));
+    if (events.length === 0) return null;
+    beats = [
+      { day: `Day ${day + 1}`, lines: lifeBeats(events) },
+      ...beats,
+    ].slice(0, 4);
+    return events;
+  }
 
   /** Carries out a place or remove from the pick logic; a refused placement keeps the activity picked. */
   function runEffect(effect: PickEffect | null) {
@@ -438,12 +454,16 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       draw();
     },
     onPlay: () => {
-      const day = life.day;
-      const events = apply(() => advanceDay(life));
-      beats = [
-        { day: `Day ${day + 1}`, lines: lifeBeats(events) },
-        ...beats,
-      ].slice(0, 3);
+      // Each day goes through the same advanceDay as the one-day button; only the stop rule is new.
+      for (;;) {
+        const events = playOneDay();
+        if (events === null || weekPlayStops(events) || weekOver(life)) break;
+      }
+      pending = NO_PENDING;
+      draw();
+    },
+    onPlayDay: () => {
+      playOneDay();
       pending = NO_PENDING;
       draw();
     },

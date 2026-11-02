@@ -205,6 +205,20 @@ export function lifeBeats(events: readonly LifeEvent[]): string[] {
   return out;
 }
 
+/**
+ * Whether "Play the week" stops after a day that produced these events. It stops where the player
+ * has something to decide on the new morning: a symptom showed (book the doctor) or the sleepover's
+ * missed dose. It also stops when the week ends. The first day pressed is always played.
+ */
+export function weekPlayStops(events: readonly LifeEvent[]): boolean {
+  return events.some(
+    (e) =>
+      e.type === "SymptomAppeared" ||
+      e.type === "FrictionEvent" ||
+      e.type === "WeekEnded",
+  );
+}
+
 export interface WeekSummary {
   readonly landed: readonly { readonly text: string }[];
   readonly dodged: number;

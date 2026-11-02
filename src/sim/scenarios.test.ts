@@ -87,7 +87,7 @@ describe("duel", () => {
 });
 
 describe("skirmish", () => {
-  it("is a short battle of 1-2 size-1 leaky threats, mostly reachable on turn 1", () => {
+  it("is a short battle of 2-3 size-1 leaky threats, mostly reachable on turn 1", () => {
     const S = PARAMS.campaign.skirmish;
     let reachable = 0;
     for (let seed = 1; seed <= 200; seed++) {

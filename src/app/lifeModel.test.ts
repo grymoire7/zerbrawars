@@ -13,6 +13,7 @@ import {
   clearPending,
   particleCount,
   placementCheck,
+  weekPlayStops,
   weekSummary,
   battleOddsText,
   weekEndText,
@@ -254,5 +255,37 @@ describe("medStateWord and chargesText", () => {
     expect(chargesText({ antibacterial: 0, antifungal: 0, strong: 0 })).toBe(
       "no charges",
     );
+  });
+});
+
+describe("weekPlayStops", () => {
+  /** What "Play the week" does: advanceDay until a stop, returning the days it played. */
+  const playWeek = (start: LifeState) => {
+    let life = start;
+    const days: number[] = [];
+    for (;;) {
+      const day = life.day;
+      const step = advanceDay(life);
+      life = step.state;
+      days.push(day);
+      if (weekPlayStops(step.events)) break;
+    }
+    return { life, days };
+  };
+
+  it("plays a quiet week to the end in one go", () => {
+    const { life, days } = playWeek(createLife({ seed: 1 }));
+    if (life.symptoms.length === 0) expect(days).toEqual([0, 1, 2]);
+    expect(life.day).toBeGreaterThanOrEqual(1);
+  });
+
+  it("stops on the morning after a sleepover without the pills", () => {
+    const l = put(createLife({ seed: 1 }), 0, 1, "sleepover", false);
+    const { days } = playWeek(l);
+    expect(days).toEqual([0]);
+  });
+
+  it("does not stop on a plain day", () => {
+    expect(weekPlayStops([{ type: "DayStarted", day: 1 }])).toBe(false);
   });
 });

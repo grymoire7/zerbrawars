@@ -1,6 +1,6 @@
 import { medForecast } from "./life/calendar";
 import { cardDef } from "./life/cards";
-import type { LifeState } from "./life/types";
+import type { CardId, LifeState } from "./life/types";
 import { PARAMS } from "./params";
 import type { CycleResult } from "./campaign";
 
@@ -49,6 +49,27 @@ export interface CampaignScore {
 
 const pct = (chance: number) => Math.round(100 * chance);
 
+/**
+ * What choosing a card adds to Choices: its life points, plus (for a smarter version) the landing
+ * chance it avoids against its base card. No luck, so it is the same every week. The doctor card
+ * adds nothing here: its bonus depends on the day and on what is found.
+ */
+export function cardChoices(card: CardId): {
+  readonly living: number;
+  readonly dodged: number;
+  readonly total: number;
+} {
+  const def = cardDef(card);
+  const living = S.perPoint * def.points;
+  const gain =
+    pct(cardDef(def.base).exposure.chance) - pct(def.exposure.chance);
+  const dodged =
+    def.id === def.base || def.doctor
+      ? 0
+      : S.perDodgedPercent * Math.max(0, gain);
+  return { living, dodged, total: living + dodged };
+}
+
 /** Choices from the finished week's life state. */
 export function weekChoices(life: LifeState): ChoicesParts {
   const living = S.perPoint * life.goal.points;
@@ -85,13 +106,9 @@ export function plannedChoices(life: LifeState): ChoicesParts {
   for (let day = life.day; day < PARAMS.life.days; day++) {
     for (const p of life.plan[day]) {
       if (!p) continue;
-      const def = cardDef(p.card);
-      living += S.perPoint * def.points;
-      if (def.id !== def.base) {
-        const gain =
-          pct(cardDef(def.base).exposure.chance) - pct(def.exposure.chance);
-        dodged += S.perDodgedPercent * Math.max(0, gain);
-      }
+      const c = cardChoices(p.card);
+      living += c.living;
+      dodged += c.dodged;
     }
   }
   const undecidedTaken = medForecast(life).filter(

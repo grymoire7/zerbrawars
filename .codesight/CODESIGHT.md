@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 49 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,100 tokens. Without it, AI exploration would cost ~21,800 tokens. **Saves ~17,800 tokens per conversation.**
-> **Last scanned:** 2026-11-02 22:03 — re-run after significant changes
+> **Last scanned:** 2026-11-02 22:30 — re-run after significant changes
 
 ---
 
@@ -193,13 +193,13 @@
   - function loadScenario: (name, seed) => BattleState | null
   - _...5 more_
 - `src/sim/score.ts`
+  - function cardChoices: (card) => void
   - function weekChoices: (life) => ChoicesParts
   - function plannedChoices: (life) => ChoicesParts
   - function weekOutcome: (result, carriedCount) => OutcomeParts
   - function weekScore: (life, result, carriedCount) => WeekScore
   - function campaignScore: (weeks) => CampaignScore
-  - interface ChoicesParts
-  - _...3 more_
+  - _...4 more_
 - `src/sim/sessionLog.ts`
   - function createSessionLog: (seed, cycles, t) => SessionLog
   - function appendEntry: (log, entry) => SessionLog
