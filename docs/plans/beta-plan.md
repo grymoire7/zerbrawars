@@ -83,6 +83,9 @@ Five parts, in this order:
    irregular cell shapes, soft edges, slight wobble, a tissue texture or background image behind it.
    Telegraph and heat painting keep working on the same logical tiles.
 
+The design pass is in `../specs/b1a-design.md` (all seven questions answered yes, 2026-11-02); build it in
+its seven slices.
+
 *Done when:* every screen has color beyond gray with shape/label backup; the meters and score are
 visible on the life screen and the battle screen; the score appears on the arc-complete screen with the
 best-score line; the board no longer reads as a grey right-angled grid; typecheck, lint, tests and
