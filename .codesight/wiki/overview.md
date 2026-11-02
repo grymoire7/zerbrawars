@@ -6,16 +6,16 @@
 
 ## Scale
 
-48 library files
+49 library files
 
-**Libraries:** 48 files — see [libraries.md](./libraries.md)
+**Libraries:** 49 files — see [libraries.md](./libraries.md)
 
 ## High-Impact Files
 
 Changes to these files have the widest blast radius across the codebase:
 
-- `src/sim/params.ts` — imported by **42** files
-- `src/sim/types.ts` — imported by **42** files
+- `src/sim/params.ts` — imported by **44** files
+- `src/sim/types.ts` — imported by **44** files
 - `src/sim/pathogens.ts` — imported by **21** files
 - `src/sim/rng.ts` — imported by **18** files
 - `src/sim/battle/setup.ts` — imported by **17** files

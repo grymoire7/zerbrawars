@@ -98,7 +98,6 @@ export interface HudModel {
   readonly maxTurns: number;
   /** A skirmish is labelled in the turn line. */
   readonly kind: BattleKind;
-  readonly tissueHealth: number;
   readonly canEndTurn: boolean;
   readonly log: readonly string[];
   readonly orders: readonly HudOrder[];
@@ -122,8 +121,8 @@ export interface HudModel {
 
 export interface Hud {
   update(model: HudModel): void;
-  /** Cheap per-frame update while a turn plays: ticking tissue number and progress 0..1. */
-  setLive(tissueHealth: number, progress: number): void;
+  /** Cheap per-frame update while a turn plays: progress 0..1. */
+  setLive(progress: number): void;
   /** Brief highlight of the log (the reduced-motion summary). */
   pulse(): void;
 }
@@ -181,7 +180,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   };
   const line = (text: string, css = "") => el("div", css, text);
 
-  // Turn and tissue summary, with the How to play button.
+  // Turn summary, with the How to play button (tissue lives in the status strip).
   const stats = el(
     "div",
     PANEL +
@@ -189,7 +188,6 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       "box-sizing:border-box;display:flex;gap:14px;align-items:center;font-size:15px;",
   );
   const turn = el("span", "font-weight:600;");
-  const health = el("span");
   const help = button(
     "?",
     handlers.onHelp,
@@ -201,31 +199,26 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     "div",
     "position:absolute;left:0;bottom:0;height:3px;background:var(--zw-focus);width:0;",
   );
-  stats.append(turn, health, help, progress);
+  stats.append(turn, help, progress);
 
-  // Medication: the level meter (the aura on the board edge) and the charge chips.
+  // Medication: the note on the aura and the charge chips (the level is in the status strip).
   const medBox = el("div", PANEL + "padding:8px 10px;");
   const medHead = el(
     "div",
     "display:flex;justify-content:space-between;font-weight:600;",
   );
   const medLabel = el("span", "", "Medication");
-  const medValue = el("span", "font:12px monospace;");
-  medHead.append(medLabel, medValue);
-  const medTrack = el(
+  medHead.append(medLabel);
+  const medNote = el(
     "div",
-    "height:8px;border-radius:4px;background:var(--zw-line);overflow:hidden;margin:4px 0;",
+    "font-size:12px;opacity:0.7;line-height:1.3;margin-top:4px;",
   );
-  medTrack.setAttribute("role", "img");
-  const medFill = el("div", "height:100%;background:var(--zw-med);");
-  medTrack.append(medFill);
-  const medNote = el("div", "font-size:12px;opacity:0.7;line-height:1.3;");
   const chipRow = el(
     "div",
     "display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;",
   );
   const chipHint = el("div", "font-size:12px;margin-top:4px;line-height:1.3;");
-  medBox.append(medHead, medTrack, medNote, chipRow, chipHint);
+  medBox.append(medHead, medNote, chipRow, chipHint);
 
   // Orders: how many swarms have one, and a status chip per swarm.
   const ordersBox = el("div", PANEL + "padding:8px 10px;");
@@ -318,8 +311,6 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   const reset = button("Reset", handlers.onReset, "flex:1 1 auto;");
   row.append(endTurn, wallOff, x1, x2, skip, replay, reset);
   bar.append(row);
-
-  let shownTissue = -1;
 
   const swatch = (css: string) => {
     const sw = el(
@@ -587,8 +578,6 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
           : `${m.kind === "skirmish" ? "Skirmish · " : ""}Turn ${m.turn} / ${m.maxTurns}`;
         turn.style.color = "";
         progress.style.width = "0";
-        shownTissue = m.tissueHealth;
-        health.textContent = `Tissue ${m.tissueHealth}`;
       }
 
       ordersBox.style.display = pb.playing ? "none" : "";
@@ -600,10 +589,6 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       );
 
       medBox.style.display = pb.playing ? "none" : "";
-      const lvl = Math.round(m.medication.level * 100);
-      medValue.textContent = `${lvl}%`;
-      medFill.style.width = `${lvl}%`;
-      medTrack.setAttribute("aria-label", `Medication level ${lvl}%`);
       medNote.textContent =
         m.medication.level > 0
           ? `Each germ has a ${Math.round(m.medication.stallChance * 100)}% chance of being held back each turn.`
@@ -716,11 +701,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       logBox.style.display = m.log.length > 0 ? "block" : "none";
       log.replaceChildren(...m.log.map((t) => line(t)));
     },
-    setLive(tissue, p) {
-      if (tissue !== shownTissue) {
-        shownTissue = tissue;
-        health.textContent = `Tissue ${tissue}`;
-      }
+    setLive(p) {
       progress.style.width = `${Math.round(p * 100)}%`;
     },
     pulse() {

@@ -9,7 +9,15 @@ export function getUiRoot(): HTMLElement {
   return need("ui");
 }
 
-/** The side panel regions: a scrollable column and a pinned control bar. */
-export function getPanels(): { scroll: HTMLElement; bar: HTMLElement } {
-  return { scroll: need("sideScroll"), bar: need("bar") };
+/** The side panel regions: the pinned status strip, a scrollable column and a pinned control bar. */
+export function getPanels(): {
+  status: HTMLElement;
+  scroll: HTMLElement;
+  bar: HTMLElement;
+} {
+  return {
+    status: need("status"),
+    scroll: need("sideScroll"),
+    bar: need("bar"),
+  };
 }

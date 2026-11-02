@@ -64,6 +64,111 @@
         background: var(--zw-surface, #1f232b);
         border-top: 1px solid var(--zw-line, #3a4150);
       }
+      /* Status strip: pinned at the top of the side panel while #sideScroll scrolls; never on the board. */
+      #status {
+        flex: none;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 6px 8px;
+        background: var(--zw-surface, #1f232b);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      #status:empty {
+        display: none;
+      }
+      .zw-status-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .zw-status-grid[data-cols="3"] {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      @media (max-width: 339px) {
+        .zw-status-grid[data-cols] {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      .zw-cell {
+        min-height: 44px;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 3px 5px 5px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 2px;
+        text-align: left;
+        background: var(--zw-raised, #272c36);
+        border: 1px solid var(--zw-line, #3a4150);
+        border-radius: 6px;
+      }
+      .zw-cell[aria-pressed="true"] {
+        border-color: var(--zw-focus, #9fd8f0);
+      }
+      .zw-cell-label {
+        font-size: 12px;
+        line-height: 1.2;
+        color: var(--zw-text-muted, #a9b0bd);
+      }
+      .zw-cell-value {
+        font-size: 13px;
+        line-height: 1.2;
+        color: var(--zw-text, #e8eaf0);
+      }
+      .zw-cell-state {
+        font-weight: 600;
+      }
+      .zw-bar {
+        position: relative;
+        flex: none;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--zw-line, #3a4150);
+        overflow: hidden;
+      }
+      .zw-bar-ghost,
+      .zw-bar-solid {
+        position: absolute;
+        inset: 0 auto 0 0;
+      }
+      .zw-bar-ghost {
+        opacity: 0.35;
+      }
+      .zw-bar-notch {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--zw-text, #e8eaf0);
+      }
+      .zw-bar-segments {
+        display: flex;
+        gap: 2px;
+        background: none;
+        border-radius: 0;
+        overflow: visible;
+      }
+      .zw-seg {
+        flex: 1 1 0;
+        border-radius: 2px;
+        background: var(--zw-line, #3a4150);
+      }
+      .zw-seg-solid {
+        background: var(--zw-seg);
+      }
+      .zw-seg-ghost {
+        background: var(--zw-seg);
+        opacity: 0.35;
+      }
+      .zw-status-info {
+        font-size: 13px;
+        line-height: 1.3;
+        color: var(--zw-text, #e8eaf0);
+      }
       #sideScroll {
         flex: 1 1 0;
         min-height: 0;
@@ -106,6 +211,7 @@
     <div id="app">
       <div id="board"><canvas id="scene"></canvas></div>
       <aside id="side" aria-label="Orders and information">
+        <div id="status"></div>
         <div id="sideScroll"></div>
         <div id="bar"></div>
       </aside>

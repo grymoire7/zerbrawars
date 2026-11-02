@@ -61,19 +61,8 @@ export interface LifeSummaryModel {
 export interface LifePanelModel {
   readonly title: string;
   readonly over: boolean;
-  readonly goal: {
-    readonly points: number;
-    readonly planned: number;
-    readonly target: number;
-  };
-  readonly energy: {
-    readonly now: number;
-    readonly end: number;
-    readonly max: number;
-  };
   readonly meds: {
     readonly level: number;
-    readonly pct: string;
     readonly streak: number;
     /** What the day's dose button should offer. */
     readonly dose: "open" | "taken" | "skipped" | "lost" | "over";
@@ -154,40 +143,6 @@ export function createLifePanel(
     b.addEventListener("click", onClick);
     return b;
   };
-  const meter = (
-    label: string,
-    value: string,
-    fill: number,
-    ghost: number,
-    color: string,
-    desc: string,
-  ) => {
-    const box = el("div", "display:flex;flex-direction:column;gap:3px;");
-    const head = el(
-      "div",
-      "display:flex;justify-content:space-between;font-size:13px;",
-    );
-    head.append(el("span", "font-weight:600;", label), el("span", "", value));
-    const track = el(
-      "div",
-      "position:relative;height:10px;border-radius:5px;background:var(--zw-line);overflow:hidden;",
-    );
-    track.setAttribute("role", "img");
-    track.setAttribute("aria-label", desc);
-    track.append(
-      el(
-        "div",
-        `position:absolute;inset:0 auto 0 0;width:${Math.min(1, ghost) * 100}%;background:${color};opacity:0.35;`,
-      ),
-      el(
-        "div",
-        `position:absolute;inset:0 auto 0 0;width:${Math.min(1, fill) * 100}%;background:${color};`,
-      ),
-    );
-    box.append(head, track);
-    return box;
-  };
-
   const top = el(
     "div",
     PANEL +
@@ -199,10 +154,6 @@ export function createLifePanel(
   help.title = "How to play";
   top.append(title, help);
 
-  const metersBox = el(
-    "div",
-    PANEL + "padding:8px 10px;display:flex;flex-direction:column;gap:8px;",
-  );
   const medsBox = el(
     "div",
     PANEL + "padding:8px 10px;display:flex;flex-direction:column;gap:6px;",
@@ -297,7 +248,6 @@ export function createLifePanel(
     top,
     aftermathBox,
     feelBox,
-    metersBox,
     medsBox,
     calBox,
     handBox,
@@ -328,31 +278,6 @@ export function createLifePanel(
   const activeKey = () =>
     (document.activeElement as HTMLElement | null)?.dataset?.key ?? null;
 
-  function renderMeters(m: LifePanelModel) {
-    metersBox.replaceChildren(
-      meter(
-        "Goal",
-        `${m.goal.points} / ${m.goal.target} points` +
-          (m.goal.planned > m.goal.points
-            ? ` (${m.goal.planned} planned)`
-            : ""),
-        m.goal.points / m.goal.target,
-        m.goal.planned / m.goal.target,
-        "var(--zw-goal)",
-        `Goal: ${m.goal.points} of ${m.goal.target} points, ${m.goal.planned} planned`,
-      ),
-      meter(
-        "Energy (a game resource)",
-        `${m.energy.now} / ${m.energy.max}` +
-          (m.energy.end !== m.energy.now ? ` → ${m.energy.end}` : ""),
-        m.energy.now / m.energy.max,
-        m.energy.end / m.energy.max,
-        "var(--zw-focus)",
-        `Energy: ${m.energy.now} of ${m.energy.max}, ${m.energy.end} left after the plan`,
-      ),
-    );
-  }
-
   function renderMeds(m: LifePanelModel) {
     const { meds } = m;
     const head = el(
@@ -361,11 +286,7 @@ export function createLifePanel(
     );
     head.append(
       el("span", "", "Medication"),
-      el(
-        "span",
-        "font:12px monospace;",
-        `level ${meds.pct}  ·  streak ${meds.streak}`,
-      ),
+      el("span", "font:12px monospace;", `streak ${meds.streak}`),
     );
     const strip = el("div", "display:flex;gap:6px;");
     for (const c of meds.strip) {
@@ -704,7 +625,6 @@ export function createLifePanel(
           ? [el("div", "font-size:13px;opacity:0.85;", m.feel.nudge)]
           : []),
       );
-      renderMeters(m);
       renderMeds(m);
       renderCalendar(m);
       if (m.over && m.summary) renderSummary(m.summary);

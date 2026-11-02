@@ -8,7 +8,11 @@ export interface ScreenEnv {
   readonly camera: THREE.PerspectiveCamera;
   /** A fresh child scene for this screen's meshes; removed when the screen is disposed. */
   readonly root: THREE.Scene;
-  readonly panels: { readonly scroll: HTMLElement; readonly bar: HTMLElement };
+  readonly panels: {
+    readonly status: HTMLElement;
+    readonly scroll: HTMLElement;
+    readonly bar: HTMLElement;
+  };
   /** Full-window overlay for modals. */
   readonly ui: HTMLElement;
   /** Switch screens. */

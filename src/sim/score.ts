@@ -1,3 +1,4 @@
+import { medForecast } from "./life/calendar";
 import { cardDef } from "./life/cards";
 import type { LifeState } from "./life/types";
 import { PARAMS } from "./params";
@@ -69,6 +70,42 @@ export function weekChoices(life: LifeState): ChoicesParts {
     meds,
     checked,
     total: living + dodged + meds + checked,
+  };
+}
+
+/**
+ * Choices if the calendar plays out as placed and every undecided dose defaults (taken, unless the
+ * pills are in the other bag). For the live Score cell; the doctor bonus counts only once a visit
+ * has happened, so the planned figure can rise by up to that much, never fall.
+ */
+export function plannedChoices(life: LifeState): ChoicesParts {
+  const now = weekChoices(life);
+  let living = now.living;
+  let dodged = now.dodged;
+  for (let day = life.day; day < PARAMS.life.days; day++) {
+    for (const p of life.plan[day]) {
+      if (!p) continue;
+      const def = cardDef(p.card);
+      living += S.perPoint * def.points;
+      if (def.id !== def.base) {
+        const gain =
+          pct(cardDef(def.base).exposure.chance) - pct(def.exposure.chance);
+        dodged += S.perDodgedPercent * Math.max(0, gain);
+      }
+    }
+  }
+  const undecidedTaken = medForecast(life).filter(
+    (f) =>
+      f.taken &&
+      !life.doses.some((d) => d.week === life.week && d.day === f.day),
+  ).length;
+  const meds = now.meds + S.perDose * undecidedTaken;
+  return {
+    living,
+    dodged,
+    meds,
+    checked: now.checked,
+    total: living + dodged + meds + now.checked,
   };
 }
 

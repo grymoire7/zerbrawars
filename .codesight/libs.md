@@ -184,12 +184,12 @@
   - _...5 more_
 - `src/sim/score.ts`
   - function weekChoices: (life) => ChoicesParts
+  - function plannedChoices: (life) => ChoicesParts
   - function weekOutcome: (result, carriedCount) => OutcomeParts
   - function weekScore: (life, result, carriedCount) => WeekScore
   - function campaignScore: (weeks) => CampaignScore
   - interface ChoicesParts
-  - interface OutcomeParts
-  - _...2 more_
+  - _...3 more_
 - `src/sim/sessionLog.ts`
   - function createSessionLog: (seed, cycles, t) => SessionLog
   - function appendEntry: (log, entry) => SessionLog
@@ -253,3 +253,10 @@
   - interface OutcomeOverlay
   - const SKIRMISH_COPY
 - `src/ui/probe.ts` — function createProbe: (root) => Probe, interface Probe
+- `src/ui/statusStrip.ts`
+  - function createStatusStrip: (mount) => StatusStrip
+  - function cellLabel
+  - interface StatusCell
+  - interface StatusModel
+  - interface StatusStrip
+  - type StatusBar

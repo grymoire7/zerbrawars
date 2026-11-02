@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CycleResult } from "./campaign";
-import { createLife } from "./life/calendar";
+import { createLife, placeCard } from "./life/calendar";
 import type {
   CardId,
   Dose,
@@ -12,7 +12,13 @@ import type {
 import { cardDef } from "./life/cards";
 import { PARAMS } from "./params";
 import type { BattleGrade, BattleKind } from "./types";
-import { campaignScore, weekChoices, weekOutcome, weekScore } from "./score";
+import {
+  campaignScore,
+  plannedChoices,
+  weekChoices,
+  weekOutcome,
+  weekScore,
+} from "./score";
 
 // Hand-built weeks: a fresh life with the finished-week fields overridden.
 
@@ -212,5 +218,33 @@ describe("week and campaign totals", () => {
       w.total,
     ])
       expect(n).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("plannedChoices", () => {
+  it("counts an empty fresh week as its default doses only", () => {
+    const p = plannedChoices(createLife({ seed: 1 }));
+    expect(p.living).toBe(0);
+    expect(p.dodged).toBe(0);
+    expect(p.meds).toBe(PARAMS.score.perDose * PARAMS.life.days);
+    expect(p.total).toBe(p.meds);
+  });
+
+  it("adds placed cards: points and the odds a smarter version pushes", () => {
+    let l = createLife({ seed: 1 });
+    l = placeCard(l, 0, 0, "yardIndoor", false).state;
+    const p = plannedChoices(l);
+    expect(p.living).toBe(PARAMS.score.perPoint * cardDef("yardIndoor").points);
+    expect(p.dodged).toBe(35);
+    expect(p.total).toBe(p.living + p.dodged + p.meds + p.checked);
+  });
+
+  it("matches weekChoices once nothing is left to play", () => {
+    const done = week({
+      day: PARAMS.life.days,
+      goal: { points: 9, target: 10 },
+      doses: [dose(0, true), dose(1, false), dose(2, true)],
+    });
+    expect(plannedChoices(done)).toEqual(weekChoices(done));
   });
 });

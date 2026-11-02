@@ -1,7 +1,6 @@
 import { createInsetView } from "../render/insetView";
 import {
   advanceDay,
-  energyPlan,
   findPlaced,
   placeCard,
   setPackPills,
@@ -46,6 +45,7 @@ import {
   weekEndText,
   doseStrip,
   lifeBeats,
+  lifeStatusModel,
   oddsText,
   particleCount,
   pct,
@@ -60,6 +60,7 @@ import {
   type PickEffect,
   weekSummary,
 } from "./lifeModel";
+import { createStatusStrip } from "../ui/statusStrip";
 import type { Screen, ScreenEnv } from "./screen";
 
 const L = PARAMS.life;
@@ -164,7 +165,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     const sel = selOf();
     const week = exposurePreview(life);
     const over = weekOver(life);
-    const energyRows = energyPlan(life).flat();
     const dose = todayDose(life);
     const strip = doseStrip(life);
     const lost = week.frictionDays;
@@ -277,21 +277,8 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         ? `Week ${life.week} is done`
         : `Week ${life.week} · Day ${life.day + 1} of ${L.days}`,
       over,
-      goal: {
-        points: life.goal.points,
-        planned: week.points.planned,
-        target: life.goal.target,
-      },
-      energy: {
-        now: life.energy,
-        end: energyRows.length
-          ? energyRows[energyRows.length - 1]
-          : life.energy,
-        max: L.maxEnergy,
-      },
       meds: {
         level: life.medLevel,
-        pct: pct(life.medLevel),
         streak: life.streak,
         dose: over
           ? "over"
@@ -491,7 +478,12 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     session: sessionOptions(run),
   });
 
+  const strip = createStatusStrip(panels.status);
+  const earlierScore = () =>
+    run.campaign().history.reduce((n, h) => n + h.score.total, 0);
+
   function draw() {
+    strip.update(lifeStatusModel(life, earlierScore()));
     panel.update(model());
     showInset();
   }
@@ -524,6 +516,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       caption.remove();
       canvas.removeAttribute("role");
       canvas.removeAttribute("aria-label");
+      strip.clear();
       panels.scroll.replaceChildren();
       panels.bar.replaceChildren();
       ui.replaceChildren();

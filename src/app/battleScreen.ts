@@ -37,6 +37,9 @@ import { sessionOptions } from "./sessionOptions";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
+import { createStatusStrip } from "../ui/statusStrip";
+import { weekChoices } from "../sim/score";
+import { battleStatusModel, type BattleStatusInput } from "./battleModel";
 import { createOutcomeOverlay } from "../ui/outcome";
 import {
   createController,
@@ -118,6 +121,14 @@ export function mountBattle(
     tilePosition: view.tilePosition,
   });
   const help = createHelp(ui);
+  const status = createStatusStrip(panels.status);
+  let statusIn: BattleStatusInput | null = null;
+  let shownTissue = -1;
+  const showStatus = (input: BattleStatusInput) => {
+    statusIn = input;
+    shownTissue = input.tissue;
+    status.update(battleStatusModel(input));
+  };
   const hud = createHud(panels, {
     onHelp: () => help.open(),
     onEndTurn: () => endTurn(),
@@ -377,12 +388,18 @@ export function mountBattle(
       outcomeShown = false;
       outcomeOverlay.hide();
     }
+    showStatus({
+      tissue: s.tissueHealth,
+      damage: forecast?.tissueDamage ?? 0,
+      medLevel: s.meds.level,
+      charges: s.meds.charges,
+      choices: run ? weekChoices(run.campaign().life).total : null,
+    });
     hud.update({
       over: controller.over(),
       turn: s.turn,
       maxTurns: s.maxTurns,
       kind: s.kind,
-      tissueHealth: s.tissueHealth,
       canEndTurn: controller.canEndTurn(),
       log: logLines(controller.lastEvents()),
       orders: statuses.map((w) => {
@@ -551,8 +568,11 @@ export function mountBattle(
       if (playing) {
         playbackView.frame(playing.time);
         const tissue = playbackView.tissue();
+        const live = tissue ?? playing.before.tissueHealth;
+        if (statusIn && live !== shownTissue) {
+          showStatus({ ...statusIn, tissue: live, damage: 0 });
+        }
         hud.setLive(
-          tissue ?? playing.before.tissueHealth,
           playing.timeline.duration > 0
             ? playing.time / playing.timeline.duration
             : 1,
@@ -570,6 +590,7 @@ export function mountBattle(
       strip.dispose();
       probe.dispose();
       help.dispose();
+      status.clear();
       panels.scroll.replaceChildren();
       panels.bar.replaceChildren();
       ui.replaceChildren();

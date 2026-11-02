@@ -1,5 +1,10 @@
 import { medLevelOf } from "../sim/life/meds";
+import { exposurePreview } from "../sim/life/preview";
+import { plannedChoices } from "../sim/score";
+import type { MedCharges } from "../sim/types";
+import type { StatusCell, StatusModel } from "../ui/statusStrip";
 import {
+  energyPlan,
   findPlaced,
   medForecast,
   placementProblems,
@@ -355,4 +360,109 @@ export function weekEndText(
 /** The week preview's odds line. The number is the chance of a full battle, not of any fight. */
 export function battleOddsText(chanceFull: number): string {
   return `With this plan, the chance of a full battle this week is ${pct(chanceFull)}. Otherwise it is a small skirmish.`;
+}
+
+// ---- The status strip: Points, Energy, Medication and Score (B1a design, section 2.2). ----
+
+/** "2 antifungal, 1 antibacterial", or "no charges". Shared by the life and battle strips. */
+export function chargesText(c: MedCharges): string {
+  const parts = [
+    c.antifungal > 0 ? `${c.antifungal} antifungal` : "",
+    c.antibacterial > 0 ? `${c.antibacterial} antibacterial` : "",
+    c.strong > 0 ? `${c.strong} strong` : "",
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : "no charges";
+}
+
+/** The state word for a medication level made of `doses` of `window` doses. */
+export function medStateWord(doses: number, window: number): string {
+  if (doses >= window) return "full";
+  if (doses <= 0) return "none";
+  return doses * 2 >= window ? "reduced" : "low";
+}
+
+export const medDoses = (level: number) =>
+  Math.round(level * PARAMS.life.meds.window);
+
+const energyWord = (energy: number) =>
+  energy >= 4 ? "plenty" : energy >= 2 ? "some" : "low";
+
+/**
+ * The four life-screen cells. `earlier` is the total score of the weeks already finished; it only
+ * appears in the Score explanation.
+ */
+export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
+  const week = exposurePreview(life);
+  const rows = energyPlan(life).flat();
+  const endEnergy = rows.length ? rows[rows.length - 1] : life.energy;
+  const max = L.maxEnergy;
+  const target = life.goal.target;
+  const points = life.goal.points;
+  const planned = Math.max(points, week.points.planned);
+  const window = PARAMS.life.meds.window;
+  const doses = medDoses(week.medLevel);
+  const choices = plannedChoices(life).total;
+
+  const pointsCell: StatusCell = {
+    id: "points",
+    label: "Points",
+    value: `${points}/${target}`,
+    state:
+      points >= target
+        ? "goal met"
+        : planned >= target
+          ? "on track"
+          : "to build",
+    bar: {
+      kind: "fill",
+      solid: points / target,
+      ghost: planned / target,
+    },
+    color: "goal",
+    explain:
+      planned > points
+        ? `Life points from your week: ${points} so far, ${planned} with your plan. Living fully earns them.`
+        : `Life points from your week: ${points} so far. Living fully earns them.`,
+  };
+  const energyCell: StatusCell = {
+    id: "energy",
+    label: "Energy",
+    value:
+      endEnergy !== life.energy
+        ? `${life.energy}/${max}, then ${endEnergy}`
+        : `${life.energy}/${max}`,
+    state: energyWord(life.energy),
+    bar: {
+      kind: "segments",
+      count: max,
+      solid: Math.min(life.energy, endEnergy),
+      ghost: Math.max(life.energy, endEnergy),
+    },
+    color: "energy",
+    explain:
+      endEnergy !== life.energy
+        ? `Energy is a game-only resource. Activities cost it, rest gives it back. You have ${life.energy} now and ${endEnergy} after your plan.`
+        : "Energy is a game-only resource. Activities cost it, rest gives it back.",
+  };
+  const medCell: StatusCell = {
+    id: "medication",
+    label: "Medication",
+    value: `${doses}/${window} doses`,
+    state: medStateWord(doses, window),
+    bar: { kind: "segments", count: window, solid: doses, ghost: doses },
+    color: "med",
+    explain: `Doses taken over the last ${window} days, as planned: ${doses} of ${window}. That gives ${chargesText(week.charges)} in the fight. Fewer doses means a weaker aura and fewer charges.`,
+  };
+  const scoreCell: StatusCell = {
+    id: "score",
+    label: "Score",
+    value: `Choices ${choices}`,
+    state: "planned",
+    bar: null,
+    color: "goal",
+    explain:
+      "Your choices this week, if the plan plays out. Outcome is added after the fight." +
+      (earlier > 0 ? ` Earlier weeks: ${earlier}.` : ""),
+  };
+  return { cells: [pointsCell, energyCell, medCell, scoreCell] };
 }

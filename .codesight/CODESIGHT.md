@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 48 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,000 tokens. Without it, AI exploration would cost ~21,600 tokens. **Saves ~17,600 tokens per conversation.**
-> **Last scanned:** 2026-11-02 21:19 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 49 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,100 tokens. Without it, AI exploration would cost ~21,800 tokens. **Saves ~17,800 tokens per conversation.**
+> **Last scanned:** 2026-11-02 21:31 — re-run after significant changes
 
 ---
 
@@ -194,12 +194,12 @@
   - _...5 more_
 - `src/sim/score.ts`
   - function weekChoices: (life) => ChoicesParts
+  - function plannedChoices: (life) => ChoicesParts
   - function weekOutcome: (result, carriedCount) => OutcomeParts
   - function weekScore: (life, result, carriedCount) => WeekScore
   - function campaignScore: (weeks) => CampaignScore
   - interface ChoicesParts
-  - interface OutcomeParts
-  - _...2 more_
+  - _...3 more_
 - `src/sim/sessionLog.ts`
   - function createSessionLog: (seed, cycles, t) => SessionLog
   - function appendEntry: (log, entry) => SessionLog
@@ -263,6 +263,13 @@
   - interface OutcomeOverlay
   - const SKIRMISH_COPY
 - `src/ui/probe.ts` — function createProbe: (root) => Probe, interface Probe
+- `src/ui/statusStrip.ts`
+  - function createStatusStrip: (mount) => StatusStrip
+  - function cellLabel
+  - interface StatusCell
+  - interface StatusModel
+  - interface StatusStrip
+  - type StatusBar
 
 ---
 
@@ -279,8 +286,8 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/sim/params.ts` — imported by **42** files
-- `src/sim/types.ts` — imported by **42** files
+- `src/sim/params.ts` — imported by **44** files
+- `src/sim/types.ts` — imported by **44** files
 - `src/sim/pathogens.ts` — imported by **21** files
 - `src/sim/rng.ts` — imported by **18** files
 - `src/sim/battle/setup.ts` — imported by **17** files
@@ -290,20 +297,20 @@
 - `src/sim/life/loadout.ts` — imported by **15** files
 - `src/sim/validate.ts` — imported by **14** files
 - `src/sim/life/types.ts` — imported by **13** files
+- `src/theme/palette.ts` — imported by **13** files
 - `src/sim/battle/resolve.ts` — imported by **13** files
 - `src/sim/campaign.ts` — imported by **12** files
-- `src/theme/palette.ts` — imported by **12** files
 - `src/sim/battle/outcome.ts` — imported by **11** files
+- `src/sim/life/calendar.ts` — imported by **8** files
 - `src/sim/life/cards.ts` — imported by **8** files
-- `src/sim/life/calendar.ts` — imported by **7** files
 - `src/app/run.ts` — imported by **7** files
 - `src/sim/battle/orders.ts` — imported by **6** files
 - `src/sim/battle/bots.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
-- `src/sim/params.ts` ← `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts`, `src/app/controller.ts`, `src/app/info.ts` +37 more
-- `src/sim/types.ts` ← `src/app/battleScreen.ts`, `src/app/campaignModel.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts`, `src/app/info.ts` +37 more
+- `src/sim/params.ts` ← `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts` +39 more
+- `src/sim/types.ts` ← `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +39 more
 - `src/sim/pathogens.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/render/insetView.ts`, `src/sim/battle/bots.ts` +16 more
 - `src/sim/rng.ts` ← `src/sim/battle/bots.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/intents.ts`, `src/sim/battle/orders.test.ts` +13 more
 - `src/sim/battle/setup.ts` ← `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts`, `src/app/main.ts` +12 more
@@ -318,7 +325,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 28 test files found
+> 29 test files found
 
 ---
 
