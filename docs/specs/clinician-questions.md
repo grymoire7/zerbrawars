@@ -1,0 +1,48 @@
+# Questions for a clinician
+
+Running list of facts and wording to verify. Access is limited (possibly one clinician, after an
+initial playable version exists), so each item says whether it affects gameplay and when it is
+needed. Until answered, the game uses the working assumption listed. Adjust later if needed.
+
+Priority: A = needed before the NIH demo if at all possible. B = before wider release.
+C = deferred / low priority.
+
+## Gameplay-affecting
+
+| # | Question | Working assumption | Priority |
+|---|----------|--------------------|----------|
+| 1 | Residual oxidase activity: what kill chance for sealed pathogens is realistic for a typical X-linked patient vs a typical p47phox (AR) patient? Is a single per-character "blunt weapon" chance a fair simplification? | Low for XL, higher for AR, tunable per character (research: Kuhns et al., NEJM 2010) | A |
+| 2 | Which organisms most often infect which sites (lung, lymph node, liver, skin, bone, gut)? Is the leaky/sealed split by catalase a fair basis for the pairings we show? | Lung first, then lymph node, liver, skin. Organism-to-site pairings are our guess | A |
+| 3 | Steroids: is "calms inflammation, weakens defense" a fair summary of the trade-off? In what situations are they used? | Double-edged support in the gut flare arc | B |
+| 4 | Inflammation mechanic: is "over-committing cells to one spot raises local inflammation" a fair simplification of granuloma formation? Also confirm colitis has a genetic component beyond infection | Inflammation rises where swarms over-commit | A |
+| 5 | Persistent infection model: is "swallowed but unkilled infections persist and flare later" a fair picture of how latent infections behave? | Hidden reservoirs that grow and surface as fever, pain, tiredness | A |
+| 6 | Doctor visit as a power move: do early visits reveal and clear infections the way the game implies (imaging, IV antifungals, drainage)? | Reveals reservoirs and gives strong support | B |
+| 7 | Fever guidance: what do patients actually get told? The game must not teach dismissing a fever, even a viral one | Any fever makes a doctor visit a good move; the doctor may reveal it was viral | A |
+| 8 | Safe vs unsafe exposures: are our "smarter third options" valid (indoor chores instead of yardwork, skip the brackish lagoon, skip the cave, artificial tree)? Which exposures matter most? | The user's list (yardwork, brackish water, caves, scuba, marijuana, live trees, reptile pets) | A |
+| 9 | Macrophages and monocytes are also affected in CGD. Confirm NK cells, T cells and antibodies as the "this part works" examples for virus fights | NK cells, T cells and antibodies only | A |
+| 10 | Rare-site infections (for example spine or lower brain): how are they best framed so they are relatable but not frightening? How rare are they? | Rare surprise battle, clearly framed as uncommon | B |
+
+## Wording / tutorial only (does not change gameplay)
+
+| # | Question | Working assumption | Priority |
+|---|----------|--------------------|----------|
+| 11 | Catalase wording: later studies suggest catalase status does not fully explain which organisms cause trouble. Is the "weapon you can steal" metaphor acceptable if never stated as complete fact? | Keep as a simplified metaphor | B |
+| 12 | Prophylaxis wording: antibacterial (for example TMP-SMX) and antifungal (for example itraconazole or posaconazole). Is interferon-gamma safe to leave out? | Say "antibacterial" and "antifungal"; no interferon-gamma | B |
+| 13 | Additional organisms worth including: Granulibacter, Chromobacterium, Salmonella, Aspergillus nidulans (bone) | Staph aureus, Aspergillus, Burkholderia, Serratia, Nocardia, plus Streptococcus as the leaky example | B |
+
+## Epilogue (curative options, not gameplay)
+
+| # | Question | Working assumption | Priority |
+|---|----------|--------------------|----------|
+| 14 | After a successful BMT or gene therapy: no prophylaxis meds, "normal person" restrictions, about-normal immune response. Is this accurate and how should caveats be worded? | As stated by the user | B |
+| 15 | Gene therapy correction: roughly 20-30% corrected cells are enough for normal infection fighting, and one recent patient reached about 70%. Are these figures safe to publish? | Use as stated by the user, with hedged wording | B |
+| 16 | Procedure: how long and arduous is BMT or gene therapy conditioning and recovery? How should it be summarized? | Short, honest summary | B |
+| 17 | Tone: how to present curative options as real choices with the care team, without implying patients should wait or that living with CGD now is second best | Hopeful and neutral | B |
+
+## Deferred
+
+| # | Question | Working assumption | Priority |
+|---|----------|--------------------|----------|
+| 18 | Age scaling: how does infection frequency and speed change with age? | Not modeled | C |
+| 19 | Vaccines: any to avoid? | Out of scope. The user has never been told to avoid any | C |
+| 20 | Diagnosis experience: how varied is it (XL often early, AR sometimes much later), and how should the undiagnosed prologue arc be framed? | Short, skippable prologue | B |
