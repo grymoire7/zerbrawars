@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**49 library files** across 4 modules
+**51 library files** across 4 modules
 
 ## Sim (24 files)
 
@@ -31,9 +31,10 @@
 - `src/sim/life/meds.ts` — medLevelOf, streakOf, preWeekDoses
 - `src/sim/validate.ts` — validateBattle, validateLife, validateCampaign
 
-## Render (13 files)
+## Render (15 files)
 
 - `src/render/playback.ts` — buildTimeline, beatProgress, createPlayback, PhaseSpan, Timeline, Playback, …
+- `src/render/cellShape.ts` — cellHash, cellOutline, outlineArea, Point2, CELL_POINTS
 - `src/render/labels.ts` — setLabelBoost, labelMaterial, sizeLabel, labelSprite, LabelOptions
 - `src/render/boardView.ts` — createBoardView, BoardView, ORDER_COLOR
 - `src/render/orderView.ts` — createOrderView, DoseMarks, OrderView
@@ -46,6 +47,7 @@
 - `src/render/playbackView.ts` — createPlaybackView, PlaybackView
 - `src/render/scene.ts` — createScene, SceneContext
 - `src/render/telegraphView.ts` — createTelegraphView, TelegraphView
+- `src/render/tissueTexture.ts` — createTissueTexture
 
 ## Ui (11 files)
 

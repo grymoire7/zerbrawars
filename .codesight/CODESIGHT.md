@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 49 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,100 tokens. Without it, AI exploration would cost ~21,800 tokens. **Saves ~17,800 tokens per conversation.**
-> **Last scanned:** 2026-11-02 22:39 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 51 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,100 tokens. Without it, AI exploration would cost ~22,400 tokens. **Saves ~18,200 tokens per conversation.**
+> **Last scanned:** 2026-11-02 22:42 — re-run after significant changes
 
 ---
 
@@ -15,6 +15,12 @@
   - function createBoardView: (scene, state) => BoardView
   - interface BoardView
   - const ORDER_COLOR
+- `src/render/cellShape.ts`
+  - function cellHash: (x, y, salt) => number
+  - function cellOutline: (x, y) => Point2[]
+  - function outlineArea: (pts) => number
+  - interface Point2
+  - const CELL_POINTS
 - `src/render/fxView.ts` — function createFxView: (scene) => FxView, interface FxView
 - `src/render/granulomaView.ts` — function createGranulomaView: (scene, tilePosition) => void, interface GranulomaView
 - `src/render/insetView.ts` — function createInsetView: (root, state) => InsetView, interface InsetView
@@ -47,6 +53,7 @@
   - interface SwarmPose
   - interface SwarmView
 - `src/render/telegraphView.ts` — function createTelegraphView: (scene, tilePosition) => void, interface TelegraphView
+- `src/render/tissueTexture.ts` — function createTissueTexture: () => THREE.CanvasTexture
 - `src/sim/battle/bots.ts`
   - function playBattle: (bot, start, seed, support) => void
   - interface BotTurn
@@ -296,9 +303,9 @@
 - `src/sim/board.ts` — imported by **17** files
 - `src/sim/battle/intents.ts` — imported by **15** files
 - `src/sim/life/loadout.ts` — imported by **15** files
+- `src/theme/palette.ts` — imported by **14** files
 - `src/sim/validate.ts` — imported by **14** files
 - `src/sim/life/types.ts` — imported by **13** files
-- `src/theme/palette.ts` — imported by **13** files
 - `src/sim/battle/resolve.ts` — imported by **13** files
 - `src/sim/campaign.ts` — imported by **12** files
 - `src/sim/battle/outcome.ts` — imported by **11** files
@@ -319,14 +326,14 @@
 - `src/sim/board.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/render/boardView.ts`, `src/render/orderView.ts`, `src/sim/battle/bots.ts` +12 more
 - `src/sim/battle/intents.ts` ← `src/app/battleScreen.ts`, `src/app/controller.ts`, `src/app/info.test.ts`, `src/app/info.ts`, `src/render/telegraphView.ts` +10 more
 - `src/sim/life/loadout.ts` ← `src/app/campaignModel.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.ts`, `src/app/run.ts` +10 more
-- `src/sim/validate.ts` ← `src/sim/battle/balance.test.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/orders.test.ts`, `src/sim/battle/outcome.test.ts` +9 more
+- `src/theme/palette.ts` ← `src/app/main.ts`, `src/render/boardView.ts`, `src/render/granulomaView.ts`, `src/render/insetView.ts`, `src/render/labels.ts` +9 more
 
 ---
 
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 31 test files found
+> 32 test files found
 
 ---
 

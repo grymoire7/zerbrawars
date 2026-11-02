@@ -22,7 +22,7 @@ export function createScene(
   extent: { width: number; depth: number },
 ): SceneContext {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(hex("bg"));

@@ -6,9 +6,9 @@
 
 ## Scale
 
-49 library files
+51 library files
 
-**Libraries:** 49 files — see [libraries.md](./libraries.md)
+**Libraries:** 51 files — see [libraries.md](./libraries.md)
 
 ## High-Impact Files
 

@@ -587,6 +587,7 @@ export function mountBattle(
       swarmView.tick(dt);
       orderView.tick(dt);
       auraView.tick(dt);
+      view.tick(dt);
     },
     dispose() {
       ac.abort();

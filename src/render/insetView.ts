@@ -240,6 +240,7 @@ export function createInsetView(
     shownAura: () => shown,
     tick(dt) {
       clock += dt;
+      board3.tick(dt);
       if (shown !== target) {
         const step = AURA_RATE * dt;
         shown =

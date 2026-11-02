@@ -5,6 +5,12 @@
   - function createBoardView: (scene, state) => BoardView
   - interface BoardView
   - const ORDER_COLOR
+- `src/render/cellShape.ts`
+  - function cellHash: (x, y, salt) => number
+  - function cellOutline: (x, y) => Point2[]
+  - function outlineArea: (pts) => number
+  - interface Point2
+  - const CELL_POINTS
 - `src/render/fxView.ts` — function createFxView: (scene) => FxView, interface FxView
 - `src/render/granulomaView.ts` — function createGranulomaView: (scene, tilePosition) => void, interface GranulomaView
 - `src/render/insetView.ts` — function createInsetView: (root, state) => InsetView, interface InsetView
@@ -37,6 +43,7 @@
   - interface SwarmPose
   - interface SwarmView
 - `src/render/telegraphView.ts` — function createTelegraphView: (scene, tilePosition) => void, interface TelegraphView
+- `src/render/tissueTexture.ts` — function createTissueTexture: () => THREE.CanvasTexture
 - `src/sim/battle/bots.ts`
   - function playBattle: (bot, start, seed, support) => void
   - interface BotTurn

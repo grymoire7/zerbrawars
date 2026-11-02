@@ -4,17 +4,23 @@ import { PARAMS } from "../sim/params";
 import type { TileHeat } from "../sim/battle/inflammation";
 import type { BattleState, Coord } from "../sim/types";
 import { PALETTE, hex } from "../theme/palette";
+import { cellHash, cellOutline, type Point2 } from "./cellShape";
+import { createTissueTexture } from "./tissueTexture";
 
 const TILE = 1;
-const GAP = 0.06;
-const TILE_HEIGHT = 0.2;
+const CELL_DEPTH = 0.16;
+const BEVEL_T = 0.04;
+const BEVEL_S = 0.03;
+// The cell's top face sits at y = 0; the tissue plane lies under the gaps.
+const TISSUE_Y = -0.2;
+const TISSUE_MARGIN = 1.2;
+const BREATH = 0.012;
+const BREATH_SECONDS = 4.5;
 
-const BASE_A = new THREE.Color(hex("region-lung"));
-const BASE_B = new THREE.Color(hex("region-lung")).multiplyScalar(0.96);
+const BASE = new THREE.Color(hex("region-lung"));
 const INFLAMED = new THREE.Color(hex("tissue-damaged"));
 const HOVER_TINT = new THREE.Color(hex("white"));
 const PULSE_TINT = new THREE.Color(hex("heat"));
-const SLAB = hex("region-lung-bg");
 // Order UI: magenta-violet, apart from the telegraph's yellow/blue/red/white. Shape carries it too:
 // a thick solid frame for the selection, filled discs with a ring for destinations.
 export const ORDER_COLOR = hex("order");
@@ -58,6 +64,58 @@ function heatTexture(level: number): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+/** Shared by every cell: a soft radial gradient (centre a little darker, like an alveolus) and faint speckles. */
+function cellTexture(): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const g = canvas.getContext("2d");
+  if (g) {
+    const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    grad.addColorStop(0, "rgb(235,235,235)");
+    grad.addColorStop(1, "rgb(255,255,255)");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, size, size);
+    let a = 12345;
+    const rand = () => {
+      a = (Math.imul(a, 1664525) + 1013904223) >>> 0;
+      return a / 4294967296;
+    };
+    for (let i = 0; i < 28; i++) {
+      g.fillStyle = i % 2 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.06)";
+      g.beginPath();
+      g.arc(rand() * size, rand() * size, 3 + rand() * 6, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  // Top-face UVs are the outline's own x, y (about -0.5..0.5), so centre the texture on the cell.
+  tex.offset.set(0.5, 0.5);
+  return tex;
+}
+
+/** The outline as a three Shape. Shape y is flipped so that after rotateX(-PI/2) world z equals outline y. */
+function toShape(pts: readonly Point2[], scale = 1): THREE.Shape {
+  const shape = new THREE.Shape();
+  pts.forEach((p, i) => {
+    if (i === 0) shape.moveTo(p.x * scale, -p.y * scale);
+    else shape.lineTo(p.x * scale, -p.y * scale);
+  });
+  shape.closePath();
+  return shape;
+}
+
+/** Cell-shaped ring: the outline minus the outline scaled by `hole`. */
+function ringGeometry(pts: readonly Point2[], hole: number) {
+  const shape = toShape(pts, 1.02);
+  shape.holes.push(new THREE.Path(toShape(pts, hole).getPoints()));
+  const geo = new THREE.ShapeGeometry(shape);
+  geo.rotateX(-Math.PI / 2);
+  return geo;
 }
 
 /** Warm corner glow with one or two small flame glyphs, so the cue is a shape and not just color. */
@@ -111,6 +169,8 @@ export interface BoardView {
   clearPulses(): void;
   /** Centre of a tile in world space (y = top surface), for later views to place things. */
   tilePosition(coord: Coord): THREE.Vector3;
+  /** Advances the slight cell breathing. A no-op under reduced motion or `?still=1`. */
+  tick(dtSeconds: number): void;
 }
 
 export function createBoardView(
@@ -128,29 +188,73 @@ export function createBoardView(
       (c.y - (board.height - 1) / 2) * TILE,
     );
 
-  const slab = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      board.width * TILE + 0.3,
-      0.3,
-      board.height * TILE + 0.3,
-    ),
-    new THREE.MeshStandardMaterial({ color: SLAB, roughness: 1 }),
-  );
-  slab.position.y = -TILE_HEIGHT - 0.15;
-  group.add(slab);
+  const outlines = board.tiles.map((_, id) => {
+    const c = coordOf(board, id);
+    return cellOutline(c.x, c.y);
+  });
 
-  const tileGeo = new THREE.BoxGeometry(TILE - GAP, TILE_HEIGHT, TILE - GAP);
+  // Tissue between and under the cells, fading out at its edges.
+  const tissue = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      board.width * TILE + TISSUE_MARGIN,
+      board.height * TILE + TISSUE_MARGIN,
+    ),
+    new THREE.MeshStandardMaterial({
+      map: createTissueTexture(),
+      transparent: true,
+      roughness: 1,
+    }),
+  );
+  tissue.rotation.x = -Math.PI / 2;
+  tissue.position.y = TISSUE_Y;
+  group.add(tissue);
+
+  const surface = cellTexture();
   const meshes: THREE.Mesh[] = board.tiles.map((_, id) => {
+    const geo = new THREE.ExtrudeGeometry(toShape(outlines[id]!), {
+      depth: CELL_DEPTH,
+      bevelEnabled: true,
+      bevelThickness: BEVEL_T,
+      bevelSize: BEVEL_S,
+      bevelSegments: 2,
+      curveSegments: 1,
+    });
+    geo.rotateX(-Math.PI / 2);
+    geo.translate(0, -(CELL_DEPTH + BEVEL_T), 0);
     const mesh = new THREE.Mesh(
-      tileGeo,
-      new THREE.MeshStandardMaterial({ roughness: 0.9 }),
+      geo,
+      new THREE.MeshStandardMaterial({ roughness: 0.9, map: surface }),
     );
-    mesh.position.copy(toWorld(coordOf(board, id), -TILE_HEIGHT / 2));
+    mesh.position.copy(toWorld(coordOf(board, id)));
     group.add(mesh);
     return mesh;
   });
 
-  // One flat pattern plane per tile, swapped by level (maxInflammation is 3).
+  // Invisible full-size squares: a tap in the gap between cells still lands on the logical tile.
+  const pickGeo = new THREE.PlaneGeometry(TILE, TILE);
+  pickGeo.rotateX(-Math.PI / 2);
+  const pickMat = new THREE.MeshBasicMaterial();
+  pickMat.visible = false;
+  const picks: THREE.Mesh[] = board.tiles.map((_, id) => {
+    const m = new THREE.Mesh(pickGeo, pickMat);
+    m.position.copy(toWorld(coordOf(board, id)));
+    group.add(m);
+    return m;
+  });
+
+  // Per-tile shade (up to 4%) and breathing phase, from the same hash as the shape.
+  const bases = board.tiles.map((_, id) => {
+    const c = coordOf(board, id);
+    return BASE.clone().multiplyScalar(
+      1 + (cellHash(c.x, c.y, 1) - 0.5) * 0.08,
+    );
+  });
+  const phases = Float32Array.from(board.tiles, (_, id) => {
+    const c = coordOf(board, id);
+    return cellHash(c.x, c.y, 2) * Math.PI * 2;
+  });
+
+  // One flat pattern mesh per tile, swapped by level (maxInflammation is 3). Clipped to the cell.
   const heatMats = [1, 2, 3].map(
     (level) =>
       new THREE.MeshBasicMaterial({
@@ -160,10 +264,15 @@ export function createBoardView(
         depthWrite: false,
       }),
   );
-  const heatGeo = new THREE.PlaneGeometry(TILE - GAP - 0.04, TILE - GAP - 0.04);
-  heatGeo.rotateX(-Math.PI / 2);
-  const heat: THREE.Mesh[] = meshes.map((m) => {
-    const h = new THREE.Mesh(heatGeo, heatMats[0]);
+  const heat: THREE.Mesh[] = meshes.map((m, id) => {
+    const geo = new THREE.ShapeGeometry(toShape(outlines[id]!, 0.9));
+    const pos = geo.getAttribute("position");
+    const uv = geo.getAttribute("uv");
+    for (let i = 0; i < pos.count; i++) {
+      uv.setXY(i, pos.getX(i) + 0.5, pos.getY(i) + 0.5);
+    }
+    geo.rotateX(-Math.PI / 2);
+    const h = new THREE.Mesh(geo, heatMats[0]);
     h.position.set(m.position.x, 0.004, m.position.z);
     h.visible = false;
     group.add(h);
@@ -190,30 +299,21 @@ export function createBoardView(
     return m;
   };
 
-  const outline = (color: number, inner: number) => {
-    const half = (TILE - GAP) / 2;
-    const shape = new THREE.Shape()
-      .moveTo(-half, -half)
-      .lineTo(half, -half)
-      .lineTo(half, half)
-      .lineTo(-half, half);
-    const h = inner / 2;
-    shape.holes.push(
-      new THREE.Path().moveTo(-h, -h).lineTo(-h, h).lineTo(h, h).lineTo(h, -h),
-    );
+  // Cell-shaped rings, precomputed for every tile; the two frames just swap geometry.
+  const hoverRings = outlines.map((o) => ringGeometry(o, 0.9));
+  const selectedRings = outlines.map((o) => ringGeometry(o, 0.7));
+  const makeFrame = (color: number, y: number) => {
     const mesh = new THREE.Mesh(
-      new THREE.ShapeGeometry(shape),
+      hoverRings[0],
       new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }),
     );
-    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.y = y;
     mesh.visible = false;
     group.add(mesh);
     return mesh;
   };
-  const hoverFrame = outline(hex("white"), TILE - GAP - 0.06);
-  const selectedFrame = outline(ORDER_COLOR, TILE - GAP - 0.34);
-  selectedFrame.position.y = 0.012;
-  hoverFrame.position.y = 0.006;
+  const hoverFrame = makeFrame(hex("white"), 0.006);
+  const selectedFrame = makeFrame(ORDER_COLOR, 0.012);
 
   const optionMarks: THREE.Group[] = [];
   const discGeo = new THREE.CircleGeometry(0.2, 20);
@@ -250,7 +350,7 @@ export function createBoardView(
 
   const colorTile = (id: number, s: BattleState) => {
     const c = coordOf(board, id);
-    const base = (c.x + c.y) % 2 === 0 ? BASE_A : BASE_B;
+    const base = bases[id]!;
     const t = Math.min(
       1,
       Math.max(
@@ -272,16 +372,30 @@ export function createBoardView(
 
   const refreshAll = () => meshes.forEach((_, id) => colorTile(id, lastState));
 
-  const place = (frame: THREE.Mesh, c: Coord | null) => {
+  const place = (
+    frame: THREE.Mesh,
+    c: Coord | null,
+    rings: readonly THREE.BufferGeometry[],
+  ) => {
     frame.visible = c !== null;
     if (c) {
       const p = toWorld(c);
       frame.position.x = p.x;
       frame.position.z = p.z;
+      frame.geometry = rings[tileId(board, c)]!;
     }
   };
 
   const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  const calm =
+    typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)")
+      : null;
+  const still =
+    new URLSearchParams(window.location.search).get("still") === "1";
+  let clock = 0;
+  let breathing = false;
 
   refreshAll();
 
@@ -292,10 +406,11 @@ export function createBoardView(
       refreshAll();
     },
     pick(pointer, camera) {
-      raycaster.setFromCamera(new THREE.Vector2(pointer.x, pointer.y), camera);
-      const hit = raycaster.intersectObjects(meshes, false)[0];
+      ndc.set(pointer.x, pointer.y);
+      raycaster.setFromCamera(ndc, camera);
+      const hit = raycaster.intersectObjects(picks, false)[0];
       return hit
-        ? coordOf(board, meshes.indexOf(hit.object as THREE.Mesh))
+        ? coordOf(board, picks.indexOf(hit.object as THREE.Mesh))
         : null;
     },
     setHover(coord) {
@@ -305,11 +420,11 @@ export function createBoardView(
       hover = next;
       if (prev) colorTile(tileId(board, prev), lastState);
       if (next) colorTile(tileId(board, next), lastState);
-      place(hoverFrame, next);
+      place(hoverFrame, next, hoverRings);
     },
     setSelected(coord) {
       selected = coord && inBounds(board, coord) ? coord : null;
-      place(selectedFrame, selected);
+      place(selectedFrame, selected, selectedRings);
     },
     setOptions(coords) {
       while (optionMarks.length < coords.length) {
@@ -351,5 +466,21 @@ export function createBoardView(
       }
     },
     tilePosition: (c) => toWorld(c),
+    tick(dt) {
+      if (still || calm?.matches) {
+        if (breathing) {
+          for (const m of meshes) m.scale.set(1, 1, 1);
+          breathing = false;
+        }
+        return;
+      }
+      breathing = true;
+      clock += dt;
+      const w = (clock / BREATH_SECONDS) * Math.PI * 2;
+      for (let i = 0; i < meshes.length; i++) {
+        const k = 1 + BREATH * (0.5 + 0.5 * Math.sin(w + phases[i]!));
+        meshes[i]!.scale.set(k, 1, k);
+      }
+    },
   };
 }
