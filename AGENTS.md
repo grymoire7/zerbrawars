@@ -8,8 +8,8 @@ The codesight wiki is kept up-to-date with a pre-commit hook.
 
 ## Commands
 
-Node comes from mise (`mise.toml`, Node 26); plain `node` in a non-interactive shell may be a different version. Run everything through `mise exec --`.
+Node comes from mise (`mise.toml`, Node 26); plain `node` in a non-interactive shell may be a different version. Tasks are defined in `mise.toml`; `mise tasks` lists them and `mise run <task>` runs one (use `mise exec -- npm ...` for anything else).
 
-- `mise exec -- npm run dev -- --port 5199` starts the dev server.
-- Verify with `mise exec -- npm run typecheck`, `lint`, `format:check`, `test` and `build`.
-- Run `npm run format` only on files you edited, never to reformat other people's work.
+- `mise run check` runs typecheck, lint, format:check, test and build. The individual tasks are `typecheck`, `lint`, `format:check`, `test` and `build`.
+- `pitchfork start web` (daemon in `pitchfork.toml`) serves the dev server at http://localhost:5199/. `mise run dev` runs it in the foreground.
+- Run `mise run format` only when the whole tree is yours; otherwise run Prettier on the files you edited.

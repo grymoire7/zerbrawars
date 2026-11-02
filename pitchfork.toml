@@ -1,0 +1,7 @@
+#:schema https://pitchfork.jdx.dev/schema.json
+
+[daemons.web]
+run = "exec npm run dev -- --port 5199 --strictPort"
+mise = true
+port = { expect = [5199], bump = false }
+ready_http = { url = "http://localhost:5199/", status = [200] }
