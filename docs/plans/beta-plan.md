@@ -52,6 +52,42 @@ beyond the current run (my call), localization, steroids and the gut map.
 subagents stop reformatting; add `npm run format:check` to the verification list; document `mise exec`.
 *Done when:* clean diff, all checks pass.
 
+**B1a. Visual identity, status meters and score (before B1: the HUD decides what B1 must fit on a phone).**
+Five parts, in this order:
+1. *Design pass (Opus, timeboxed to one sitting, no code).* Settle three things and write them into
+   this section: (a) the score formula below; (b) pacing and stakes: make each life choice's cost and
+   payoff visible at once, shorten the calendar if it helps, tilt the week toward the battle (tuning,
+   not new mechanics); (c) the palette. Anything bigger than tuning goes to the post-patient backlog.
+2. *Palette and region colors.* Hue plus a distinct shape or icon per pathogen family, the medication
+   aura and body region, so color never carries meaning alone (B7 grayscale check must still pass).
+3. *Status meters.* Surface what the sim already tracks as bars: **Medication** (share of doses taken),
+   **Energy**, **Tissue** (health out of 20), **Inflammation** (battle only) and the week's **Life
+   points** goal meter. No new "Happiness" stat: life points already play that role (living fully
+   earns points, and the risky versions pay more, which is the core tension).
+4. *Overall score.* Does not exist yet (only per-week points, battle grades and tissue lost in
+   `campaignSummary`). Draft for the design pass to confirm. Two parts, shown separately so the player
+   can see which one their choices control:
+   - **Choices** (luck-free): life points earned, plus "risk dodged", the exposure chance avoided
+     compared with the risky version of the same plan, plus medication adherence. This is the part the
+     player can push every run, and it teaches how to push the odds.
+   - **Outcome** (luck included): tissue kept, battle grades, reservoirs left. Shown honestly, framed as
+     "how it went", not a verdict.
+
+   The overall score is the sum, shown with a per-week breakdown. Best score per variant (CGD XL, AR) and
+   seed kept in `localStorage` (the one exception to "no save/load", try/catch around it; the game plays
+   fine without it). Seeded replay (`?seed=`) lets a player retry the same dice. Add a "play again" path
+   from the arc-complete screen. Tone: infections happen whatever you do, the score measures how well you
+   pushed the odds.
+5. *Organic board.* Keep the square logic grid (hexes change adjacency, telegraphs, heat forecast and
+   balance, and the ~329 tests; post-beta question only). Render it organically: rounded and
+   irregular cell shapes, soft edges, slight wobble, a tissue texture or background image behind it.
+   Telegraph and heat painting keep working on the same logical tiles.
+
+*Done when:* every screen has color beyond gray with shape/label backup; the meters and score are
+visible on the life screen and the battle screen; the score appears on the arc-complete screen with the
+best-score line; the board no longer reads as a grey right-angled grid; typecheck, lint, tests and
+build green; screenshots of life, battle and outcome attached to the commit.
+
 **B1. Mobile layout and touch.** Real device pass (serve with `--host`, open on the user's phone).
 *Done when:* life screen, battle screen and outcome overlays are usable one-handed in portrait on a
 phone; End Turn and playback controls reachable; board stays large; nothing essential needs hover.
@@ -88,8 +124,8 @@ then fix the top three issues.
 
 ## 4. Schedule (estimate, not a commitment)
 
-- Nov 1 - 7: B0, B1, B2, B3.
-- Nov 8 - 14: B4, B5, B6, B7.
+- Nov 1 - 8: B0, B1a, B1, B2, B3 (B1a added 2026-11-02; this is the tightest week).
+- Nov 9 - 14: B4, B5, B6, B7.
 - Nov 15 - 17: B8, then B9 with the patient (around Nov 15-17).
 - Nov 18 - 20: B9 fixes, B10, final rehearsal.
 - Nov 21: beta cut. NIH trip a few days later.
@@ -111,7 +147,7 @@ no worktrees, conventional commits, one commit per task, never run a formatter o
 
 ## 7. Cut first (in order)
 
-1. Epilogue (B6). 2. Title-screen polish and the greyed Wilson's entry. 3. Accessibility beyond keyboard and
+1. Epilogue (B6), to pay for B1a. 2. Title-screen polish and the greyed Wilson's entry. 3. Accessibility beyond keyboard and
 reduced motion. 4. Arc 2 intro/ending text beyond a single screen. 5. Undiagnosed vignette in Arc 1 (keep
 only the diagnosed part with the aura contrast).
 
@@ -124,6 +160,13 @@ only the diagnosed part with the aura contrast).
 3. Demo device: a laptop for sure; a phone is also possible; no tablet. Phone support therefore
    matters for the demo (B1 real-device pass); tablet layout is a nice-to-have only.
 4. Save/load: none (each run starts fresh). Agreed.
+5. (2026-11-02) Visual and status feedback: add B1a. No invented "Happiness" stat; life points already
+   cover it. An overall score is wanted for replay value and learning: players know infections happen
+   regardless, so a score will not read as a judgment. Score is split into luck-free "Choices" and
+   luck-included "Outcome". Organic board by rendering only; hex grid deferred past the beta.
+6. (2026-11-02) `localStorage` may hold game stats (best scores per variant and seed). They must be
+   surfaced in the UI (title/hub and arc-complete screen), or they mean nothing. Still no save/load of
+   a run in progress.
 
 ## 9. Resuming after a break
 
