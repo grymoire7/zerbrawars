@@ -362,10 +362,10 @@ export const PARAMS = {
    * weight or tuning that moves the measured ranges changes, so best scores stay comparable.
    */
   score: {
-    version: 2,
+    version: 3,
     perPoint: 10,
     perDodgedPercent: 1,
-    perDose: 10,
+    perDose: 30,
     checked: { early: 20, late: 10 },
     perTissue: 2,
     fight: { cleared: 40, contained: 20, neededBackup: 10 },

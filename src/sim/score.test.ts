@@ -95,7 +95,7 @@ describe("Choices", () => {
     ).toBe(65);
   });
 
-  it("pays ten per dose taken this week and drops ten per skipped dose", () => {
+  it("pays per dose taken this week and drops that much per skipped dose", () => {
     const pre = dose(2, true, 0);
     const taken = week({
       doses: [pre, dose(0, true), dose(1, true), dose(2, true)],
@@ -103,8 +103,8 @@ describe("Choices", () => {
     const skipped = week({
       doses: [pre, dose(0, true), dose(1, false), dose(2, true)],
     });
-    expect(weekChoices(taken).meds).toBe(30);
-    expect(weekChoices(skipped).meds).toBe(20);
+    expect(weekChoices(taken).meds).toBe(3 * PARAMS.score.perDose);
+    expect(weekChoices(skipped).meds).toBe(2 * PARAMS.score.perDose);
   });
 
   it("pays for checking a symptom, early more than late, a viral visit the same", () => {
@@ -139,9 +139,9 @@ describe("Choices", () => {
     expect(c).toEqual({
       living: 100,
       dodged: 35,
-      meds: 30,
+      meds: 90,
       checked: 20,
-      total: 185,
+      total: 245,
     });
   });
 });

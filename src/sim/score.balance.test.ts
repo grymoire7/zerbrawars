@@ -58,7 +58,7 @@ function survey(bot: CampaignBot): Row {
       for (const n of parts(h)) expect(n).toBeGreaterThanOrEqual(0);
       expect(h.score.choices.living).toBeLessThanOrEqual(140);
       expect(h.score.choices.dodged).toBeLessThanOrEqual(65);
-      expect(h.score.choices.meds).toBeLessThanOrEqual(30);
+      expect(h.score.choices.meds).toBeLessThanOrEqual(90);
       expect(h.score.choices.checked).toBeLessThanOrEqual(20);
       expect(h.score.outcome.tissue).toBeLessThanOrEqual(40);
       expect(h.score.outcome.fight).toBeGreaterThanOrEqual(10);
@@ -66,7 +66,7 @@ function survey(bot: CampaignBot): Row {
       expect(h.score.outcome.clear).toBeLessThanOrEqual(20);
     }
     expect(s.total).toBe(s.choices + s.outcome);
-    expect(s.total).toBeLessThanOrEqual(670);
+    expect(s.total).toBeLessThanOrEqual(790);
     r.choices += s.choices / SEEDS;
     r.outcome += s.outcome / SEEDS;
     r.total += s.total / SEEDS;
@@ -102,11 +102,11 @@ describe("score ranges", () => {
   });
 
   it("keeps each bot near its measured range", () => {
-    expect(rows.home.choices).toBeLessThanOrEqual(100);
+    expect(rows.home.choices).toBeLessThanOrEqual(200);
     expect(rows.careless.total).toBeLessThanOrEqual(450);
     expect(rows.careless.total).toBeGreaterThanOrEqual(330);
-    expect(rows.smarter.total).toBeGreaterThanOrEqual(620);
-    expect(rows.smarter.total).toBeLessThanOrEqual(670);
+    expect(rows.smarter.total).toBeGreaterThanOrEqual(740);
+    expect(rows.smarter.total).toBeLessThanOrEqual(790);
   });
 
   it("orders the strategies", () => {

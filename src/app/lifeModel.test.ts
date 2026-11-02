@@ -233,7 +233,7 @@ describe("lifeStatusModel", () => {
 
   it("shows planned Choices and the earlier total", () => {
     const l = createLife({ seed: 1 });
-    expect(cellOf(l, "score").value).toBe("Choices 30");
+    expect(cellOf(l, "score").value).toBe("Choices 90");
     expect(cellOf(l, "score").state).toBe("planned");
     const later = lifeStatusModel(l, 315).cells.find((c) => c.id === "score")!;
     expect(later.explain).toContain("Earlier weeks: 315");

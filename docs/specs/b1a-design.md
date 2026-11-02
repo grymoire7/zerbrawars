@@ -446,3 +446,5 @@ Each slice is one commit and one sitting for a Sonnet implementer. Each is done 
    the clinical word and the board's heat patterns.
 
 **Answers (Tracy, 2026-11-02):** yes to all seven.
+
+**Update (Tracy, 2026-11-02, after slice 6):** `perDose` raised from 10 to 30 and `PARAMS.score.version` bumped to 3, because the skip-all-doses bot scored only 63 below smarter play. Measured over 200 seeds, two weeks (this supersedes the table in 1.3): home 391, careless 422, risky 661, mixed 676, skipMeds 578, smarter 761 (750 to 790). The skipMeds gap is now 183. Stay-home (391) is only 31 below careless (422), because it still takes its doses; revisit if that reads as rewarding hiding. Making skipped doses cost tissue in battle is the real fix and stays in the post-beta backlog.
