@@ -36,7 +36,7 @@
 - `src/render/labels.ts` — setLabelBoost, labelMaterial, sizeLabel, labelSprite, LabelOptions
 - `src/render/boardView.ts` — createBoardView, BoardView, ORDER_COLOR
 - `src/render/orderView.ts` — createOrderView, DoseMarks, OrderView
-- `src/render/pathogenView.ts` — createPathogenView, PathogenView, FORM_COLOR
+- `src/render/pathogenView.ts` — createPathogenView, PathogenView, KIND_COLOR
 - `src/render/swarmView.ts` — createSwarmView, SwarmPose, SwarmView
 - `src/render/auraView.ts` — createAuraView, AuraView
 - `src/render/fxView.ts` — createFxView, FxView

@@ -4,7 +4,7 @@
 
 - `src/sim/types.ts` — imported by **41** files
 - `src/sim/params.ts` — imported by **40** files
-- `src/sim/pathogens.ts` — imported by **23** files
+- `src/sim/pathogens.ts` — imported by **21** files
 - `src/sim/rng.ts` — imported by **18** files
 - `src/sim/battle/setup.ts` — imported by **17** files
 - `src/sim/scenarios.ts` — imported by **17** files
@@ -27,7 +27,7 @@
 
 - `src/sim/types.ts` ← `src/app/battleScreen.ts`, `src/app/campaignModel.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts`, `src/app/info.ts` +36 more
 - `src/sim/params.ts` ← `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts`, `src/app/controller.ts`, `src/app/info.ts` +35 more
-- `src/sim/pathogens.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/render/insetView.ts`, `src/render/pathogenView.ts` +18 more
+- `src/sim/pathogens.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/render/insetView.ts`, `src/sim/battle/bots.ts` +16 more
 - `src/sim/rng.ts` ← `src/sim/battle/bots.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/intents.ts`, `src/sim/battle/orders.test.ts` +13 more
 - `src/sim/battle/setup.ts` ← `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts`, `src/app/main.ts` +12 more
 - `src/sim/scenarios.ts` ← `src/app/battleScreen.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts`, `src/app/loadoutOptions.ts`, `src/app/main.ts` +12 more

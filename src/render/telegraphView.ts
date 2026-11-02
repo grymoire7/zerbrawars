@@ -19,6 +19,7 @@ const SPORE_COLOR = hex("spore");
 const GROW_COLOR = hex("grow");
 const BLOCKED_COLOR = hex("blocked");
 const STALL_COLOR = hex("stall");
+const HALO_COLOR = hex("mark-halo");
 
 const LIFT = 0.5;
 const LABEL_HEIGHT = 0.26;
@@ -61,6 +62,12 @@ export function createTelegraphView(
     }),
     blocked: mat(BLOCKED_COLOR),
     stall: mat(STALL_COLOR),
+    halo: new THREE.MeshBasicMaterial({
+      color: HALO_COLOR,
+      depthTest: false,
+      transparent: true,
+      opacity: 0.8,
+    }),
   };
   const baseOpacity = new Map<THREE.Material, number>(
     Object.values(mats).map((m) => [m, m.opacity] as const),
@@ -82,6 +89,14 @@ export function createTelegraphView(
     mesh.position.copy(at);
     mesh.renderOrder = 10;
     group.add(mesh);
+    // Dark halo under each solid mark (spec 4.2) so spore and blocked stay above 3:1 on hot tiles.
+    if (m !== mats.ghost && m !== mats.ghostRing) {
+      const h = new THREE.Mesh(geo, mats.halo);
+      if (geo === boxGeo) h.scale.set(1.1, 2.1, 2.1);
+      else h.scale.setScalar(1.5);
+      h.renderOrder = 9.5;
+      mesh.add(h);
+    }
     return mesh;
   };
 

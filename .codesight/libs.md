@@ -21,7 +21,7 @@
 - `src/render/pathogenView.ts`
   - function createPathogenView: (scene, tilePosition) => void
   - interface PathogenView
-  - const FORM_COLOR: Record<PathogenForm, number>
+  - const KIND_COLOR: Record<PathogenKindId, number>
 - `src/render/playback.ts`
   - function buildTimeline: (before, events) => Timeline
   - function beatProgress: (beat, t) => number

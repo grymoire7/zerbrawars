@@ -151,6 +151,13 @@ export interface HudMounts {
 const PANEL =
   "background:var(--zw-raised);border:1px solid var(--zw-line);border-radius:6px;";
 const DARK = "var(--zw-heat-ink)";
+/** Colour name for each organism in the on-screen key; matches the palette tokens. */
+const GERM_COLOR_WORD: Record<PathogenKindId, string> = {
+  strep: "Orange",
+  staph: "Rose",
+  aspergillus: "Violet",
+};
+
 const STATUS_COLOR: Record<string, string> = {
   "no order": "var(--zw-text-muted)",
   busy: "var(--zw-text-muted)",
@@ -384,8 +391,8 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       const def = PATHOGEN_KINDS[id];
       const body =
         def.form === "mold"
-          ? "background:var(--zw-aspergillus);clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);"
-          : "background:var(--zw-strep);border-radius:50%;";
+          ? `background:var(--zw-${id});clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);`
+          : `background:var(--zw-${id});border-radius:50%;`;
       const sealed = def.wall === "sealed";
       const mark = el(
         "span",
@@ -397,9 +404,11 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       mark.setAttribute("aria-hidden", "true");
       return keyRow(
         mark,
-        `${def.organism}: ${def.form === "mold" ? "spiky mold" : "round bacterium"}` +
+        `${GERM_COLOR_WORD[id]} ${def.form === "mold" ? "spiky dots" : "round dots"}` +
+          (sealed ? " with a ring" : "") +
+          `: ${def.organism}` +
           (sealed
-            ? ", pale ring = sealed shell. Engulfing loads a swarm, it does not kill."
+            ? ". The pale ring is a shell. Engulfing loads a swarm, it does not kill."
             : ". Engulfing kills it."),
       );
     });

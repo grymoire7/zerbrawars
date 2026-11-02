@@ -5,7 +5,7 @@ import { pathogenKind, type PathogenKindId } from "../sim/pathogens";
 import type { BattleState, Coord } from "../sim/types";
 import { createAuraView } from "./auraView";
 import { createBoardView } from "./boardView";
-import { FORM_COLOR } from "./pathogenView";
+import { KIND_COLOR } from "./pathogenView";
 import { hex } from "../theme/palette";
 
 /** The body inset for the life screen: the slab at reduced detail, the aura, and preview dots. */
@@ -83,21 +83,25 @@ export function createInsetView(
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   const dummy = new THREE.Object3D();
-  const bodyMat = (form: "bacterium" | "mold") =>
+  const bodyMat = (kind: PathogenKindId) =>
     new THREE.MeshStandardMaterial({
-      color: FORM_COLOR[form],
+      color: KIND_COLOR[kind],
       roughness: 0.6,
-      emissive: FORM_COLOR[form],
+      emissive: KIND_COLOR[kind],
       emissiveIntensity: 0.25,
     });
-  const bodies = {
-    bacterium: new THREE.InstancedMesh(
-      new THREE.SphereGeometry(0.8, 10, 8),
-      bodyMat("bacterium"),
+  // One instanced draw per organism: colour names the organism, the shape names the form.
+  const beadGeo = new THREE.SphereGeometry(0.8, 10, 8);
+  const bodies: Record<PathogenKindId, THREE.InstancedMesh> = {
+    strep: new THREE.InstancedMesh(beadGeo, bodyMat("strep"), MAX_DOTS),
+    staph: new THREE.InstancedMesh(beadGeo, bodyMat("staph"), MAX_DOTS),
+    aspergillus: new THREE.InstancedMesh(
+      moldGeometry(),
+      bodyMat("aspergillus"),
       MAX_DOTS,
     ),
-    mold: new THREE.InstancedMesh(moldGeometry(), bodyMat("mold"), MAX_DOTS),
   };
+  const bodyList = Object.values(bodies);
   const rimGeo = new THREE.TorusGeometry(1.05, 0.14, 6, 18);
   rimGeo.rotateX(Math.PI / 2);
   const rims = new THREE.InstancedMesh(
@@ -109,14 +113,14 @@ export function createInsetView(
     }),
     MAX_DOTS,
   );
-  for (const m of [bodies.bacterium, bodies.mold, rims]) {
+  for (const m of [...bodyList, rims]) {
     m.count = 0;
     m.frustumCulled = false;
     group.add(m);
   }
 
   let preview: {
-    dots: readonly { form: "bacterium" | "mold"; sealed: boolean }[];
+    dots: readonly { kind: PathogenKindId; sealed: boolean }[];
     count: number;
     from: THREE.Vector3;
     to: THREE.Vector3;
@@ -141,9 +145,9 @@ export function createInsetView(
   };
 
   const draw = () => {
-    for (const m of [bodies.bacterium, bodies.mold, rims]) m.count = 0;
+    for (const m of [...bodyList, rims]) m.count = 0;
     if (!preview) return;
-    const used = { bacterium: 0, mold: 0, rims: 0 };
+    const used = { strep: 0, staph: 0, aspergillus: 0, rims: 0 };
     for (let i = 0; i < preview.count; i++) {
       const dot = preview.dots[i % preview.dots.length];
       // Reduced motion: dots sit evenly along the path instead of drifting.
@@ -151,14 +155,13 @@ export function createInsetView(
         ? (i + 0.5) / preview.count
         : (i / preview.count + clock * DRIFT_SPEED) % 1;
       place(t, i, 1);
-      bodies[dot.form].setMatrixAt(used[dot.form]++, dummy.matrix);
+      bodies[dot.kind].setMatrixAt(used[dot.kind]++, dummy.matrix);
       if (dot.sealed) rims.setMatrixAt(used.rims++, dummy.matrix);
     }
-    bodies.bacterium.count = used.bacterium;
-    bodies.mold.count = used.mold;
+    for (const k of Object.keys(bodies) as PathogenKindId[])
+      bodies[k].count = used[k];
     rims.count = used.rims;
-    for (const m of [bodies.bacterium, bodies.mold, rims])
-      m.instanceMatrix.needsUpdate = true;
+    for (const m of [...bodyList, rims]) m.instanceMatrix.needsUpdate = true;
   };
 
   const markers = new THREE.Group();
@@ -185,7 +188,7 @@ export function createInsetView(
       }
       const dots = (p.kinds?.length ? p.kinds : [p.kind]).map((k) => {
         const def = pathogenKind(k);
-        return { form: def.form, sealed: def.wall === "sealed" };
+        return { kind: k, sealed: def.wall === "sealed" };
       });
       const to = board3.tilePosition(p.entry).clone();
       const toLeft = p.entry.x;
@@ -214,9 +217,8 @@ export function createInsetView(
       list.forEach((r, i) => {
         const at = r.at ?? PARAMS.setup.reservoirTiles[i];
         if (!at) return;
-        const kind = pathogenKind(r.kind);
         const mat = new THREE.MeshBasicMaterial({
-          color: FORM_COLOR[kind.form],
+          color: KIND_COLOR[r.kind],
           transparent: true,
           opacity: r.hidden ? 0.28 : 0.85,
           depthWrite: false,

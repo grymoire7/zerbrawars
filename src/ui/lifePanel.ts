@@ -272,13 +272,19 @@ export function createLifePanel(
     ),
     keyRow(
       dot("border-radius:50%;background:var(--zw-strep);"),
-      "Round orange dots drifting in: bacteria. More dots, better odds of an exposure.",
+      "Orange round dots drifting in: Streptococcus, a bacterium. More dots, better odds of an exposure.",
+    ),
+    keyRow(
+      dot(
+        "border-radius:50%;background:var(--zw-staph);outline:2px solid var(--zw-sealed-rim);outline-offset:1px;",
+      ),
+      "Rose round dots with a ring: Staphylococcus aureus, a bacterium in a shell.",
     ),
     keyRow(
       dot(
         "background:var(--zw-aspergillus);clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);",
       ),
-      "Violet spiky dots: mold. A pale ring around a dot means it is sealed in a shell.",
+      "Violet spiky dots with a ring: Aspergillus, a mold in a shell. A pale ring always means a shell.",
     ),
     keyRow(
       dot("border-radius:50%;border:2px dashed var(--zw-aspergillus-ink);"),

@@ -1,11 +1,10 @@
 import * as THREE from "three";
 import { PARAMS } from "../sim/params";
-import { PATHOGEN_KINDS } from "../sim/pathogens";
 import type { BattleState, Coord, GranulomaId, PathogenId } from "../sim/types";
 import type { BoardView } from "./boardView";
 import type { FxView } from "./fxView";
 import type { GranulomaView } from "./granulomaView";
-import { FORM_COLOR, type PathogenView } from "./pathogenView";
+import { KIND_COLOR, type PathogenView } from "./pathogenView";
 import { beatProgress, type Beat, type Playback } from "./playback";
 import type { SwarmView } from "./swarmView";
 import { PALETTE, hex } from "../theme/palette";
@@ -93,7 +92,7 @@ export function createPlaybackView(v: Views): PlaybackView {
 
   const colorOf = (state: BattleState, id: PathogenId) => {
     const p = state.pathogens.find((q) => q.id === id);
-    return p ? FORM_COLOR[PATHOGEN_KINDS[p.kind].form] : GROW;
+    return p ? KIND_COLOR[p.kind] : GROW;
   };
 
   const cache = (beat: Beat, i: number, before: BattleState): Cache => {

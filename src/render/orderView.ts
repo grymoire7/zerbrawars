@@ -86,10 +86,41 @@ export function createOrderView(
     return [Math.cos(a) * r, Math.sin(a) * r] as const;
   });
 
+  // Dark halo under every solid mark (spec 4.2) so the order colour stays above 3:1 on hot tiles.
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: hex("mark-halo"),
+    depthTest: false,
+    transparent: true,
+    opacity: 0.8,
+    side: THREE.DoubleSide,
+  });
+  const haloRingGeo = new THREE.RingGeometry(0.31, 0.47, 24);
+  const haloReticleGeo = new THREE.RingGeometry(0.44, 0.54, 32);
+  const haloDotGeo = new THREE.CircleGeometry(0.13, 12);
+  const addHalo = (mesh: THREE.Mesh) => {
+    const geo = mesh.geometry;
+    const swap =
+      geo === ringGeo
+        ? haloRingGeo
+        : geo === reticleGeo
+          ? haloReticleGeo
+          : geo === dotGeo
+            ? haloDotGeo
+            : null;
+    const h = new THREE.Mesh(swap ?? geo, haloMat);
+    if (!swap) {
+      if (geo === boxGeo) h.scale.set(1.1, 2.2, 1.8);
+      else h.scale.setScalar(1.45);
+    }
+    h.renderOrder = mesh.renderOrder - 0.5;
+    mesh.add(h);
+  };
+
   const place = (mesh: THREE.Mesh, at: THREE.Vector3, order = 11) => {
     mesh.position.copy(at);
     mesh.renderOrder = order;
     group.add(mesh);
+    if (mesh.material === solid || mesh.material === doseMat) addHalo(mesh);
     return mesh;
   };
 
@@ -245,6 +276,7 @@ export function createOrderView(
     dot.renderOrder = 11;
     dot.scale.setScalar(queued ? 2.2 : 1);
     group.add(dot);
+    addHalo(dot);
     if (queued) {
       const tag = labelSprite("dose", 0.2, { color: PALETTE.med });
       tag.position.copy(at(c, 1.1));

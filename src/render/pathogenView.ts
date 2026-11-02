@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { labelMaterial, sizeLabel } from "./labels";
-import { PATHOGEN_KINDS, type PathogenForm } from "../sim/pathogens";
+import {
+  PATHOGEN_KINDS,
+  type PathogenForm,
+  type PathogenKindId,
+} from "../sim/pathogens";
 import type { BattleState, Coord, Pathogen, PathogenId } from "../sim/types";
 import { hex } from "../theme/palette";
 
@@ -30,11 +34,12 @@ export interface PathogenView {
   tick(dtSeconds: number): void;
 }
 
-// Shape carries the growth form; the rim carries sealed vs leaky. Colors are secondary and chosen
-// to differ in lightness as well as hue (orange vs violet), so red/green confusion does not matter.
-export const FORM_COLOR: Record<PathogenForm, number> = {
-  bacterium: hex("strep"),
-  mold: hex("aspergillus"),
+// Colour names the organism, shape names the growth form, and the rim names sealed vs leaky.
+// Staph is rose, not strep's orange, so the two round bacteria differ in hue as well as the rim.
+export const KIND_COLOR: Record<PathogenKindId, number> = {
+  strep: hex("strep"),
+  staph: hex("staph"),
+  aspergillus: hex("aspergillus"),
 };
 const RIM_COLOR = hex("sealed-rim");
 const BADGE_HEIGHT = 0.34;
@@ -66,16 +71,27 @@ export function createPathogenView(
   spikeGeo.translate(0, 0.15, 0);
   const rimGeo = new THREE.TorusGeometry(0.4, 0.045, 8, 28);
   rimGeo.rotateX(Math.PI / 2);
-  const mats: Record<PathogenForm, THREE.MeshStandardMaterial> = {
-    bacterium: new THREE.MeshStandardMaterial({
-      color: FORM_COLOR.bacterium,
+  const mats: Record<PathogenKindId, THREE.MeshStandardMaterial> = {
+    strep: new THREE.MeshStandardMaterial({
+      color: KIND_COLOR.strep,
       roughness: 0.6,
     }),
-    mold: new THREE.MeshStandardMaterial({
-      color: FORM_COLOR.mold,
+    staph: new THREE.MeshStandardMaterial({
+      color: KIND_COLOR.staph,
+      roughness: 0.6,
+    }),
+    aspergillus: new THREE.MeshStandardMaterial({
+      color: KIND_COLOR.aspergillus,
       roughness: 0.7,
     }),
   };
+  // Inverted hull: a slightly larger back-face copy in the halo colour reads as a thin dark
+  // silhouette outline, so tokens stay readable on hot tiles.
+  const outlineMat = new THREE.MeshBasicMaterial({
+    color: hex("mark-halo"),
+    side: THREE.BackSide,
+  });
+  const OUTLINE = 0.022;
   const rimMat = new THREE.MeshStandardMaterial({
     color: RIM_COLOR,
     roughness: 0.3,
@@ -95,21 +111,31 @@ export function createPathogenView(
   let growing = new Set<PathogenId>();
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  const buildBody = (form: PathogenForm): THREE.Group => {
+  const addSphere = (
+    body: THREE.Group,
+    mat: THREE.Material,
+    x: number,
+    y: number,
+    z: number,
+    r: number,
+  ) => {
+    const m = new THREE.Mesh(sphereGeo, mat);
+    m.position.set(x, y, z);
+    m.scale.setScalar(r);
+    body.add(m);
+    const o = new THREE.Mesh(sphereGeo, outlineMat);
+    o.position.set(x, y, z);
+    o.scale.setScalar(r + OUTLINE);
+    body.add(o);
+  };
+
+  const buildBody = (kind: PathogenKindId, form: PathogenForm): THREE.Group => {
     const body = new THREE.Group();
-    const mat = mats[form];
+    const mat = mats[kind];
     if (form === "bacterium") {
-      for (const [x, y, z, r] of CLUSTER) {
-        const m = new THREE.Mesh(sphereGeo, mat);
-        m.position.set(x, y, z);
-        m.scale.setScalar(r);
-        body.add(m);
-      }
+      for (const [x, y, z, r] of CLUSTER) addSphere(body, mat, x, y, z, r);
     } else {
-      const core = new THREE.Mesh(sphereGeo, mat);
-      core.position.y = 0.2;
-      core.scale.setScalar(0.15);
-      body.add(core);
+      addSphere(body, mat, 0, 0.2, 0, 0.15);
       // Spikes fan out over the upper hemisphere (golden-angle spiral).
       for (let i = 0; i < SPIKES; i++) {
         const tilt = Math.acos(1 - (i + 0.5) / SPIKES);
@@ -125,8 +151,14 @@ export function createPathogenView(
           ),
         );
         // Longer spikes on the sides, short on top, for a clearly spiky outline.
-        spike.scale.set(1, 0.9 + 1.1 * Math.sin(tilt), 1);
+        const sy = 0.9 + 1.1 * Math.sin(tilt);
+        spike.scale.set(1, sy, 1);
         body.add(spike);
+        const edge = new THREE.Mesh(spikeGeo, outlineMat);
+        edge.position.copy(spike.position);
+        edge.quaternion.copy(spike.quaternion);
+        edge.scale.set(1.7, sy * 1.08, 1.7);
+        body.add(edge);
       }
     }
     return body;
@@ -145,7 +177,7 @@ export function createPathogenView(
   const buildToken = (p: Pathogen): Token => {
     const def = PATHOGEN_KINDS[p.kind];
     const root = new THREE.Group();
-    const body = buildBody(def.form);
+    const body = buildBody(p.kind, def.form);
     root.add(body);
     bodies.push(body);
     if (def.wall === "sealed") {
