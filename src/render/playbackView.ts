@@ -8,6 +8,7 @@ import type { GranulomaView } from "./granulomaView";
 import { FORM_COLOR, type PathogenView } from "./pathogenView";
 import { beatProgress, type Beat, type Playback } from "./playback";
 import type { SwarmView } from "./swarmView";
+import { PALETTE, hex } from "../theme/palette";
 
 /**
  * Drives the views from a Playback. Every frame is posed from scratch from the timeline time, so
@@ -39,15 +40,15 @@ const TOKEN_Y = 0.2;
 const LIFT = 0.5;
 const LABEL_LIFE = 0.95;
 const SUMMARY_LIFE = 0.9;
-const KILL = 0xfff3c4;
-const GOLD = 0xffd84a;
-const LOAD = 0x7d94a3;
-const BLOCK = 0xff5a46;
-const SPORE = 0x6fb8ff;
-const GROW = 0xf2f2f2;
-const WALL = 0xb08a5a;
-const DOSE = 0x5be3c6;
-const PING = 0xcfe8ff;
+const KILL = hex("kill");
+const GOLD = hex("residual");
+const LOAD = hex("swarm-loaded");
+const BLOCK = hex("warn-line");
+const SPORE = hex("spore");
+const GROW = hex("grow");
+const WALL = hex("granuloma");
+const DOSE = hex("med");
+const PING = hex("focus");
 const DOSE_HEIGHT = 4.2;
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
@@ -236,14 +237,14 @@ export function createPlaybackView(v: Views): PlaybackView {
         at.z,
         0.1 + 0.5 * easeOut(q2),
         0.8 * (1 - q2),
-        0xffffff,
+        hex("white"),
       );
       v.fx.burst(c.seed, at.x, cy, at.z, q, 26, 1.5, color);
       label(
         t,
         time(0.56),
         beat.outcome === "residualKill" ? "RESIDUAL KILL" : "KILLED",
-        beat.outcome === "residualKill" ? "#ffd84a" : "#fff3c4",
+        beat.outcome === "residualKill" ? PALETTE.residual : PALETTE.kill,
         at,
         0.75,
       );
@@ -257,9 +258,17 @@ export function createPlaybackView(v: Views): PlaybackView {
           seg(p, 0.5, 0.75),
           8,
           0.4,
-          0x9aa0aa,
+          hex("text-muted"),
         );
-        label(t, time(0.48), "kill roll failed", "#aab0ba", at, 0.6, 0.75);
+        label(
+          t,
+          time(0.48),
+          "kill roll failed",
+          PALETTE["text-muted"],
+          at,
+          0.6,
+          0.75,
+        );
       }
       const q = seg(p, 0.6, 1);
       v.fx.ring(
@@ -274,7 +283,7 @@ export function createPlaybackView(v: Views): PlaybackView {
         t,
         time(0.66),
         `LOADED ${beat.load}/${PARAMS.loadCap}`,
-        "#b8cfdc",
+        PALETTE["text-muted"],
         at,
         roll ? 1.0 : 0.75,
       );
@@ -345,19 +354,19 @@ export function createPlaybackView(v: Views): PlaybackView {
         c.a.z,
         0.1 + 0.5 * easeOut(seg(p, hit + 0.05, 1)),
         0.8 * (1 - seg(p, hit + 0.05, 1)),
-        0xffffff,
+        hex("white"),
       );
       v.fx.burst(c.seed, c.a.x, c.a.y + TOKEN_Y, c.a.z, q, 22, 1.4, DOSE);
       label(
         t,
         time(hit),
         killed ? `${beat.charge} dose` : `${beat.charge}: load cleared`,
-        "#8ff0d8",
+        PALETTE.med,
         c.a,
         0.8,
         0.9,
       );
-      if (killed) label(t, time(hit + 0.1), "KILLED", "#fff3c4", c.a, 1.1);
+      if (killed) label(t, time(hit + 0.1), "KILLED", PALETTE.kill, c.a, 1.1);
     }
   };
 
@@ -396,7 +405,7 @@ export function createPlaybackView(v: Views): PlaybackView {
           KILL,
         );
         v.fx.burst(c.seed, c.a.x, c.a.y + TOKEN_Y, c.a.z, q, 20, 1.3, KILL);
-        label(t, time(0.2), "KILLED", "#fff3c4", c.a, 0.75);
+        label(t, time(0.2), "KILLED", PALETTE.kill, c.a, 0.75);
         return;
       }
       case "reveal": {
@@ -418,9 +427,9 @@ export function createPlaybackView(v: Views): PlaybackView {
           c.a.z,
           0.15 + 0.35 * easeOut(seg(p, 0.3, 1)),
           0.6 * (1 - seg(p, 0.3, 1)),
-          0xffffff,
+          hex("white"),
         );
-        label(t, time(0.25), "revealed", "#cfe8ff", c.a, 0.85);
+        label(t, time(0.25), "revealed", PALETTE.focus, c.a, 0.85);
         return;
       }
       case "dose":
@@ -445,7 +454,7 @@ export function createPlaybackView(v: Views): PlaybackView {
         );
         v.fx.burst(c.seed, c.a.x, c.a.y + 0.1, c.a.z, q, 12, 0.9, WALL);
         v.board.setPulse(beat.at, 0.6 * bump(seg(p, 0.4, 1)));
-        label(t, time(0.45), "WALLED OFF", "#e2c9a8", c.a, 0.95);
+        label(t, time(0.45), "WALLED OFF", PALETTE.goal, c.a, 0.95);
         return;
       }
       case "carried": {
@@ -482,7 +491,7 @@ export function createPlaybackView(v: Views): PlaybackView {
           t,
           time(0.4),
           beat.success ? "carried kill: success" : "carried kill: failed",
-          beat.success ? "#ffd84a" : "#aab0ba",
+          beat.success ? PALETTE.residual : PALETTE["text-muted"],
           c.a,
           0.85,
           0.8,
@@ -516,7 +525,7 @@ export function createPlaybackView(v: Views): PlaybackView {
           t,
           time(0.42),
           `+${beat.size - beat.sizeBefore}`,
-          "#f2f2f2",
+          PALETTE.grow,
           c.a,
           0.85,
           0.8,
@@ -660,7 +669,7 @@ export function createPlaybackView(v: Views): PlaybackView {
           );
           v.fx.burst(c.seed, ix, iy, iz, q, 14, 1.1, BLOCK);
         }
-        label(t, time(hit), "BLOCKED", "#ff8a7a", c.b, 0.95);
+        label(t, time(hit), "BLOCKED", PALETTE.blocked, c.b, 0.95);
         return;
       }
       case "inflame":

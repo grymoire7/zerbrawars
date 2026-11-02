@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { telegraph, type TelegraphMark } from "../sim/battle/intents";
 import { labelSprite } from "./labels";
 import type { BattleState, Coord } from "../sim/types";
+import { hex } from "../theme/palette";
 
 export interface TelegraphView {
   readonly group: THREE.Group;
@@ -13,11 +14,11 @@ export interface TelegraphView {
 
 // Shape carries the meaning (solid straight arrow = spread, dotted arc = spore, X + bar = blocked);
 // color is secondary, with yellow vs blue differing in lightness as well as hue.
-const SPREAD_COLOR = 0xffd23f;
-const SPORE_COLOR = 0x6fb8ff;
-const GROW_COLOR = 0xf2f2f2;
-const BLOCKED_COLOR = 0xff5040;
-const STALL_COLOR = 0x7fe0c8;
+const SPREAD_COLOR = hex("spread");
+const SPORE_COLOR = hex("spore");
+const GROW_COLOR = hex("grow");
+const BLOCKED_COLOR = hex("blocked");
+const STALL_COLOR = hex("stall");
 
 const LIFT = 0.5;
 const LABEL_HEIGHT = 0.26;

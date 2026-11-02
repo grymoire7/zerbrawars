@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { PALETTE } from "../theme/palette";
 
 const materials = new Map<string, THREE.SpriteMaterial>();
 let boost = 1;
@@ -19,7 +20,7 @@ export interface LabelOptions {
 export function labelMaterial(
   text: string,
   {
-    color = "#ffffff",
+    color = PALETTE.white,
     background = "rgba(26,28,34,0.9)",
     round = false,
   }: LabelOptions = {},

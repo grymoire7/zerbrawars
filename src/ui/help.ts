@@ -118,7 +118,7 @@ export function createHelp(root: HTMLElement, opts: HelpOptions = {}): Help {
   backdrop.style.cssText =
     "position:absolute;inset:0;display:none;align-items:center;justify-content:center;" +
     "padding:12px;box-sizing:border-box;background:rgba(14,15,19,0.7);pointer-events:auto;" +
-    "font:15px sans-serif;color:#e4e7ee;z-index:5;";
+    "font:15px sans-serif;color:var(--zw-text);z-index:5;";
 
   const card = document.createElement("div");
   card.setAttribute("role", "dialog");
@@ -126,7 +126,7 @@ export function createHelp(root: HTMLElement, opts: HelpOptions = {}): Help {
   card.setAttribute("aria-labelledby", "help-title");
   card.tabIndex = -1;
   card.style.cssText =
-    "background:#23262e;border:1px solid #4a505e;border-radius:10px;padding:16px 18px;" +
+    "background:var(--zw-raised);border:1px solid var(--zw-line-strong);border-radius:10px;padding:16px 18px;" +
     "width:min(100%,520px);max-height:100%;overflow:auto;box-sizing:border-box;" +
     "display:flex;flex-direction:column;gap:10px;";
 

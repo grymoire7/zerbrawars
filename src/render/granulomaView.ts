@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { BattleState, Coord, Granuloma, GranulomaId } from "../sim/types";
+import { hex } from "../theme/palette";
 
 export interface GranulomaView {
   readonly group: THREE.Group;
@@ -13,9 +14,9 @@ export interface GranulomaView {
   clearPoses(): void;
 }
 
-const WALL = 0x8a6a4a;
-const WALL_DARK = 0x5e4630;
-const CORE = 0x3b2c3d;
+const WALL = hex("granuloma");
+const WALL_DARK = hex("granuloma-dark");
+const CORE = hex("region-lung-bg");
 
 // Fixed blocky lumps (x, z, width, height, depth, yaw): a squat, chunky heap that reads as scar
 // tissue and nothing like the round, spiky tokens or the loose cells of a swarm.

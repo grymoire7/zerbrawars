@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**46 library files** across 3 modules
+**47 library files** across 4 modules
 
 ## Sim (23 files)
 
@@ -58,6 +58,10 @@
 - `src/ui/download.ts` — downloadText, copyText
 - `src/ui/index.ts` — getUiRoot, getPanels
 - `src/ui/probe.ts` — createProbe, Probe
+
+## Theme (1 files)
+
+- `src/theme/palette.ts` — hex, applyCssTokens, PaletteName, PALETTE
 
 ---
 _Back to [overview.md](./overview.md)_

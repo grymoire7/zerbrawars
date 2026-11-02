@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { labelMaterial, sizeLabel } from "./labels";
 import { PATHOGEN_KINDS, type PathogenForm } from "../sim/pathogens";
 import type { BattleState, Coord, Pathogen, PathogenId } from "../sim/types";
+import { hex } from "../theme/palette";
 
 export interface PathogenView {
   readonly group: THREE.Group;
@@ -32,10 +33,10 @@ export interface PathogenView {
 // Shape carries the growth form; the rim carries sealed vs leaky. Colors are secondary and chosen
 // to differ in lightness as well as hue (orange vs violet), so red/green confusion does not matter.
 export const FORM_COLOR: Record<PathogenForm, number> = {
-  bacterium: 0xe8a33d,
-  mold: 0x6f4fb8,
+  bacterium: hex("strep"),
+  mold: hex("aspergillus"),
 };
-const RIM_COLOR = 0xf4efe0;
+const RIM_COLOR = hex("sealed-rim");
 const BADGE_HEIGHT = 0.34;
 
 // Fixed offsets (unit-ish sphere packing) so every bacterium cluster looks the same.

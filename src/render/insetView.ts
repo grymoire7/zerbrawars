@@ -6,6 +6,7 @@ import type { BattleState, Coord } from "../sim/types";
 import { createAuraView } from "./auraView";
 import { createBoardView } from "./boardView";
 import { FORM_COLOR } from "./pathogenView";
+import { hex } from "../theme/palette";
 
 /** The body inset for the life screen: the slab at reduced detail, the aura, and preview dots. */
 export interface InsetView {
@@ -37,7 +38,7 @@ export interface InsetView {
 
 const MAX_DOTS = 40;
 const DOT = 0.11;
-const RIM_COLOR = 0xf4efe0;
+const RIM_COLOR = hex("sealed-rim");
 const AURA_RATE = 0.35;
 const DRIFT_SPEED = 0.22;
 const SPREAD = 0.8;

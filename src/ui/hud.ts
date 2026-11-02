@@ -148,11 +148,12 @@ export interface HudMounts {
   readonly bar: HTMLElement;
 }
 
-const PANEL = "background:#262a33;border:1px solid #3a3f4a;border-radius:6px;";
-const DARK = "#4a130e";
+const PANEL =
+  "background:var(--zw-raised);border:1px solid var(--zw-line);border-radius:6px;";
+const DARK = "var(--zw-heat-ink)";
 const STATUS_COLOR: Record<string, string> = {
-  "no order": "#8a8f9a",
-  busy: "#8a8f9a",
+  "no order": "var(--zw-text-muted)",
+  busy: "var(--zw-text-muted)",
 };
 
 export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
@@ -191,7 +192,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   help.title = "How to play";
   const progress = el(
     "div",
-    "position:absolute;left:0;bottom:0;height:3px;background:#9fd8f0;width:0;",
+    "position:absolute;left:0;bottom:0;height:3px;background:var(--zw-focus);width:0;",
   );
   stats.append(turn, health, help, progress);
 
@@ -206,10 +207,10 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   medHead.append(medLabel, medValue);
   const medTrack = el(
     "div",
-    "height:8px;border-radius:4px;background:#3a3f4a;overflow:hidden;margin:4px 0;",
+    "height:8px;border-radius:4px;background:var(--zw-line);overflow:hidden;margin:4px 0;",
   );
   medTrack.setAttribute("role", "img");
-  const medFill = el("div", "height:100%;background:#5be3c6;");
+  const medFill = el("div", "height:100%;background:var(--zw-med);");
   medTrack.append(medFill);
   const medNote = el("div", "font-size:12px;opacity:0.7;line-height:1.3;");
   const chipRow = el(
@@ -233,7 +234,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   const problems = el(
     "div",
     PANEL +
-      "padding:6px 10px;font-size:13px;border-color:#ff5040;color:#ffb4aa;",
+      "padding:6px 10px;font-size:13px;border-color:var(--zw-warn-line);color:var(--zw-warn);",
   );
   problems.setAttribute("role", "alert");
 
@@ -316,7 +317,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   const swatch = (css: string) => {
     const sw = el(
       "span",
-      `display:inline-block;width:16px;height:16px;border-radius:2px;flex:none;background-color:#c4554a;${css}`,
+      `display:inline-block;width:16px;height:16px;border-radius:2px;flex:none;background-color:var(--zw-tissue-damaged);${css}`,
     );
     sw.setAttribute("aria-hidden", "true");
     return sw;
@@ -356,8 +357,8 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     const c = el(
       "span",
       `display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:none;` +
-        `background:radial-gradient(circle,#ff9628 0%,rgba(255,110,20,0.5) 60%,transparent 100%);` +
-        `color:#fff3c4;font-size:10px;`,
+        `background:radial-gradient(circle,var(--zw-heat) 0%,rgba(255,110,20,0.5) 60%,transparent 100%);` +
+        `color:var(--zw-kill);font-size:10px;`,
       "▲",
     );
     c.setAttribute("aria-hidden", "true");
@@ -383,13 +384,15 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       const def = PATHOGEN_KINDS[id];
       const body =
         def.form === "mold"
-          ? "background:#6f4fb8;clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);"
-          : "background:#e8a33d;border-radius:50%;";
+          ? "background:var(--zw-aspergillus);clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);"
+          : "background:var(--zw-strep);border-radius:50%;";
       const sealed = def.wall === "sealed";
       const mark = el(
         "span",
         `display:inline-block;width:16px;height:16px;flex:none;box-sizing:border-box;${body}` +
-          (sealed ? "outline:2px solid #f4efe0;outline-offset:1px;" : ""),
+          (sealed
+            ? "outline:2px solid var(--zw-sealed-rim);outline-offset:1px;"
+            : ""),
       );
       mark.setAttribute("aria-hidden", "true");
       return keyRow(
@@ -405,29 +408,29 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
         ? [line("Germs", "font-weight:600;"), ...germRows]
         : []),
       line("What germs will do next turn", "font-weight:600;margin-top:4px;"),
-      keyRow(glyph("→", "#ffd23f"), "Yellow arrow: spread"),
-      keyRow(glyph("···", "#6fb8ff"), "Blue dotted arc: spore"),
+      keyRow(glyph("→", "var(--zw-spread)"), "Yellow arrow: spread"),
+      keyRow(glyph("···", "var(--zw-spore)"), "Blue dotted arc: spore"),
       keyRow(
-        glyph("◯", "#f2f2f2"),
+        glyph("◯", "var(--zw-grow)"),
         "Swelling germ with faint outline: grows (grow 3→4)",
       ),
-      keyRow(glyph("✕", "#ff5040"), "Red: blocked by your swarm"),
+      keyRow(glyph("✕", "var(--zw-warn-line)"), "Red: blocked by your swarm"),
       ...(k.aura
         ? [
             keyRow(
-              glyph("❚❚", "#7fe0c8"),
+              glyph("❚❚", "var(--zw-stall)"),
               "Green pause sign: held back by medication, it does nothing this turn",
             ),
           ]
         : []),
-      keyRow(glyph("3", "#ffffff"), "Number on a germ: its size"),
+      keyRow(glyph("3", "var(--zw-white)"), "Number on a germ: its size"),
       ...(k.aura || k.charges
         ? [
             line("Medication", "font-weight:600;margin-top:4px;"),
             ...(k.aura
               ? [
                   keyRow(
-                    glyph("~", "#5be3c6"),
+                    glyph("~", "var(--zw-med)"),
                     "Green glow on the board edge: the medication aura. Stronger glow, more germs held back",
                   ),
                 ]
@@ -435,7 +438,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
             ...(k.charges
               ? [
                   keyRow(
-                    glyph("◇", "#5be3c6"),
+                    glyph("◇", "var(--zw-med)"),
                     "Green diamond: a germ or a swarm's load a charge can hit. A charge kills it outright, no dice",
                   ),
                 ]
@@ -452,8 +455,10 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     const c = el(
       "span",
       "display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;" +
-        `border:1px solid ${STATUS_COLOR[label] ?? "#d05cff"};` +
-        (hasOrder ? "background:#3a2a4a;color:#f0d8ff;" : "color:#aab0bb;"),
+        `border:1px solid ${STATUS_COLOR[label] ?? "var(--zw-order)"};` +
+        (hasOrder
+          ? "background:var(--zw-order-bg);color:var(--zw-text);"
+          : "color:var(--zw-text-muted);"),
       label,
     );
     return c;
@@ -463,7 +468,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     const r = el(
       "div",
       "display:flex;align-items:stretch;gap:4px;border-radius:6px;" +
-        (o.selected ? "outline:2px solid #d05cff;" : ""),
+        (o.selected ? "outline:2px solid var(--zw-order);" : ""),
     );
     const pick = el(
       "button",
@@ -499,7 +504,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       el(
         "span",
         "display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;" +
-          `border:1px solid ${sp.problem ? "#ff5040" : "#5be3c6"};background:#173a33;color:#bff5e8;`,
+          `border:1px solid ${sp.problem ? "var(--zw-warn-line)" : "var(--zw-med)"};background:var(--zw-med-bg);color:var(--zw-med);`,
         sp.charge,
       ),
       el("span", "font:12px monospace;opacity:0.75;", sp.detail),
@@ -515,10 +520,12 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       "div",
       PANEL +
         "padding:8px 10px;font-size:13px;" +
-        (c.pending ? "border:2px solid #5be3c6;" : "border-style:dashed;"),
+        (c.pending
+          ? "border:2px solid var(--zw-med);"
+          : "border-style:dashed;"),
     );
     const text = line(c.text);
-    if (!c.valid) text.style.color = "#ffb4aa";
+    if (!c.valid) text.style.color = "var(--zw-warn)";
     card.append(line(c.title, "font-weight:600;"), text);
     return card;
   };
@@ -528,12 +535,14 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       "div",
       PANEL +
         "padding:8px 10px;font-size:13px;" +
-        (o.pending ? "border:2px solid #d05cff;" : "border-style:dashed;"),
+        (o.pending
+          ? "border:2px solid var(--zw-order);"
+          : "border-style:dashed;"),
     );
     card.title = o.organism;
     const pct = Math.round(o.killChance * 100);
     const text = line(o.text);
-    if (!o.valid) text.style.color = "#ffb4aa";
+    if (!o.valid) text.style.color = "var(--zw-warn)";
     const meter = el(
       "div",
       "display:flex;align-items:center;gap:8px;margin-top:4px;font:12px monospace;",
@@ -542,9 +551,11 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     meter.setAttribute("aria-label", `Kill chance ${pct}%`);
     const track = el(
       "div",
-      "flex:1;height:8px;border-radius:4px;background:#3a3f4a;overflow:hidden;",
+      "flex:1;height:8px;border-radius:4px;background:var(--zw-line);overflow:hidden;",
     );
-    track.append(el("div", `width:${pct}%;height:100%;background:#d05cff;`));
+    track.append(
+      el("div", `width:${pct}%;height:100%;background:var(--zw-order);`),
+    );
     meter.append(track, el("span", "", `kill ${pct}%`));
     card.append(
       line(`Engulf ${o.title}`, "font-weight:600;"),
@@ -560,7 +571,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       const pb = m.playback;
       if (pb.playing) {
         turn.textContent = `Playing turn ${pb.turn}`;
-        turn.style.color = "#9fd8f0";
+        turn.style.color = "var(--zw-focus)";
       } else {
         turn.textContent = m.over
           ? `${m.kind === "skirmish" ? "Skirmish over" : "Finished"} after ${Math.min(m.turn - 1, m.maxTurns)} turns`
@@ -595,7 +606,9 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
             `${c.label} x${c.count}`,
             () => handlers.onPickCharge(c.charge),
             "flex:1 1 auto;" +
-              (c.selected ? "outline:2px solid #5be3c6;font-weight:700;" : ""),
+              (c.selected
+                ? "outline:2px solid var(--zw-med);font-weight:700;"
+                : ""),
           );
           b.setAttribute("aria-pressed", String(c.selected));
           b.title = "Use this charge on a germ or a carried load";
@@ -610,7 +623,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
         : m.charges.length > 0
           ? "Pick a charge to use one this turn (one per turn)."
           : "";
-      chipHint.style.color = picked && m.noTargets ? "#ffb4aa" : "";
+      chipHint.style.color = picked && m.noTargets ? "var(--zw-warn)" : "";
       problems.style.display = m.problems.length > 0 ? "block" : "none";
       problems.replaceChildren(...m.problems.map((t) => line(t)));
 
@@ -637,12 +650,16 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
           "div",
           PANEL +
             "padding:8px 10px;font-size:13px;" +
-            (w.queued ? "border:2px solid #d05cff;" : "border-style:dashed;"),
+            (w.queued
+              ? "border:2px solid var(--zw-order);"
+              : "border-style:dashed;"),
         );
         c.append(
           line(`Wall off ${w.swarmId}`, "font-weight:600;"),
           ...w.lines.map((t) => line(t)),
-          ...(w.reason ? [line(`Cannot: ${w.reason}.`, "color:#ffb4aa;")] : []),
+          ...(w.reason
+            ? [line(`Cannot: ${w.reason}.`, "color:var(--zw-warn);")]
+            : []),
         );
         cards.push(c);
       }
@@ -681,7 +698,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
         b.style.display = pb.playing ? "" : "none";
         b.setAttribute("aria-pressed", String(pb.speed === s));
         b.style.fontWeight = pb.speed === s ? "700" : "";
-        b.style.outline = pb.speed === s ? "2px solid #9fd8f0" : "";
+        b.style.outline = pb.speed === s ? "2px solid var(--zw-focus)" : "";
       }
       skip.style.display = pb.playing ? "" : "none";
       replay.style.display = pb.playing ? "none" : "";
@@ -700,7 +717,10 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     pulse() {
       logBox.animate(
         [
-          { boxShadow: "0 0 0 2px #ff8a5c", background: "rgba(80,48,40,0.9)" },
+          {
+            boxShadow: "0 0 0 2px var(--zw-heat)",
+            background: "rgba(80,48,40,0.9)",
+          },
           { boxShadow: "0 0 0 0 transparent" },
         ],
         { duration: 900, easing: "ease-out" },

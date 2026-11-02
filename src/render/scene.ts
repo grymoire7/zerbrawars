@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { setLabelBoost } from "./labels";
+import { hex } from "../theme/palette";
 
 export interface SceneContext {
   renderer: THREE.WebGLRenderer;
@@ -24,12 +25,12 @@ export function createScene(
   renderer.setPixelRatio(window.devicePixelRatio);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a1c22);
+  scene.background = new THREE.Color(hex("bg"));
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x333344, 0.9));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+  scene.add(new THREE.HemisphereLight(hex("white"), hex("line"), 0.9));
+  const sun = new THREE.DirectionalLight(hex("white"), 1.8);
   sun.position.set(-3, 9, 5);
   scene.add(sun);
 

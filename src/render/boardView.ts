@@ -3,20 +3,21 @@ import { coordOf, inBounds, sameCoord, tileId } from "../sim/board";
 import { PARAMS } from "../sim/params";
 import type { TileHeat } from "../sim/battle/inflammation";
 import type { BattleState, Coord } from "../sim/types";
+import { PALETTE, hex } from "../theme/palette";
 
 const TILE = 1;
 const GAP = 0.06;
 const TILE_HEIGHT = 0.2;
 
-const BASE_A = new THREE.Color(0x8d7a78);
-const BASE_B = new THREE.Color(0x84716f);
-const INFLAMED = new THREE.Color(0xc4554a);
-const HOVER_TINT = new THREE.Color(0xffffff);
-const PULSE_TINT = new THREE.Color(0xff8a5c);
-const SLAB = 0x3a2f31;
+const BASE_A = new THREE.Color(hex("region-lung"));
+const BASE_B = new THREE.Color(hex("region-lung")).multiplyScalar(0.96);
+const INFLAMED = new THREE.Color(hex("tissue-damaged"));
+const HOVER_TINT = new THREE.Color(hex("white"));
+const PULSE_TINT = new THREE.Color(hex("heat"));
+const SLAB = hex("region-lung-bg");
 // Order UI: magenta-violet, apart from the telegraph's yellow/blue/red/white. Shape carries it too:
 // a thick solid frame for the selection, filled discs with a ring for destinations.
-export const ORDER_COLOR = 0xd05cff;
+export const ORDER_COLOR = hex("order");
 
 /**
  * Inflammation is tint plus a pattern, so it reads without color: 1 dots, 2 diagonal hatch,
@@ -29,8 +30,8 @@ function heatTexture(level: number): THREE.CanvasTexture {
   canvas.height = size;
   const g = canvas.getContext("2d");
   if (g) {
-    g.fillStyle = "#4a130e";
-    g.strokeStyle = "#4a130e";
+    g.fillStyle = PALETTE["heat-ink"];
+    g.strokeStyle = PALETTE["heat-ink"];
     g.lineWidth = level === 3 ? 6 : 7;
     if (level === 1) {
       for (let y = 20; y < size; y += 44) {
@@ -73,7 +74,7 @@ function chipTexture(flames: number): THREE.CanvasTexture {
     glow.addColorStop(1, "rgba(255,90,10,0)");
     g.fillStyle = glow;
     g.fillRect(0, 0, size, size);
-    g.fillStyle = "#fff3c4";
+    g.fillStyle = PALETTE.kill;
     const flame = (cx: number) => {
       g.beginPath();
       g.moveTo(cx, 30);
@@ -209,7 +210,7 @@ export function createBoardView(
     group.add(mesh);
     return mesh;
   };
-  const hoverFrame = outline(0xffffff, TILE - GAP - 0.06);
+  const hoverFrame = outline(hex("white"), TILE - GAP - 0.06);
   const selectedFrame = outline(ORDER_COLOR, TILE - GAP - 0.34);
   selectedFrame.position.y = 0.012;
   hoverFrame.position.y = 0.006;

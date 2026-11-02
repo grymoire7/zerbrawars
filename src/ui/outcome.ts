@@ -87,7 +87,7 @@ export function createOutcomeOverlay(
   backdrop.style.cssText =
     "position:absolute;inset:0;display:none;align-items:center;justify-content:center;" +
     "padding:12px;box-sizing:border-box;background:rgba(14,15,19,0.6);pointer-events:auto;" +
-    "font:15px sans-serif;color:#e4e7ee;";
+    "font:15px sans-serif;color:var(--zw-text);";
 
   const card = document.createElement("div");
   card.setAttribute("role", "dialog");
@@ -95,7 +95,7 @@ export function createOutcomeOverlay(
   card.setAttribute("aria-labelledby", "outcome-title");
   card.tabIndex = -1;
   card.style.cssText =
-    "background:#23262e;border:1px solid #4a505e;border-radius:10px;padding:18px 20px;" +
+    "background:var(--zw-raised);border:1px solid var(--zw-line-strong);border-radius:10px;padding:18px 20px;" +
     "width:min(100%,480px);max-height:100%;overflow:auto;box-sizing:border-box;" +
     "display:flex;flex-direction:column;gap:10px;";
 
@@ -153,7 +153,7 @@ export function createOutcomeOverlay(
   const meaning = (extra: OutcomeExtra) => {
     const box = document.createElement("div");
     box.style.cssText =
-      "margin-top:8px;padding:8px 10px;border-radius:6px;background:#2c2f38;line-height:1.4;font-size:14px;";
+      "margin-top:8px;padding:8px 10px;border-radius:6px;background:var(--zw-control);line-height:1.4;font-size:14px;";
     if (extra.kept === 0) {
       box.textContent = extra.lastWeek
         ? "Nothing is left over to carry forward."

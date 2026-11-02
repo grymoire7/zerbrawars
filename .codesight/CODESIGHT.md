@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 46 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~3,900 tokens. Without it, AI exploration would cost ~21,100 tokens. **Saves ~17,200 tokens per conversation.**
-> **Last scanned:** 2026-11-02 20:46 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 47 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~3,900 tokens. Without it, AI exploration would cost ~21,300 tokens. **Saves ~17,400 tokens per conversation.**
+> **Last scanned:** 2026-11-02 20:50 — re-run after significant changes
 
 ---
 
@@ -204,6 +204,11 @@
   - function validateBattle: (battle) => string[]
   - function validateLife: (life) => string[]
   - function validateCampaign: (c) => string[]
+- `src/theme/palette.ts`
+  - function hex: (name) => number
+  - function applyCssTokens: (root) => void
+  - type PaletteName
+  - const PALETTE
 - `src/ui/broughtStrip.ts`
   - function createBroughtStrip: (root, onDismiss) => void
   - interface BroughtView
@@ -278,6 +283,7 @@
 - `src/sim/validate.ts` — imported by **14** files
 - `src/sim/battle/resolve.ts` — imported by **13** files
 - `src/sim/life/types.ts` — imported by **12** files
+- `src/theme/palette.ts` — imported by **12** files
 - `src/sim/battle/outcome.ts` — imported by **11** files
 - `src/sim/campaign.ts` — imported by **8** files
 - `src/app/run.ts` — imported by **7** files
@@ -285,7 +291,6 @@
 - `src/sim/life/cards.ts` — imported by **6** files
 - `src/sim/battle/orders.ts` — imported by **6** files
 - `src/sim/battle/bots.ts` — imported by **6** files
-- `src/app/screen.ts` — imported by **5** files
 
 ## Import Map (who imports what)
 
@@ -305,7 +310,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 25 test files found
+> 26 test files found
 
 ---
 

@@ -10,26 +10,26 @@
         margin: 0;
         height: 100%;
         overflow: hidden;
-        background: #1a1c22;
-        color: #e4e7ee;
+        background: var(--zw-bg, #15171c);
+        color: var(--zw-text, #e8eaf0);
         font: 14px sans-serif;
       }
       button {
         font: inherit;
-        color: #e4e7ee;
-        background: #2d313b;
-        border: 1px solid #4a505e;
+        color: var(--zw-text, #e8eaf0);
+        background: var(--zw-control, #2d3340);
+        border: 1px solid var(--zw-line-strong, #4a5263);
         border-radius: 6px;
       }
       button:hover:not(:disabled) {
-        background: #3a3f4c;
+        background: var(--zw-control-hover, #3a4150);
       }
       button:disabled {
         opacity: 0.45;
       }
       button:focus-visible,
       summary:focus-visible {
-        outline: 2px solid #9fd8f0;
+        outline: 2px solid var(--zw-focus, #9fd8f0);
         outline-offset: 2px;
       }
       /* Narrow or portrait: board on top, panels below, controls pinned at the bottom. */
@@ -61,8 +61,8 @@
         min-height: 0;
         display: flex;
         flex-direction: column;
-        background: #20232b;
-        border-top: 1px solid #3a3f4a;
+        background: var(--zw-surface, #1f232b);
+        border-top: 1px solid var(--zw-line, #3a4150);
       }
       #sideScroll {
         flex: 1 1 0;
@@ -76,8 +76,8 @@
       #bar {
         flex: none;
         padding: 8px;
-        background: #1a1c22;
-        border-top: 1px solid #3a3f4a;
+        background: var(--zw-bg, #15171c);
+        border-top: 1px solid var(--zw-line, #3a4150);
       }
       #ui {
         position: fixed;
@@ -97,7 +97,7 @@
         #side {
           flex: 0 0 clamp(300px, 28vw, 360px);
           border-top: 0;
-          border-left: 1px solid #3a3f4a;
+          border-left: 1px solid var(--zw-line, #3a4150);
         }
       }
     </style>

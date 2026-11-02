@@ -24,7 +24,7 @@ export function createBroughtStrip(
     box.style.cssText =
       "position:absolute;left:8px;top:8px;display:none;flex-direction:column;gap:6px;" +
       "pointer-events:auto;box-sizing:border-box;padding:8px 10px;border-radius:8px;" +
-      "background:rgba(35,38,46,0.94);border:1px solid #4a505e;font:13px sans-serif;color:#e4e7ee;" +
+      "background:rgba(35,38,46,0.94);border:1px solid var(--zw-line-strong);font:13px sans-serif;color:var(--zw-text);" +
       (wide.matches
         ? "right:calc(clamp(300px,28vw,360px) + 8px);"
         : "right:8px;") +
@@ -59,14 +59,16 @@ export function createBroughtStrip(
       box.style.background = soft
         ? "rgba(34,48,58,0.9)"
         : "rgba(35,38,46,0.94)";
-      box.style.borderColor = soft ? "#5b7f94" : "#4a505e";
+      box.style.borderColor = soft
+        ? "var(--zw-swarm-loaded)"
+        : "var(--zw-line-strong)";
       title.style.fontWeight = soft ? "500" : "";
       chips.replaceChildren(
         ...items.map((it) => {
           const c = document.createElement("div");
           c.style.cssText =
             "display:flex;gap:6px;align-items:center;padding:4px 8px;border-radius:6px;" +
-            "background:#2c2f38;border:1px solid #3a3f4a;line-height:1.25;";
+            "background:var(--zw-control);border:1px solid var(--zw-line);line-height:1.25;";
           const icon = document.createElement("span");
           icon.textContent = it.icon;
           icon.setAttribute("aria-hidden", "true");

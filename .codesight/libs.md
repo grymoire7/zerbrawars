@@ -194,6 +194,11 @@
   - function validateBattle: (battle) => string[]
   - function validateLife: (life) => string[]
   - function validateCampaign: (c) => string[]
+- `src/theme/palette.ts`
+  - function hex: (name) => number
+  - function applyCssTokens: (root) => void
+  - type PaletteName
+  - const PALETTE
 - `src/ui/broughtStrip.ts`
   - function createBroughtStrip: (root, onDismiss) => void
   - interface BroughtView

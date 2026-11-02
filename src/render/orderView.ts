@@ -4,6 +4,7 @@ import { movePath, type EngulfTarget } from "../sim/battle/orders";
 import type { BattleState, Coord, Order } from "../sim/types";
 import { ORDER_COLOR } from "./boardView";
 import { labelSprite } from "./labels";
+import { PALETTE, hex } from "../theme/palette";
 
 /** Support charge marks: every legal target while a charge is picked, and the queued one. */
 export interface DoseMarks {
@@ -50,20 +51,20 @@ export function createOrderView(
     side: THREE.DoubleSide,
   });
   const ghost = new THREE.MeshBasicMaterial({
-    color: 0x9fd8f0,
+    color: hex("energy"),
     transparent: true,
     opacity: 0.4,
     depthWrite: false,
   });
   const idleMat = new THREE.MeshBasicMaterial({
-    color: 0xcfeefa,
+    color: hex("text"),
     depthTest: false,
     transparent: true,
     opacity: 0.4,
     side: THREE.DoubleSide,
   });
   const doseMat = new THREE.MeshBasicMaterial({
-    color: 0x5be3c6,
+    color: hex("med"),
     depthTest: false,
     transparent: true,
     opacity: 0.95,
@@ -245,7 +246,7 @@ export function createOrderView(
     dot.scale.setScalar(queued ? 2.2 : 1);
     group.add(dot);
     if (queued) {
-      const tag = labelSprite("dose", 0.2, { color: "#5be3c6" });
+      const tag = labelSprite("dose", 0.2, { color: PALETTE.med });
       tag.position.copy(at(c, 1.1));
       group.add(tag);
     }

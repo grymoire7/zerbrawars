@@ -53,7 +53,7 @@ export function createDebugPanel(
 ): DebugPanel {
   const panel = document.createElement("div");
   panel.style.cssText =
-    "font:14px sans-serif;color:#c8ccd4;background:#262a33;border:1px solid #3a3f4a;border-radius:6px;" +
+    "font:14px sans-serif;color:var(--zw-text-muted);background:var(--zw-raised);border:1px solid var(--zw-line);border-radius:6px;" +
     "padding:4px;display:flex;flex-direction:column;gap:6px;align-items:stretch;";
 
   const toggle = document.createElement("button");

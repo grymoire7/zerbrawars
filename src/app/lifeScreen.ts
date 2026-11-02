@@ -128,7 +128,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   caption.setAttribute("aria-hidden", "true");
   caption.style.cssText =
     "position:absolute;left:10px;right:10px;bottom:8px;pointer-events:none;font:13px sans-serif;" +
-    "color:#e4e7ee;text-shadow:0 1px 3px #000;display:flex;flex-direction:column;gap:2px;";
+    "color:var(--zw-text);text-shadow:0 1px 3px #000;display:flex;flex-direction:column;gap:2px;";
   const capLeft = document.createElement("span");
   const capRight = document.createElement("span");
   caption.append(capLeft, capRight);

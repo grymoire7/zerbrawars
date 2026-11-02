@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { PARAMS } from "../sim/params";
 import type { BattleState, Coord, Swarm, SwarmId } from "../sim/types";
+import { PALETTE, hex } from "../theme/palette";
 
 /**
  * Playback's hold on one swarm. Every field has a neutral value (see clearPoses), so a pose only
@@ -44,10 +45,10 @@ export interface SwarmView {
 const CELLS_PER_SWARM = 48;
 const CLUSTER_RADIUS = 0.34;
 const CELL_SIZE = 0.075;
-const FREE_COLOR = new THREE.Color(0x9fd8f0);
-const LOADED_COLOR = new THREE.Color(0x4f6b7a);
-const FLASH_COLOR = new THREE.Color(0xffffff);
-const CARGO_COLOR = 0x4a3480;
+const FREE_COLOR = new THREE.Color(hex("swarm"));
+const LOADED_COLOR = new THREE.Color(hex("swarm-loaded"));
+const FLASH_COLOR = new THREE.Color(hex("white"));
+const CARGO_COLOR = hex("cargo");
 const LOADED_SWELL = 1.4;
 /** How far (world units) the tail trails the leader mid-move. */
 const STREAM_LENGTH = 1.1;
@@ -105,7 +106,7 @@ function labelTexture(text: string): THREE.CanvasTexture {
     g.beginPath();
     g.roundRect(2, 2, 124, 44, 10);
     g.fill();
-    g.fillStyle = "#e4e7ee";
+    g.fillStyle = PALETTE.text;
     g.font = "bold 26px sans-serif";
     g.textAlign = "center";
     g.textBaseline = "middle";

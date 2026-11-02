@@ -17,14 +17,14 @@ export function createProbe(root: HTMLElement): Probe {
   backdrop.style.cssText =
     "position:absolute;inset:0;display:none;align-items:center;justify-content:center;" +
     "padding:12px;box-sizing:border-box;background:rgba(14,15,19,0.6);pointer-events:auto;" +
-    "font:15px sans-serif;color:#e4e7ee;z-index:4;";
+    "font:15px sans-serif;color:var(--zw-text);z-index:4;";
   const card = document.createElement("div");
   card.setAttribute("role", "dialog");
   card.setAttribute("aria-modal", "true");
   card.setAttribute("aria-labelledby", "probe-title");
   card.tabIndex = -1;
   card.style.cssText =
-    "background:#23262e;border:1px solid #4a505e;border-radius:10px;padding:16px 18px;" +
+    "background:var(--zw-raised);border:1px solid var(--zw-line-strong);border-radius:10px;padding:16px 18px;" +
     "width:min(100%,420px);display:flex;flex-direction:column;gap:8px;box-sizing:border-box;";
   const title = document.createElement("h2");
   title.id = "probe-title";

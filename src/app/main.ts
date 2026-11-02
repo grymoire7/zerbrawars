@@ -11,6 +11,9 @@ import { parseReservoirs } from "./campaignModel";
 import { createRun, type Run } from "./run";
 import { loadoutFor, parseLoadoutParams } from "./loadoutOptions";
 import { parseMode, type Screen, type ScreenRequest } from "./screen";
+import { applyCssTokens } from "../theme/palette";
+
+applyCssTokens(document.documentElement);
 
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();

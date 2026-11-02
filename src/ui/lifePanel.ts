@@ -126,8 +126,9 @@ export interface LifePanel {
   showCalendar(): void;
 }
 
-const PANEL = "background:#262a33;border:1px solid #3a3f4a;border-radius:6px;";
-const MINT = "#5be3c6";
+const PANEL =
+  "background:var(--zw-raised);border:1px solid var(--zw-line);border-radius:6px;";
+const MINT = "var(--zw-med)";
 
 export function createLifePanel(
   mounts: HudMounts,
@@ -169,7 +170,7 @@ export function createLifePanel(
     head.append(el("span", "font-weight:600;", label), el("span", "", value));
     const track = el(
       "div",
-      "position:relative;height:10px;border-radius:5px;background:#3a3f4a;overflow:hidden;",
+      "position:relative;height:10px;border-radius:5px;background:var(--zw-line);overflow:hidden;",
     );
     track.setAttribute("role", "img");
     track.setAttribute("aria-label", desc);
@@ -212,14 +213,14 @@ export function createLifePanel(
   );
   const feelBox = el(
     "div",
-    "background:#2f2a22;border:1px solid #6b5a3a;border-radius:6px;padding:8px 10px;" +
+    "background:var(--zw-notice-bg);border:1px solid var(--zw-notice-line);border-radius:6px;padding:8px 10px;" +
       "display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.35;",
   );
   feelBox.setAttribute("role", "status");
   const aftermathBox = el(
     "div",
-    "background:#22303a;border:1px dashed #5b7f94;border-radius:6px;padding:8px 10px;" +
-      "display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:1.35;color:#cfe3ee;",
+    "background:var(--zw-info-bg);border:1px dashed var(--zw-swarm-loaded);border-radius:6px;padding:8px 10px;" +
+      "display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:1.35;color:var(--zw-text);",
   );
   aftermathBox.setAttribute("role", "status");
   const handBox = el("div", "display:flex;flex-direction:column;gap:8px;");
@@ -270,17 +271,17 @@ export function createLifePanel(
       "Green glow around the body: your medication. It fades when a dose is missed.",
     ),
     keyRow(
-      dot("border-radius:50%;background:#e8a33d;"),
+      dot("border-radius:50%;background:var(--zw-strep);"),
       "Round orange dots drifting in: bacteria. More dots, better odds of an exposure.",
     ),
     keyRow(
       dot(
-        "background:#6f4fb8;clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);",
+        "background:var(--zw-aspergillus);clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);",
       ),
       "Violet spiky dots: mold. A pale ring around a dot means it is sealed in a shell.",
     ),
     keyRow(
-      dot("border-radius:50%;border:2px dashed #b9a7e8;"),
+      dot("border-radius:50%;border:2px dashed var(--zw-aspergillus-ink);"),
       "Rings on the body: something the doctor found that is still there.",
     ),
   );
@@ -331,7 +332,7 @@ export function createLifePanel(
             : ""),
         m.goal.points / m.goal.target,
         m.goal.planned / m.goal.target,
-        "#f0c05a",
+        "var(--zw-goal)",
         `Goal: ${m.goal.points} of ${m.goal.target} points, ${m.goal.planned} planned`,
       ),
       meter(
@@ -340,7 +341,7 @@ export function createLifePanel(
           (m.energy.end !== m.energy.now ? ` → ${m.energy.end}` : ""),
         m.energy.now / m.energy.max,
         m.energy.end / m.energy.max,
-        "#9fd8f0",
+        "var(--zw-focus)",
         `Energy: ${m.energy.now} of ${m.energy.max}, ${m.energy.end} left after the plan`,
       ),
     );
@@ -367,7 +368,7 @@ export function createLifePanel(
         `flex:1 1 0;min-width:0;border-radius:6px;padding:4px 6px;font-size:12px;line-height:1.25;box-sizing:border-box;` +
           (c.taken
             ? `border:1px solid ${MINT};background:rgba(91,227,198,${c.decided ? 0.18 : 0.06});`
-            : "border:1px dashed #d9a35c;background:rgba(217,163,92,0.14);"),
+            : "border:1px dashed var(--zw-notice);background:rgba(217,163,92,0.14);"),
       );
       cell.append(
         el(
@@ -473,7 +474,7 @@ export function createLifePanel(
               ? `border:2px solid ${MINT};box-shadow:0 0 0 2px ${MINT};background:rgba(91,227,198,0.16);`
               : "") +
             (blocked ? "opacity:0.5;border-style:dashed;" : "") +
-            (s.today && !s.pending ? "background:#303744;" : ""),
+            (s.today && !s.pending ? "background:var(--zw-control);" : ""),
           `slot-${s.day}-${s.slot}`,
         );
         const name = `Day ${s.day + 1} ${s.name.toLowerCase()}`;
@@ -499,7 +500,7 @@ export function createLifePanel(
           b.append(el("span", "opacity:0.7;", "Rest (+1 energy)"));
         }
         if (blocked && s.target) {
-          b.append(el("span", "color:#e8c68f;", s.target.reason));
+          b.append(el("span", "color:var(--zw-goal);", s.target.reason));
         }
         b.disabled = s.played || blocked;
         b.setAttribute("aria-pressed", String(s.pending));
@@ -666,7 +667,7 @@ export function createLifePanel(
     box.append(
       el(
         "div",
-        `font-weight:600;padding-top:4px;color:${s.battle.due ? "#e4e7ee" : MINT};`,
+        `font-weight:600;padding-top:4px;color:${s.battle.due ? "var(--zw-text)" : MINT};`,
         s.battle.line,
       ),
     );

@@ -26,14 +26,14 @@ export function createInterlude(root: HTMLElement): Interlude {
   backdrop.style.cssText =
     "position:absolute;inset:0;display:none;align-items:center;justify-content:center;" +
     "padding:12px;box-sizing:border-box;background:rgba(14,15,19,0.55);pointer-events:auto;" +
-    "font:15px sans-serif;color:#e4e7ee;";
+    "font:15px sans-serif;color:var(--zw-text);";
   const card = document.createElement("div");
   card.setAttribute("role", "dialog");
   card.setAttribute("aria-modal", "true");
   card.setAttribute("aria-labelledby", "interlude-title");
   card.tabIndex = -1;
   card.style.cssText =
-    "background:#23262e;border:1px solid #4a505e;border-radius:10px;padding:18px 20px;" +
+    "background:var(--zw-raised);border:1px solid var(--zw-line-strong);border-radius:10px;padding:18px 20px;" +
     "width:min(100%,520px);max-height:100%;overflow:auto;box-sizing:border-box;" +
     "display:flex;flex-direction:column;gap:10px;line-height:1.4;";
   backdrop.append(card);
@@ -57,7 +57,7 @@ export function createInterlude(root: HTMLElement): Interlude {
       const groups = m.groups.map((g) => {
         const box = document.createElement("div");
         box.style.cssText =
-          "padding:8px 10px;border-radius:6px;background:#2c2f38;display:flex;flex-direction:column;gap:2px;font-size:14px;";
+          "padding:8px 10px;border-radius:6px;background:var(--zw-control);display:flex;flex-direction:column;gap:2px;font-size:14px;";
         const h = document.createElement("div");
         h.style.fontWeight = "600";
         h.textContent = g.head;

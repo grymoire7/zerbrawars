@@ -8,6 +8,7 @@ export default defineConfig({
       "src/sim/**/*.test.ts",
       "src/render/**/*.test.ts",
       "src/app/**/*.test.ts",
+      "src/theme/**/*.test.ts",
     ],
   },
 });

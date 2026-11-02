@@ -240,7 +240,8 @@ export function mountBattle(
   });
   let outcomeShown = false;
   const readout = document.createElement("div");
-  readout.style.cssText = "font:11px monospace;color:#c8ccd4;opacity:0.7;";
+  readout.style.cssText =
+    "font:11px monospace;color:var(--zw-text-muted);opacity:0.7;";
   let hovered: Coord | null = null;
   let selected: Coord | null = null;
   const fmt = (c: Coord | null) => (c ? `${c.x},${c.y}` : "-");
