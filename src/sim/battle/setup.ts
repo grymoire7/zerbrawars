@@ -33,7 +33,7 @@ export function medStateFor(medLevel: number, doctorVisit = false): MedState {
 /**
  * Builds the opening BattleState, first telegraph included. Swarms start on
  * PARAMS.setup.swarmStarts (always all of them: neutrophil count is not a lever). Pathogen ids run
- * p1.. over exposures, then reservoirs. Exposures grow by `load`; the first `maxReservoirs`
+ * p1.. over exposures, then reservoirs. Exposures and arrivals grow by `load` (the missed doses, carried on `missedDoses`); the first `maxReservoirs`
  * reservoirs become tokens, hidden unless the doctor visit reveals them. Tiles left unset take
  * the first free tile of their list, skipping tiles next to a swarm; a token placed next to a
  * swarm anyway starts visible, so no swarm ever starts a turn next to a hidden token (applyMoves
@@ -54,16 +54,16 @@ export function battleFromLoadout(loadout: Loadout): BattleState {
     return c;
   };
 
+  const bonus = Math.max(0, loadout.load);
+  const grown = (size: number) =>
+    Math.min(PARAMS.maxPathogenSize, size + bonus);
   const pathogens: Pathogen[] = [];
   const add = (p: Omit<Pathogen, "id">) =>
     pathogens.push({ id: `p${pathogens.length + 1}`, ...p });
   for (const e of loadout.exposures) {
     add({
       kind: e.kind,
-      size: Math.min(
-        PARAMS.maxPathogenSize,
-        e.size + Math.max(0, loadout.load),
-      ),
+      size: grown(e.size),
       at: place(e.at, PARAMS.setup.doors),
       hidden: false,
     });
@@ -89,7 +89,10 @@ export function battleFromLoadout(loadout: Loadout): BattleState {
     swarms,
     pathogens,
     granulomas: [],
-    arrivals: [...(loadout.arrivals ?? [])].sort((a, b) => a.turn - b.turn),
+    arrivals: (loadout.arrivals ?? [])
+      .map((a) => ({ ...a, size: grown(a.size) }))
+      .sort((a, b) => a.turn - b.turn),
+    ...(bonus > 0 ? { missedDoses: bonus } : {}),
     intents: [],
     meds: medStateFor(loadout.medLevel, loadout.doctorVisit),
     tissueHealth: PARAMS.maxTissueHealth,

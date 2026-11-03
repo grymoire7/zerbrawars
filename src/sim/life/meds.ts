@@ -14,6 +14,11 @@ export function medLevelOf(doses: readonly Dose[]): number {
   return (w - missed) / w;
 }
 
+/** Doses missed in the last PARAMS.life.meds.window days: what makes a battle's arrivals bigger. */
+export function missedDosesOf(doses: readonly Dose[]): number {
+  return doses.slice(-PARAMS.life.meds.window).filter((d) => !d.taken).length;
+}
+
 /** Doses taken in a row at the end of the history. */
 export function streakOf(doses: readonly Dose[]): number {
   let n = 0;

@@ -191,6 +191,11 @@ export interface BattleState {
   readonly granulomas: readonly Granuloma[];
   /** Groups still to arrive, in turn order. The battle is not over while any are pending. */
   readonly arrivals: readonly Arrival[];
+  /**
+   * Doses missed in the med window: each made every exposure and arrival one size bigger (already
+   * in their sizes). Omitted = 0. Carried so the UI can say why germs came bigger.
+   */
+  readonly missedDoses?: number;
   /** Telegraphed intents for the coming resolve, at most one per pathogen. */
   readonly intents: readonly Intent[];
   readonly meds: MedState;
@@ -316,7 +321,10 @@ export type SimEvent =
       readonly type: "Arrived";
       readonly pathogenId: PathogenId;
       readonly kind: PathogenKindId;
+      /** Includes the missed-dose bonus. */
       readonly size: number;
+      /** Size added by missed doses (0 when none), after the cap. */
+      readonly bonus?: number;
       readonly at: Coord;
     }
   | {

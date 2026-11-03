@@ -3,6 +3,7 @@ import { PARAMS } from "../params";
 import type { PathogenKindId } from "../pathogens";
 import { rngInt, type RngState } from "../rng";
 import type { Arrival, BattleKind, Coord } from "../types";
+import { missedDosesOf } from "./meds";
 import { battleDueReasons, battleKindOf, weekOver } from "./calendar";
 import { cardDef } from "./cards";
 import type { BattleReason, LifeState } from "./types";
@@ -41,7 +42,11 @@ export interface Loadout {
   readonly exposures: readonly Exposure[];
   /** Later groups (see Arrival); omitted = none, so the battle is just its exposures. */
   readonly arrivals?: readonly Arrival[];
-  /** Exposure dose: added to every exposure's size (capped at the max size). 0 = as listed. */
+  /**
+   * Doses missed in the med window before the battle (loadoutFromLife sets it): added to the size
+   * of every exposure and arrival, first and second groups alike (capped at PARAMS.maxPathogenSize;
+   * reservoirs are not affected). 0 = as listed.
+   */
   readonly load: number;
   /** At most PARAMS.setup.maxReservoirs are used, in list order. */
   readonly reservoirs: readonly CarriedReservoir[];
@@ -131,7 +136,7 @@ export function fullWaves(exposures: readonly Exposure[]): Arrival[] {
  * Builds the battle's loadout from the life phase as it stands (normally once the week is over):
  * the week-end med level, every pathogen that landed, the carried reservoirs, the doctor flag and
  * the energy left. Flared reservoirs start visible. Each exposure takes the first tile of its
- * card's `at` list not yet taken, else the setup default. `load` stays 0. Once the week is over
+ * card's `at` list not yet taken, else the setup default. `load` is the doses missed in the med window. Once the week is over
  * with a skirmish due, it is the skirmish's instead: its threats only, carried reservoirs left off
  * the board (they carry on as they are).
  */
@@ -144,7 +149,7 @@ export function loadoutFromLife(life: LifeState): Loadout {
       seed: battleSeed(life),
       medLevel: life.medLevel,
       ...skirmishWaves(skirmishExposures(life.rng)),
-      load: 0,
+      load: missedDosesOf(life.doses),
       reservoirs: [],
       doctorVisit: false,
       energy: life.energy,
@@ -175,7 +180,7 @@ export function loadoutFromLife(life: LifeState): Loadout {
     medLevel: life.medLevel,
     exposures: placed,
     arrivals: fullWaves(placed),
-    load: 0,
+    load: missedDosesOf(life.doses),
     // A flared reservoir is an active infection now, so it starts visible.
     reservoirs: life.reservoirs.map((r) => {
       const c: CarriedReservoir = {

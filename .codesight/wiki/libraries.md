@@ -26,9 +26,9 @@
 - `src/sim/battle/outcome.ts` — freePathogens, aliveInside, battleStatus, reservoirs, gradeOutcome
 - `src/sim/rng.ts` — rngFromSeed, rngNext, rngInt, mulberry32, RngState
 - `src/sim/life/bots.ts` — playWeek, WeekPlan, LifeBot, LIFE_BOTS
+- `src/sim/life/meds.ts` — medLevelOf, missedDosesOf, streakOf, preWeekDoses
 - `src/sim/life/preview.ts` — cardPreview, exposurePreview, CardPreview, WeekPreview
 - `src/sim/battle/setup.ts` — chargesFor, medStateFor, battleFromLoadout
-- `src/sim/life/meds.ts` — medLevelOf, streakOf, preWeekDoses
 - `src/sim/validate.ts` — validateBattle, validateLife, validateCampaign
 
 ## Render (15 files)

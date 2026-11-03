@@ -165,8 +165,7 @@ describe("life strategies into battle", () => {
     // Full meds kill the staph and the mold with charges; one miss keeps only the antifungal.
     const cleared = (n: string) => share(rows[n], "cleared");
     expect(cleared("riskyNoPack")).toBeLessThan(cleared("risky") - 0.15);
-    expect(cleared("riskySkipMeds")).toBeLessThan(
-      cleared("riskyNoPack") - 0.15,
-    );
+    // Slice 3's bigger arrivals push both near the floor: measured 6% then 3% (was a 15-point step).
+    expect(cleared("riskySkipMeds")).toBeLessThan(cleared("riskyNoPack"));
   });
 });

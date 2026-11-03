@@ -3,8 +3,8 @@
 > **Stack:** raw-http | none | unknown | typescript
 
 > 0 routes | 0 models | 0 components | 53 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,500 tokens per conversation.**
-> **Last scanned:** 2026-11-03 18:00 — re-run after significant changes
+> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,500 tokens per conversation.**
+> **Last scanned:** 2026-11-03 18:25 — re-run after significant changes
 
 ---
 
@@ -174,6 +174,7 @@
   - _...4 more_
 - `src/sim/life/meds.ts`
   - function medLevelOf: (doses) => number
+  - function missedDosesOf: (doses) => number
   - function streakOf: (doses) => number
   - function preWeekDoses: (week) => Dose[]
 - `src/sim/life/preview.ts`

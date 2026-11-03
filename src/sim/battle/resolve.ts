@@ -206,6 +206,7 @@ function runArrivals(
         pathogenId: id,
         kind: a.kind,
         size: a.size,
+        ...(battle.missedDoses ? { bonus: battle.missedDoses } : {}),
         at: a.door,
       });
       continue;

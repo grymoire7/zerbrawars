@@ -164,6 +164,7 @@
   - _...4 more_
 - `src/sim/life/meds.ts`
   - function medLevelOf: (doses) => number
+  - function missedDosesOf: (doses) => number
   - function streakOf: (doses) => number
   - function preWeekDoses: (week) => Dose[]
 - `src/sim/life/preview.ts`
