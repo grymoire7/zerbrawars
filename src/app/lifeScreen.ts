@@ -40,7 +40,9 @@ import {
   type LifeSlotModel,
 } from "../ui/lifePanel";
 import {
+  BATTLE_ODDS_HELP,
   battleOddsText,
+  scoreLine,
   weekEndText,
   doseStrip,
   lifeBeats,
@@ -125,15 +127,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     return sel && sel !== "rest" ? versionOf(sel) : null;
   };
 
-  const caption = document.createElement("div");
-  caption.setAttribute("aria-hidden", "true");
-  caption.style.cssText =
-    "position:absolute;left:10px;right:10px;bottom:8px;pointer-events:none;font:13px sans-serif;" +
-    "color:var(--zw-text);text-shadow:0 1px 3px #000;display:flex;flex-direction:column;gap:2px;";
-  const capLeft = document.createElement("span");
-  const capRight = document.createElement("span");
-  caption.append(capLeft, capRight);
-  canvas.parentElement?.append(caption);
   canvas.setAttribute("role", "img");
 
   const showInset = () => {
@@ -151,13 +144,10 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         count: particleCount(p.expectedPathogens),
         entry,
       });
-      capRight.textContent = `${p.label}: ${oddsText(p.chance, p.kind)}`;
       label += ` Previewing ${p.label}: ${oddsText(p.chance, p.kind)}.`;
     } else {
       inset.setPreview(null);
-      capRight.textContent = "";
     }
-    capLeft.textContent = `Medication ${pct(life.medLevel)}`;
     canvas.setAttribute("aria-label", label);
   };
 
@@ -170,8 +160,8 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     const noteParts: string[] = [];
     if (lost.length > 0) {
       noteParts.push(
-        `Day ${lost.map((d) => d + 1).join(", ")}'s dose will be missed: the pills are in the other bag. ` +
-          `Medication level ends the week at ${pct(week.medLevel)}.`,
+        `Day ${lost.map((d) => d + 1).join(", ")}'s dose will be missed: pills in the other bag. ` +
+          `Level ends at ${pct(week.medLevel)}.`,
       );
     }
     const grid = Array.from({ length: L.days }, (_, day) =>
@@ -227,9 +217,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         label: pv.label,
         people: pv.people,
         blurb: pv.blurb,
-        points: pv.points,
-        energy: pv.energy,
-        choices: cardChoices(version).total,
+        facts: scoreLine(pv.points, pv.energy, cardChoices(version).total),
         odds: oddsText(pv.chance, pv.kind),
         chance: pv.chance,
         alt: other
@@ -238,7 +226,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
               text: pv.smarter
                 ? `Back to: ${other.label}`
                 : `Try instead: ${other.label}`,
-              odds: `${oddsText(other.chance, other.kind)} · +${other.points} points · Choices +${cardChoices(other.card).total}`,
+              odds: `${oddsText(other.chance, other.kind)}. ${scoreLine(other.points, other.energy, cardChoices(other.card).total)}`,
             }
           : null,
         pills: pv.friction
@@ -271,7 +259,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         ? "Now tap a time slot to clear it for a rest."
         : sel
           ? `Now tap a time slot for ${cardDef(versionOf(sel)).label}.`
-          : "Tap an activity, then a time slot. Or tap a time slot first. Tap a planned activity to take it off.";
+          : "";
     return {
       title: over
         ? `Week ${life.week} is done`
@@ -284,13 +272,15 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         note: noteParts.join(" "),
       },
       hint: message ? `Can't do that: ${message}` : hintBase,
+      help: "Tap an activity, then a time slot. Or tap a time slot first. Tap a planned activity to take it off.",
+      oddsHelp: BATTLE_ODDS_HELP,
       restSelected: sel === "rest",
       hand,
       grid,
       odds: over
         ? ""
         : week.pending.length === 0
-          ? "Nothing planned yet."
+          ? ""
           : battleOddsText(week.chanceBattle),
       beats,
       summary: over
@@ -517,7 +507,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       document.getElementById("app")?.classList.remove("life");
       help.dispose();
       inset.dispose();
-      caption.remove();
       canvas.removeAttribute("role");
       canvas.removeAttribute("aria-label");
       strip.clear();

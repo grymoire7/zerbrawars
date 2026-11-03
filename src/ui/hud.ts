@@ -1,4 +1,5 @@
 import type { BattleKind } from "../sim/types";
+import { createInfoTips } from "./infoTip";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 export interface HudOrder {
   readonly swarmId: string;
@@ -153,7 +154,7 @@ const DARK = "var(--zw-heat-ink)";
 /** Colour name for each organism in the on-screen key; matches the palette tokens. */
 const GERM_COLOR_WORD: Record<PathogenKindId, string> = {
   strep: "Orange",
-  staph: "Rose",
+  staph: "Teal",
   aspergillus: "Violet",
 };
 
@@ -179,6 +180,9 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     return b;
   };
   const line = (text: string, css = "") => el("div", css, text);
+  const tip = createInfoTips();
+  const ROW =
+    "display:flex;align-items:center;justify-content:space-between;gap:6px;";
 
   // Turn summary, with the How to play button (tissue lives in the status strip).
   const stats = el(
@@ -203,33 +207,32 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
 
   // Medication: the note on the aura and the charge chips (the level is in the status strip).
   const medBox = el("div", PANEL + "padding:8px 10px;");
-  const medHead = el(
-    "div",
-    "display:flex;justify-content:space-between;font-weight:600;",
-  );
+  const medHead = el("div", ROW + "font-weight:600;");
   const medLabel = el("span", "", "Medication");
-  medHead.append(medLabel);
-  const medNote = el(
-    "div",
-    "font-size:12px;opacity:0.7;line-height:1.3;margin-top:4px;",
-  );
+  const medTip = tip("battle-med", "", "medication");
+  medHead.append(medLabel, medTip.button);
+  const medNote = medTip.note;
   const chipRow = el(
     "div",
     "display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;",
   );
   const chipHint = el("div", "font-size:12px;margin-top:4px;line-height:1.3;");
+  chipHint.setAttribute("aria-live", "polite");
   medBox.append(medHead, medNote, chipRow, chipHint);
 
   // Orders: how many swarms have one, and a status chip per swarm.
   const ordersBox = el("div", PANEL + "padding:8px 10px;");
-  const ordersHead = el("div", "font-weight:600;margin-bottom:4px;");
-  const ordersNote = el(
-    "div",
-    "font-size:12px;opacity:0.7;margin-bottom:6px;line-height:1.3;",
+  const ordersHeadRow = el("div", ROW);
+  const ordersHead = el("span", "font-weight:600;");
+  const ordersTip = tip(
+    "battle-orders",
     "One order per swarm each turn. No order means hold.",
+    "orders",
   );
+  ordersHeadRow.append(ordersHead, ordersTip.button);
+  ordersTip.note.style.marginBottom = "6px";
   const ordersList = el("div", "display:flex;flex-direction:column;gap:6px;");
-  ordersBox.append(ordersHead, ordersNote, ordersList);
+  ordersBox.append(ordersHeadRow, ordersTip.note, ordersList);
 
   const problems = el(
     "div",
@@ -362,6 +365,13 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     c.setAttribute("aria-hidden", "true");
     return c;
   };
+  const keyTip = tip(
+    "battle-key",
+    "Engulfing kills a round germ with no shell. A pale ring is a shell: engulfing it loads your swarm instead. A charge kills what it hits outright, no dice. A stronger green glow holds more germs back. A swarm that starts on an inflamed tile moves 1 less.",
+    "the key",
+  );
+  const keyTipRow = el("div", ROW + "font-size:12px;opacity:0.85;");
+  keyTipRow.append(el("span", "", "Good to know"), keyTip.button);
   let keyText = "";
   const updateKey = (k: HudKey) => {
     const sig = `${k.heatLevels.join()}|${k.forecast}|${k.aura}|${k.charges}|${k.kinds.join()}`;
@@ -370,12 +380,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     const heat = [
       ...k.heatLevels.map((l) => keyRow(swatch(HEAT[l]![0]), HEAT[l]![1])),
       ...(k.forecast
-        ? [
-            keyRow(
-              chipSwatch(),
-              "Corner flame glow: this tile will heat up next turn",
-            ),
-          ]
+        ? [keyRow(chipSwatch(), "Corner flame: heats up next turn")]
         : []),
     ];
     const germRows = k.kinds.map((id) => {
@@ -397,29 +402,25 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
         mark,
         `${GERM_COLOR_WORD[id]} ${def.form === "mold" ? "spiky dots" : "round dots"}` +
           (sealed ? " with a ring" : "") +
-          `: ${def.organism}` +
-          (sealed
-            ? ". The pale ring is a shell. Engulfing loads a swarm, it does not kill."
-            : ". Engulfing kills it."),
+          `: ${def.organism}`,
       );
     });
     keyBody.replaceChildren(
+      keyTipRow,
+      keyTip.note,
       ...(germRows.length > 0
         ? [line("Germs", "font-weight:600;"), ...germRows]
         : []),
       line("What germs will do next turn", "font-weight:600;margin-top:4px;"),
       keyRow(glyph("→", "var(--zw-spread)"), "Yellow arrow: spread"),
       keyRow(glyph("···", "var(--zw-spore)"), "Blue dotted arc: spore"),
-      keyRow(
-        glyph("◯", "var(--zw-grow)"),
-        "Swelling germ with faint outline: grows (grow 3→4)",
-      ),
+      keyRow(glyph("◯", "var(--zw-grow)"), "Faint outline: the germ grows"),
       keyRow(glyph("✕", "var(--zw-warn-line)"), "Red: blocked by your swarm"),
       ...(k.aura
         ? [
             keyRow(
               glyph("❚❚", "var(--zw-stall)"),
-              "Green pause sign: held back by medication, it does nothing this turn",
+              "Green pause sign: held back by medication",
             ),
           ]
         : []),
@@ -431,7 +432,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
               ? [
                   keyRow(
                     glyph("~", "var(--zw-med)"),
-                    "Green glow on the board edge: the medication aura. Stronger glow, more germs held back",
+                    "Green glow on the board edge: medication aura",
                   ),
                 ]
               : []),
@@ -439,7 +440,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
               ? [
                   keyRow(
                     glyph("◇", "var(--zw-med)"),
-                    "Green diamond: a germ or a swarm's load a charge can hit. A charge kills it outright, no dice",
+                    "Green diamond: a charge can hit this",
                   ),
                 ]
               : []),
@@ -589,10 +590,14 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       );
 
       medBox.style.display = pb.playing ? "none" : "";
-      medNote.textContent =
-        m.medication.level > 0
+      medTip.setText(
+        (m.medication.level > 0
           ? `Each germ has a ${Math.round(m.medication.stallChance * 100)}% chance of being held back each turn.`
-          : "No medication: nothing holds the germs back.";
+          : "No medication: nothing holds the germs back.") +
+          (m.charges.length > 0
+            ? " Pick a charge to use one this turn (one per turn)."
+            : ""),
+      );
       chipRow.style.display = m.charges.length > 0 ? "flex" : "none";
       chipRow.replaceChildren(
         ...m.charges.map((c) => {
@@ -613,10 +618,8 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       chipHint.textContent = picked
         ? m.noTargets
           ? "Nothing this charge can hit right now."
-          : "Tap a green diamond on the board. It kills outright."
-        : m.charges.length > 0
-          ? "Pick a charge to use one this turn (one per turn)."
-          : "";
+          : "Tap a green diamond on the board."
+        : "";
       chipHint.style.color = picked && m.noTargets ? "var(--zw-warn)" : "";
       problems.style.display = m.problems.length > 0 ? "block" : "none";
       problems.replaceChildren(...m.problems.map((t) => line(t)));
@@ -659,19 +662,16 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       }
       if (f) {
         const parts = [
-          f.tissueDamage > 0
-            ? `Heat will cost ${f.tissueDamage} tissue this turn.`
-            : "No tissue lost to heat this turn.",
           f.rising > 0
-            ? `${f.rising} ${f.rising === 1 ? "tile" : "tiles"} will heat up (corner flames).`
+            ? `Heating up: ${f.rising} ${f.rising === 1 ? "tile" : "tiles"}`
             : "",
-          f.slowed.length > 0
-            ? `Slowed next turn: ${f.slowed.join(", ")}.`
-            : "",
+          f.slowed.length > 0 ? `Slowed: ${f.slowed.join(", ")}` : "",
         ].filter(Boolean);
-        cards.push(
-          line(parts.join(" "), PANEL + "padding:6px 10px;font-size:12px;"),
-        );
+        if (parts.length > 0) {
+          cards.push(
+            line(parts.join(". "), PANEL + "padding:6px 10px;font-size:12px;"),
+          );
+        }
       }
       preview.style.display = cards.length > 0 ? "flex" : "none";
       preview.replaceChildren(...cards);

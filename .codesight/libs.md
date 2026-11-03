@@ -244,6 +244,10 @@
   - interface HudSupportCard
   - _...10 more_
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
+- `src/ui/infoTip.ts`
+  - function createInfoTips: () => InfoTipFactory
+  - interface InfoTip
+  - type InfoTipFactory
 - `src/ui/interlude.ts`
   - function createInterlude: (root) => Interlude
   - interface ScoreCardModel

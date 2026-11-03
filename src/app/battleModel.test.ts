@@ -64,7 +64,7 @@ describe("battleStatusModel", () => {
   it("words the inflammation forecast", () => {
     const calm = cell(base, "inflammation");
     expect(calm.state).toBe("calm");
-    expect(calm.value).toBe("no loss next turn");
+    expect(calm.value).toBe("none");
     const warm = cell({ ...base, damage: 1 }, "inflammation");
     expect(warm.state).toBe("warm");
     expect(warm.value).toBe("-1 next turn");
@@ -73,7 +73,8 @@ describe("battleStatusModel", () => {
 
   it("counts doses and charges", () => {
     const m = cell(base, "medication");
-    expect(m.value).toBe("3/3 doses, 3 charges");
+    expect(m.value).toBe("3/3");
+    expect(m.explain).toContain("3 charges");
     expect(m.state).toBe("full");
     const low = cell(
       {
@@ -83,14 +84,15 @@ describe("battleStatusModel", () => {
       },
       "medication",
     );
-    expect(low.value).toBe("1/3 doses, 1 charge");
+    expect(low.value).toBe("1/3");
+    expect(low.explain).toContain("1 charge");
     expect(low.state).toBe("low");
     expect(cell({ ...base, medLevel: 0 }, "medication").state).toBe("none");
   });
 
-  it("shows the Choices score, and drops the cell in a standalone battle", () => {
+  it("shows the score, and drops the cell in a standalone battle", () => {
     const s = cell(base, "score");
-    expect(s.value).toBe("Choices 215");
+    expect(s.value).toBe("215");
     expect(s.state).toBe("Outcome next");
     expect(
       battleStatusModel({ ...base, choices: null }).cells.map((c) => c.id),

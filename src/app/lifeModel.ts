@@ -376,9 +376,25 @@ export function weekEndText(
   return { due: true, line, button: "Start the battle" };
 }
 
-/** The week preview's odds line. The number is the chance of a full battle, not of any fight. */
+/** The week preview's odds label. The number is the chance of a full battle, not of any fight. */
 export function battleOddsText(chanceFull: number): string {
-  return `With this plan, the chance of a full battle this week is ${pct(chanceFull)}. Otherwise it is a small skirmish.`;
+  return `Full battle odds: ${pct(chanceFull)}`;
+}
+
+/** What the odds label means, for the (?) beside it. */
+export const BATTLE_ODDS_HELP =
+  "The chance that this plan brings a full battle this week. Otherwise it is a small skirmish.";
+
+/** The energy as a signed amount: a cost has a minus, a refund a plus. */
+export function energyDelta(cost: number): string {
+  if (cost > 0) return `-${cost} energy`;
+  if (cost < 0) return `+${-cost} energy`;
+  return "0 energy";
+}
+
+/** The card face line: "+4 points, -2 energy, +40 score". `cost` is the sim's energy cost. */
+export function scoreLine(points: number, cost: number, score: number): string {
+  return `+${points} points, ${energyDelta(cost)}, +${score} score`;
 }
 
 // ---- The status strip: Points, Energy, Medication and Score (B1a design, section 2.2). ----
@@ -431,12 +447,13 @@ export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
         ? "goal met"
         : planned >= target
           ? "on track"
-          : "to build",
+          : "building",
     bar: {
       kind: "fill",
       solid: points / target,
       ghost: planned / target,
     },
+    showState: points >= target || planned >= target,
     color: "goal",
     explain:
       planned > points
@@ -446,11 +463,9 @@ export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
   const energyCell: StatusCell = {
     id: "energy",
     label: "Energy",
-    value:
-      endEnergy !== life.energy
-        ? `${life.energy}/${max}, then ${endEnergy}`
-        : `${life.energy}/${max}`,
+    value: `${life.energy}/${max}`,
     state: energyWord(life.energy),
+    showState: life.energy < 2,
     bar: {
       kind: "segments",
       count: max,
@@ -466,8 +481,9 @@ export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
   const medCell: StatusCell = {
     id: "medication",
     label: "Medication",
-    value: `${doses}/${window} doses`,
+    value: `${doses}/${window}`,
     state: medStateWord(doses, window),
+    showState: doses < window,
     bar: { kind: "segments", count: window, solid: doses, ghost: doses },
     color: "med",
     explain: `Doses taken over the last ${window} days, as planned: ${doses} of ${window}. That gives ${chargesText(week.charges)} in the fight. Fewer doses means a weaker aura and fewer charges.`,
@@ -475,12 +491,13 @@ export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
   const scoreCell: StatusCell = {
     id: "score",
     label: "Score",
-    value: `Choices ${choices}`,
+    value: `${choices}`,
     state: "planned",
+    showState: false,
     bar: null,
     color: "goal",
     explain:
-      "Your choices this week, if the plan plays out. Outcome is added after the fight." +
+      "Your score for this week's choices, if the plan plays out. Outcome is added after the fight." +
       (earlier > 0 ? ` Earlier weeks: ${earlier}.` : ""),
   };
   return { cells: [pointsCell, energyCell, medCell, scoreCell] };

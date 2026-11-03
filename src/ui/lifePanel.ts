@@ -1,5 +1,6 @@
 import type { DoseCell } from "../app/lifeModel";
 import type { HudMounts } from "./hud";
+import { createInfoTips } from "./infoTip";
 
 // The calendar screen's side panel. Views are read-only: the app builds a LifePanelModel from the
 // life state and passes handlers back; the panel never touches sim state.
@@ -10,16 +11,15 @@ export interface LifeCardModel {
   readonly label: string;
   readonly people: string;
   readonly blurb: string;
-  readonly points: number;
-  readonly energy: number;
-  /** What choosing this version adds to the Choices score. */
-  readonly choices: number;
+  /** "+4 points, -2 energy, +40 score": what this version costs and adds. */
+  readonly facts: string;
   readonly odds: string;
   readonly chance: number;
   /** The other version, offered as an easy swap. */
   readonly alt: {
     readonly version: string;
     readonly text: string;
+    /** Odds, then the same facts line as the card face. */
     readonly odds: string;
   } | null;
   /** Overnight cards: what leaving or packing the pills means. */
@@ -69,7 +69,12 @@ export interface LifePanelModel {
     readonly strip: readonly DoseCell[];
     readonly note: string;
   };
+  /** What to do next while something is picked, or why a move was refused; empty when idle. */
   readonly hint: string;
+  /** How the planner works, behind the (?) beside "Your week". */
+  readonly help: string;
+  /** What the odds label means, behind its (?). */
+  readonly oddsHelp: string;
   readonly restSelected: boolean;
   readonly hand: readonly LifeCardModel[];
   readonly grid: readonly (readonly LifeSlotModel[])[];
@@ -134,6 +139,9 @@ export function createLifePanel(
     if (text) e.textContent = text;
     return e;
   };
+  const tip = createInfoTips();
+  const ROW =
+    "display:flex;align-items:center;justify-content:space-between;gap:6px;";
   const button = (
     text: string,
     onClick: () => void,
@@ -221,32 +229,40 @@ export function createLifePanel(
     r.append(mark, text);
     return r;
   };
+  const keyTip = tip(
+    "life-key",
+    "The glow fades when a dose is missed. More orange dots mean better odds of an exposure. A pale ring always means a shell.",
+    "the key",
+  );
   keyBody.append(
+    el("div", ROW + "font-size:12px;opacity:0.85;", "Good to know"),
     keyRow(
       dot(`border-radius:50%;background:${MINT};box-shadow:0 0 6px ${MINT};`),
-      "Green glow around the body: your medication. It fades when a dose is missed.",
+      "Green glow: your medication",
     ),
     keyRow(
       dot("border-radius:50%;background:var(--zw-strep);"),
-      "Orange round dots drifting in: Streptococcus, a bacterium. More dots, better odds of an exposure.",
+      "Orange round dots: Streptococcus, a bacterium",
     ),
     keyRow(
       dot(
         "border-radius:50%;background:var(--zw-staph);outline:2px solid var(--zw-sealed-rim);outline-offset:1px;",
       ),
-      "Rose round dots with a ring: Staphylococcus aureus, a bacterium in a shell.",
+      "Teal dots with a ring: Staphylococcus aureus, a bacterium in a shell",
     ),
     keyRow(
       dot(
         "background:var(--zw-aspergillus);clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);",
       ),
-      "Violet spiky dots with a ring: Aspergillus, a mold in a shell. A pale ring always means a shell.",
+      "Violet spiky dots with a ring: Aspergillus, a mold in a shell",
     ),
     keyRow(
       dot("border-radius:50%;border:2px dashed var(--zw-aspergillus-ink);"),
-      "Rings on the body: something the doctor found that is still there.",
+      "Dashed ring: found by the doctor, still there",
     ),
+    keyTip.note,
   );
+  keyBody.firstElementChild?.append(keyTip.button);
   key.append(keyBody);
 
   mounts.scroll.append(
@@ -312,7 +328,7 @@ export function createLifePanel(
       const lines = [
         el("div", "font-weight:600;", `Day ${c.day + 1} ${mark}`),
         el("div", "opacity:0.85;", c.why),
-        el("div", "opacity:0.7;", `→ ${Math.round(c.level * 100)}%`),
+        el("div", "opacity:0.7;", `${Math.round(c.level * 100)}%`),
       ];
       cell.append(...lines);
       if (c.toggle) {
@@ -340,15 +356,14 @@ export function createLifePanel(
   }
 
   function renderCalendar(m: LifePanelModel) {
-    calBox.replaceChildren(
-      el("div", "font-weight:600;font-size:14px;", "Your week"),
-    );
-    const hint = el(
-      "div",
-      "font-size:13px;line-height:1.3;min-height:1.3em;",
-      m.hint,
-    );
+    const head = el("div", ROW);
+    head.append(el("span", "font-weight:600;font-size:14px;", "Your week"));
+    const planTip = tip("life-plan", m.help, "planning your week");
+    head.append(planTip.button);
+    calBox.replaceChildren(head, planTip.note);
+    const hint = el("div", "font-size:13px;line-height:1.3;", m.hint);
     hint.setAttribute("aria-live", "polite");
+    hint.style.display = m.hint ? "" : "none";
     calBox.append(hint);
     const grid = el(
       "table",
@@ -443,10 +458,14 @@ export function createLifePanel(
       tbody.append(tr);
     }
     grid.append(thead, tbody);
-    calBox.append(
-      grid,
-      el("div", "font-size:12px;opacity:0.85;line-height:1.3;", m.odds),
-    );
+    calBox.append(grid);
+    if (m.odds) {
+      const oddsRow = el("div", ROW);
+      oddsRow.append(el("span", "font-size:13px;font-weight:600;", m.odds));
+      const oddsTip = tip("life-odds", m.oddsHelp, "full battle odds");
+      oddsRow.append(oddsTip.button);
+      calBox.append(oddsRow, oddsTip.note);
+    }
   }
 
   function renderHand(m: LifePanelModel) {
@@ -471,22 +490,12 @@ export function createLifePanel(
       pick.setAttribute("aria-pressed", String(c.selected));
       pick.append(
         el("span", "font-weight:700;font-size:15px;", c.label),
-        el("span", "line-height:1.3;", c.people),
         ...(c.doctor
           ? c.doctor.map((t) =>
               el("span", "font-size:13px;opacity:0.9;line-height:1.3;", t),
             )
           : [
-              el(
-                "span",
-                "font-size:13px;opacity:0.8;line-height:1.3;",
-                c.blurb,
-              ),
-              el(
-                "span",
-                "font-size:13px;display:flex;gap:10px;flex-wrap:wrap;",
-                `+${c.points} points · ${c.energy} energy · Choices +${c.choices}`,
-              ),
+              el("span", "font-size:13px;", c.facts),
               el("span", "font-size:13px;font-weight:600;", c.odds),
             ]),
         el(
@@ -503,7 +512,17 @@ export function createLifePanel(
       pick.addEventListener("pointerleave", () => h.onPreview(null));
       pick.addEventListener("focus", () => h.onPreview(c.version));
       pick.addEventListener("blur", () => h.onPreview(null));
-      box.append(pick);
+      const cardTip = tip(
+        `card-${c.base}`,
+        [c.people, c.blurb].filter(Boolean).join(" "),
+        c.label,
+      );
+      const cardRow = el("div", "display:flex;align-items:flex-start;gap:2px;");
+      pick.style.flex = "1 1 auto";
+      pick.style.width = "auto";
+      pick.style.minWidth = "0";
+      cardRow.append(pick, cardTip.button);
+      box.append(cardRow, cardTip.note);
       if (c.alt && !c.played) {
         const alt = button(
           c.alt.text,
@@ -532,8 +551,8 @@ export function createLifePanel(
         row.append(
           cb,
           c.pills.packed
-            ? `Pills packed (costs ${c.pills.extra} more energy). Tomorrow's dose is safe.`
-            : `Pack the pills (costs ${c.pills.extra} more energy). Otherwise tomorrow's dose is missed.`,
+            ? `Pills packed (-${c.pills.extra} energy)`
+            : `Pack the pills (-${c.pills.extra} energy), or tomorrow's dose is missed`,
         );
         box.append(row);
       }
@@ -554,7 +573,7 @@ export function createLifePanel(
       el(
         "span",
         "font-size:13px;opacity:0.8;line-height:1.3;",
-        "Take a time slot off: +1 energy, no exposure. Tap a time slot to clear it.",
+        "+1 energy, no exposure",
       ),
     );
     handBox.append(rest);

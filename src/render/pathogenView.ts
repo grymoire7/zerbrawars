@@ -35,7 +35,7 @@ export interface PathogenView {
 }
 
 // Colour names the organism, shape names the growth form, and the rim names sealed vs leaky.
-// Staph is rose, not strep's orange, so the two round bacteria differ in hue as well as the rim.
+// Staph is teal, not strep's orange, so the two round bacteria differ in hue as well as the rim.
 export const KIND_COLOR: Record<PathogenKindId, number> = {
   strep: hex("strep"),
   staph: hex("staph"),

@@ -28,8 +28,13 @@ export interface StatusCell {
   readonly label: string;
   /** The value text, e.g. "18/20". */
   readonly value: string;
-  /** The state word, e.g. "healthy". */
+  /** The state word, e.g. "healthy". Always in the accessible label. */
   readonly state: string;
+  /**
+   * Whether the state word is also printed in the cell. Left out (false) when the value and the bar
+   * already say it, so a calm cell stays quiet; a cell that needs attention shows its word.
+   */
+  readonly showState?: boolean;
   readonly bar: StatusBar | null;
   readonly color: PaletteName;
   /** One plain sentence, shown when the cell is tapped and read as the accessible label. */
@@ -93,10 +98,13 @@ function fillCell(btn: HTMLButtonElement, c: StatusCell, open: boolean): void {
   label.textContent = c.label;
   const value = document.createElement("span");
   value.className = "zw-cell-value";
-  const state = document.createElement("span");
-  state.className = "zw-cell-state";
-  state.textContent = c.state;
-  value.append(`${c.value} `, state);
+  value.append(c.value);
+  if (c.showState !== false) {
+    const state = document.createElement("span");
+    state.className = "zw-cell-state";
+    state.textContent = c.state;
+    value.append(" ", state);
+  }
   btn.replaceChildren(label, value);
   if (c.bar) btn.append(buildBar(c.bar, c.color));
   btn.setAttribute("aria-label", cellLabel(c));

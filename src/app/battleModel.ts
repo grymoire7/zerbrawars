@@ -44,6 +44,7 @@ export function battleStatusModel(i: BattleStatusInput): StatusModel {
       label: "Tissue",
       value: `${tissue}/${max}`,
       state: tissueState(tissue),
+      showState: tissue < max * 0.8,
       bar: {
         kind: "fill",
         solid: (tissue - loss) / max,
@@ -56,8 +57,9 @@ export function battleStatusModel(i: BattleStatusInput): StatusModel {
     {
       id: "inflammation",
       label: "Inflammation",
-      value: heat === "calm" ? "no loss next turn" : `-${i.damage} next turn`,
+      value: heat === "calm" ? "none" : `-${i.damage} next turn`,
       state: heat,
+      showState: heat !== "calm",
       bar: {
         kind: "segments",
         count: 3,
@@ -72,22 +74,25 @@ export function battleStatusModel(i: BattleStatusInput): StatusModel {
     {
       id: "medication",
       label: "Medication",
-      value: `${doses}/${window} doses, ${n} ${n === 1 ? "charge" : "charges"}`,
+      value: `${doses}/${window}`,
       state: medStateWord(doses, window),
+      showState: doses < window,
       bar: { kind: "segments", count: window, solid: doses, ghost: doses },
       color: "med",
-      explain: `Your aura slows germs. Charges come from doses taken: ${chargesText(i.charges)}.`,
+      explain: `Your aura slows germs. Charges come from doses taken: ${n} ${n === 1 ? "charge" : "charges"} (${chargesText(i.charges)}).`,
     },
   ];
   if (i.choices !== null) {
     cells.push({
       id: "score",
       label: "Score",
-      value: `Choices ${i.choices}`,
+      value: `${i.choices}`,
       state: "Outcome next",
+      showState: false,
       bar: null,
       color: "goal",
-      explain: "Your choices this week. Outcome is added when the fight ends.",
+      explain:
+        "Your score for this week's choices. Outcome is added when the fight ends.",
     });
   }
   return { cells };

@@ -21,6 +21,7 @@ import {
   weekPlayStops,
   weekSummary,
   battleOddsText,
+  scoreLine,
   weekEndText,
   lifeStatusModel,
   chargesText,
@@ -204,8 +205,15 @@ describe("weekEndText", () => {
 
 describe("battleOddsText", () => {
   it("names the chance as a full battle", () => {
-    expect(battleOddsText(0.4)).toContain("full battle");
-    expect(battleOddsText(0.4)).toContain("40%");
+    expect(battleOddsText(0.4)).toBe("Full battle odds: 40%");
+  });
+});
+
+describe("scoreLine", () => {
+  it("signs the energy: a cost has a minus, a refund a plus", () => {
+    expect(scoreLine(4, 2, 40)).toBe("+4 points, -2 energy, +40 score");
+    expect(scoreLine(0, -1, 0)).toBe("+0 points, +1 energy, +0 score");
+    expect(scoreLine(0, 0, 0)).toContain("0 energy");
   });
 });
 
@@ -223,7 +231,8 @@ describe("lifeStatusModel", () => {
     const fresh = createLife({ seed: 1 });
     const p = cellOf(fresh, "points");
     expect(p.value).toBe(`0/${fresh.goal.target}`);
-    expect(p.state).toBe("to build");
+    expect(p.state).toBe("building");
+    expect(p.showState).toBe(false);
     const l = put(fresh, 0, 0, "yard");
     const planned = cellOf(l, "points");
     expect(planned.explain).toContain("with your plan");
@@ -242,23 +251,23 @@ describe("lifeStatusModel", () => {
   it("shows energy now and after the plan in words", () => {
     const fresh = createLife({ seed: 1 });
     const e = cellOf(fresh, "energy");
-    expect(e.value.startsWith(`${fresh.energy}/6`)).toBe(true);
+    expect(e.value).toBe(`${fresh.energy}/6`);
     expect(e.state).toBe("plenty");
     const spent = cellOf(put(fresh, 0, 0, "lake"), "energy");
-    expect(spent.value).toMatch(/^\d\/6, then \d$/);
+    expect(spent.value).toMatch(/^\d\/6$/);
     expect(spent.explain).toContain("after your plan");
   });
 
   it("shows doses and charges for the planned medication level", () => {
     const m = cellOf(createLife({ seed: 1 }), "medication");
-    expect(m.value).toBe("3/3 doses");
+    expect(m.value).toBe("3/3");
     expect(m.state).toBe("full");
     expect(m.explain).toContain("antifungal");
   });
 
   it("shows planned Choices and the earlier total", () => {
     const l = createLife({ seed: 1 });
-    expect(cellOf(l, "score").value).toBe("Choices 90");
+    expect(cellOf(l, "score").value).toBe("90");
     expect(cellOf(l, "score").state).toBe("planned");
     const later = lifeStatusModel(l, 315).cells.find((c) => c.id === "score")!;
     expect(later.explain).toContain("Earlier weeks: 315");

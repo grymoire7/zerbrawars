@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 51 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,200 tokens. Without it, AI exploration would cost ~22,400 tokens. **Saves ~18,200 tokens per conversation.**
-> **Last scanned:** 2026-11-03 05:07 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 52 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,200 tokens. Without it, AI exploration would cost ~22,600 tokens. **Saves ~18,400 tokens per conversation.**
+> **Last scanned:** 2026-11-03 05:15 — re-run after significant changes
 
 ---
 
@@ -254,6 +254,10 @@
   - interface HudSupportCard
   - _...10 more_
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
+- `src/ui/infoTip.ts`
+  - function createInfoTips: () => InfoTipFactory
+  - interface InfoTip
+  - type InfoTipFactory
 - `src/ui/interlude.ts`
   - function createInterlude: (root) => Interlude
   - interface ScoreCardModel

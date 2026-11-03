@@ -122,6 +122,47 @@
       .zw-cell-state {
         font-weight: 600;
       }
+      .zw-tip-btn {
+        flex: none;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+      }
+      .zw-tip-dot {
+        width: 22px;
+        height: 22px;
+        box-sizing: border-box;
+        border: 1.5px solid var(--zw-text-muted, #a9b0bd);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .zw-tip-btn[aria-expanded="true"] .zw-tip-dot {
+        border-color: var(--zw-focus, #9fd8f0);
+        background: var(--zw-control, #323846);
+      }
+      .zw-tip-note {
+        font-size: 13px;
+        line-height: 1.35;
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: var(--zw-info-bg, #2a3140);
+        color: var(--zw-text, #e8eaf0);
+      }
+      .zw-tip-note[hidden] {
+        display: none;
+      }
       .zw-bar {
         position: relative;
         flex: none;
