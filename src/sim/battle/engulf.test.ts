@@ -313,8 +313,12 @@ describe("engulf validation", () => {
   });
 
   it("refuses a sealed engulf at the load cap but still allows a leaky one", () => {
+    const base = load();
     const battle = withSwarm(
-      withSwarm(load(), "s3", { at: { x: 5, y: 3 }, load: [MOLD, MOLD] }),
+      withSwarm({ ...base, meds: { ...base.meds, level: 0, aura: 0 } }, "s3", {
+        at: { x: 5, y: 3 },
+        load: [MOLD, MOLD],
+      }),
       "s1",
       { at: { x: 1, y: 4 }, load: [MOLD, MOLD] },
     );

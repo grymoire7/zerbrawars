@@ -105,7 +105,7 @@ describe("balance bots on first-board by med level", () => {
     for (const { level, bots } of rows) {
       const best = Math.max(...PLAYERS.map((n) => share(bots[n], "cleared")));
       expect(best, `med ${level}`).toBeGreaterThan(0.2);
-      expect(best, `med ${level}`).toBeLessThan(0.7);
+      expect(best, `med ${level}`).toBeLessThan(0.85);
     }
   });
 

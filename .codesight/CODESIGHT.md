@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 53 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,500 tokens per conversation.**
-> **Last scanned:** 2026-11-03 20:51 — re-run after significant changes
+> **Last scanned:** 2026-11-03 21:04 — re-run after significant changes
 
 ---
 
@@ -85,7 +85,7 @@
   - function orderProblems: (battle, orders) => string[]
   - function withOrder: (orders, order) => Order[]
   - function moveOptions: (battle, swarmId, orders) => Reach[]
-  - _...15 more_
+  - _...16 more_
 - `src/sim/battle/outcome.ts`
   - function freePathogens: (battle) => number
   - function aliveInside: (battle) => number

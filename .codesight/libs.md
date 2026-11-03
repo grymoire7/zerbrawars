@@ -75,7 +75,7 @@
   - function orderProblems: (battle, orders) => string[]
   - function withOrder: (orders, order) => Order[]
   - function moveOptions: (battle, swarmId, orders) => Reach[]
-  - _...15 more_
+  - _...16 more_
 - `src/sim/battle/outcome.ts`
   - function freePathogens: (battle) => number
   - function aliveInside: (battle) => number

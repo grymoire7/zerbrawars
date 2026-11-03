@@ -1,5 +1,5 @@
 import type { TelegraphMark } from "../sim/battle/intents";
-import { swarmMoveRange } from "../sim/battle/orders";
+import { carriedKillChance, swarmMoveRange } from "../sim/battle/orders";
 import { PARAMS } from "../sim/params";
 import { pathogenKind } from "../sim/pathogens";
 import { sameCoord } from "../sim/board";
@@ -150,6 +150,11 @@ export function infoFor(
     s.load.length > 0
       ? `Load ${s.load.length}/${PARAMS.loadCap}: ${carried.join(", ")}`
       : `Load 0/${PARAMS.loadCap}`,
+    ...(s.load.length > 0
+      ? [
+          `Carrying ${carried.join(", ")}: ${Math.round(carriedKillChance(battle) * 100)}% this turn`,
+        ]
+      : []),
     `Moves up to ${swarmMoveRange(battle, s)} tiles`,
     order ? `Order: ${STATUS_LABEL[order.type]}` : "No order: it will hold",
   ];

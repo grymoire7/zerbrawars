@@ -15,6 +15,7 @@ import { validateBattle } from "../validate";
 import { generateIntents, landingBlockers } from "./intents";
 import { applyInflammation, inflammationAt } from "./inflammation";
 import {
+  carriedKillChance,
   engulfTargets,
   moveOptions,
   moveRange,
@@ -41,7 +42,13 @@ const move = (swarmId: string, x: number, y: number): Order => ({
 
 function quiet(patch: Partial<BattleState> = {}): BattleState {
   const b = loadScenario("duel", 1) as BattleState;
-  return { ...b, intents: [], residualKillChance: 0, ...patch };
+  return {
+    ...b,
+    intents: [],
+    residualKillChance: 0,
+    meds: { ...b.meds, level: 0, aura: 0 },
+    ...patch,
+  };
 }
 
 const withSwarm = (
@@ -176,6 +183,37 @@ describe("wall off resolution", () => {
 });
 
 describe("carried loads", () => {
+  it("add the medicine bonus to the residual chance, scaled by the med level", () => {
+    const at = (level: number) => {
+      const b = withSwarm(
+        quiet({ residualKillChance: 0.1, meds: { ...quiet().meds, level } }),
+        "s1",
+        { load: [MOLD] },
+      );
+      return resolveTurn(b, []).events.find((e) => e.type === "ResidualKill");
+    };
+    expect(at(0)).toMatchObject({ chance: 0.1 });
+    expect(at(0.5)).toMatchObject({
+      chance: 0.1 + 0.5 * PARAMS.carried.medBonus,
+    });
+    expect(at(1)).toMatchObject({ chance: 0.1 + PARAMS.carried.medBonus });
+    expect(carriedKillChance(quiet({ residualKillChance: 0.9 }))).toBe(0.9);
+    expect(
+      carriedKillChance(
+        quiet({ residualKillChance: 0.9, meds: { ...quiet().meds, level: 1 } }),
+      ),
+    ).toBe(1);
+  });
+
+  it("roll the same way for the same seed", () => {
+    const b = withSwarm(
+      quiet({ residualKillChance: 0.3, meds: { ...quiet().meds, level: 1 } }),
+      "s1",
+      { load: [MOLD] },
+    );
+    expect(resolveTurn(b, []).events).toEqual(resolveTurn(b, []).events);
+  });
+
   it("roll the residual chance again each turn they are carried", () => {
     const sure = withSwarm(quiet({ residualKillChance: 1 }), "s1", {
       load: [MOLD],

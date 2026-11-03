@@ -21,6 +21,7 @@ C = deferred / low priority.
 | 8 | Safe vs unsafe exposures: are our "smarter third options" valid (indoor chores instead of yardwork, skip the brackish lagoon, skip the cave, artificial tree)? Which exposures matter most? | The user's list (yardwork, brackish water, caves, scuba, marijuana, live trees, reptile pets) | A |
 | 9 | Macrophages and monocytes are also affected in CGD. Confirm NK cells, T cells and antibodies as the "this part works" examples for virus fights | NK cells, T cells and antibodies only | A |
 | 10 | Rare-site infections (for example spine or lower brain): how are they best framed so they are relatable but not frightening? How rare are they? | Rare surprise battle, clearly framed as uncommon | B |
+| 21 | Prophylaxis and ingested organisms: does antibacterial/antifungal prophylaxis help phagocytes finish organisms they have already ingested (a swallowed germ that survives inside the cell), and how strongly? Is "medicine keeps germs small when they arrive" accurate wording for missed doses letting more organisms take hold? | Medicine adds a modest boost (+25% at full doses) to a swallowed germ dying each turn; skipped doses add nothing and let arrivals land bigger. Wording stays simple and non-preachy | A |
 
 ## Wording / tutorial only (does not change gameplay)
 

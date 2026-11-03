@@ -13,6 +13,26 @@ import {
 
 const battle = loadScenario("first-board", 1) as BattleState;
 
+describe("carried germ chance", () => {
+  it("shows the chance this turn, with and without doses", () => {
+    const carrying = (level: number): BattleState => ({
+      ...battle,
+      residualKillChance: 0.1,
+      meds: { ...battle.meds, level, aura: level },
+      swarms: battle.swarms.map((s, i) =>
+        i === 0 ? { ...s, load: [{ kind: "staph", size: 1 }] } : s,
+      ),
+    });
+    const line = (b: BattleState) =>
+      infoFor(b, [], { kind: "swarm", id: b.swarms[0]!.id })?.lines.find((l) =>
+        l.startsWith("Carrying"),
+      );
+    expect(line(carrying(1))).toContain("35% this turn");
+    expect(line(carrying(0))).toContain("10% this turn");
+    expect(line(battle)).toBeUndefined();
+  });
+});
+
 describe("swarmStatuses", () => {
   it("marks swarms without an order and counts them", () => {
     const orders: Order[] = [{ type: "hold", swarmId: "s1" }];

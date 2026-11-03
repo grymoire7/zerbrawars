@@ -446,9 +446,18 @@ export function applyWallOffs(
   return { state: { ...after, swarms, granulomas, nextId }, events };
 }
 
+/** The chance a carried sealed germ dies this turn: residual plus the medicine bonus, capped at 1. */
+export function carriedKillChance(battle: BattleState): number {
+  return Math.min(
+    1,
+    battle.residualKillChance * PARAMS.carriedKillScale +
+      PARAMS.carried.medBonus * battle.meds.level,
+  );
+}
+
 /**
  * Carried loads (held since an earlier turn and not walled off this turn) each get the residual
- * roll again at `residualKillChance * carriedKillScale`, in swarm then load order. Each roll emits
+ * roll again at `carriedKillChance` (residual plus the medicine bonus), in swarm then load order. Each roll emits
  * ResidualKill; a swarm that lost any load then emits Loaded with what is left. Rolls are always
  * made, so the stream advances the same way whatever the chance.
  */
@@ -457,10 +466,7 @@ export function applyCarriedKills(
   after: BattleState,
 ): { state: BattleState; events: SimEvent[] } {
   if (PARAMS.carriedKillScale <= 0) return { state: after, events: [] };
-  const chance = Math.min(
-    1,
-    after.residualKillChance * PARAMS.carriedKillScale,
-  );
+  const chance = carriedKillChance(after);
   const events: SimEvent[] = [];
   let rng = after.rng.resolution;
   const swarms = after.swarms.map((s): Swarm => {

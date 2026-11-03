@@ -108,6 +108,13 @@ export const PARAMS = {
    */
   carriedKillScale: 1,
   /**
+   * Medicine finishes what was swallowed: a carried roll's chance is the battle's residual chance
+   * (times carriedKillScale) plus `medBonus` x the medication level (0..1), capped at 1. Full
+   * meds add this much; skipped doses add nothing. Only carried rolls get it; the roll made at
+   * the engulf itself stays the residual alone. No growth inside the cell in the beta.
+   */
+  carried: { medBonus: 0.25 },
+  /**
    * Medication in battle (T10). Med level is 0..1 from adherence; the aura equals it.
    * - auraStallChance: the stall chance per visible pathogen per turn at a full aura. It scales
    *   linearly with the aura and is under 1, so meds slow pathogens but never stop them.
