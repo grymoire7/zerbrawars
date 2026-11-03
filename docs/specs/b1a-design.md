@@ -278,17 +278,17 @@ The game has one dark theme; no light theme is planned.
 | tissue | `#F2A7A0` | Tissue meter, Outcome | word plus state word |
 | heat | `#FF9A3C` | Inflammation meter, forecast glow | flame glyph, state word |
 | swarm | `#9FD8F0` | neutrophil swarms (`swarm-loaded` `#5E7C8C`, `cargo` `#4A3480`) | instanced cell shapes, load pips |
-| region-lung | `#5A3C42` | lung tissue cells (healthy) | region name in the header |
-| region-lung-bg | `#3E2A30` | tissue background between cells | |
+| region-lung | `#FF8CBD` | lung tissue cells (healthy, bright pink and glossy) | region name in the header |
+| region-lung-bg | `#DFA08B` | flesh-toned organic base under the cells | |
 | region-skin / lymph / liver / gut | `#6A4E44` / `#46405E` / `#4E3030` / `#5A4436` | reserved for later maps | region name |
 | strep | `#F0A843` | Streptococcus (leaky bacteria), text ink `#F2B35B` | round bead cluster, no rim |
-| staph | `#E06A88` | Staphylococcus aureus (sealed bacteria), ink `#F08A9E` | round cluster plus the pale shell rim |
+| staph | `#1FA39A` | Staphylococcus aureus (sealed bacteria), ink `#4FD3C7` (moved off rose when the cells turned pink) | round cluster plus the pale shell rim |
 | aspergillus | `#9A80E8` | Aspergillus (mold), ink `#B9A2F0` | spiky body plus the shell rim |
 | virus | `#B8C7D9` | reserved: background viral fights | hexagon outline, label "virus" |
 | sealed-rim | `#F4EFE0` | the shell ring on sealed germs | ring shape |
-| tissue-healthy | `#5A3C42` | inflammation 0 | plain cell |
-| tissue-stressed | `#7E4C44` | inflammation 1 (no damage yet) | dot pattern |
-| tissue-damaged | `#B5503E` | inflammation 2 and 3 (losing tissue) | diagonal hatch (2), cross-hatch (3) |
+| tissue-healthy | `#FF8CBD` | inflammation 0 | plain cell |
+| tissue-stressed | `#FF7F78` | inflammation 1 (no damage yet; coral) | dot pattern |
+| tissue-damaged | `#D42A3C` | inflammation 2 and 3 (losing tissue) | diagonal hatch (2), cross-hatch (3) |
 | heat-ink | `#3A0F0B` | the pattern strokes | |
 | spread | `#FFD23F` | telegraph: spread | solid arrow |
 | spore | `#6FB8FF` | telegraph: spore | dotted arc |
@@ -311,11 +311,14 @@ order 9.4 on bg; warn 10.6 / 9.3 / 8.2; goal 10.6 / 9.3 / 8.3; med 11.3 / 9.9 / 
 7.5 / 6.6 / 5.9, aspergillus 8.1 / 7.1 / 6.3. Button text on control 10.5. All pass AA for normal
 text (4.5:1). Pathogen body colours are never used for text; use the ink variants.
 
-Graphics (WCAG 1.4.11, 3:1) on the healthy lung cell `#5A3C42`: strep 4.8, staph 3.05, aspergillus
-3.07, swarm 6.3, sealed rim 8.5, spread 6.7, spore 4.6, blocked 4.3, stall 6.2, order 5.1. On hot
-cells (`#B5503E`) spore (2.4) and blocked (2.2) fall below 3:1, so every telegraph and order mark
-gets the `mark-halo` stroke; against the halo they score 7.8 to 16. Pathogen tokens get a thin dark
-silhouette outline (inverted hull, `mark-halo`) for the same reason.
+Graphics on the bright pink cells (`#FF8CBD`, `#FF7F78`, `#D42A3C`, revised after the pink
+change): the cells are light, so luminance contrast to pathogen colours is low (1.1 to 1.6 on
+healthy and stressed cells). Hue separation carries it instead (CIE76 vs healthy: strep 73, staph
+105, aspergillus 48, swarm 64, spread 94), and every pathogen, telegraph and order mark keeps its
+`mark-halo` stroke or silhouette outline, which scores 8.3 against healthy pink. Staph moved from
+rose to teal `#1FA39A` because rose clashed with pink. Colour-blind distances after the move
+(normal / deuteranopia / protanopia): strep/staph 85/72/61, strep/aspergillus 112/112/112,
+staph/aspergillus 81/41/51, all above 40.
 
 ### 4.3 Colour-blind check
 

@@ -29,13 +29,15 @@ export function createScene(
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
 
-  scene.add(new THREE.HemisphereLight(hex("white"), hex("line"), 0.9));
-  const sun = new THREE.DirectionalLight(hex("white"), 1.8);
+  scene.add(
+    new THREE.HemisphereLight(hex("white"), hex("region-lung-bg"), 1.3),
+  );
+  const sun = new THREE.DirectionalLight(hex("white"), 2.2);
   sun.position.set(-3, 9, 5);
   scene.add(sun);
 
-  const hx = extent.width / 2 + 0.15;
-  const hz = extent.depth / 2 + 0.15;
+  const hx = extent.width / 2 + 0.3;
+  const hz = extent.depth / 2 + 0.3;
   const corners = [-1, 1].flatMap((sx) =>
     [-0.5, 0.1].flatMap((y) =>
       [-1, 1].map((sz) => new THREE.Vector3(sx * hx, y, sz * hz)),

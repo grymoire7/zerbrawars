@@ -5,7 +5,7 @@ import type { TileHeat } from "../sim/battle/inflammation";
 import type { BattleState, Coord } from "../sim/types";
 import { PALETTE, hex } from "../theme/palette";
 import { cellHash, cellOutline, type Point2 } from "./cellShape";
-import { createTissueTexture } from "./tissueTexture";
+import { basePlaneUnits, createTissueTexture } from "./tissueTexture";
 
 const TILE = 1;
 const CELL_DEPTH = 0.16;
@@ -13,12 +13,15 @@ const BEVEL_T = 0.04;
 const BEVEL_S = 0.03;
 // The cell's top face sits at y = 0; the tissue plane lies under the gaps.
 const TISSUE_Y = -0.2;
-const TISSUE_MARGIN = 1.2;
 const BREATH = 0.012;
 const BREATH_SECONDS = 4.5;
 
-const BASE = new THREE.Color(hex("region-lung"));
-const INFLAMED = new THREE.Color(hex("tissue-damaged"));
+const HEALTHY = new THREE.Color(hex("tissue-healthy"));
+const STRESSED = new THREE.Color(hex("tissue-stressed"));
+const DAMAGED = new THREE.Color(hex("tissue-damaged"));
+// Healthy cells are glossy; shine fades as heat rises (roughness up, clearcoat down).
+const GLOSS = { roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.12 };
+const MATTE = { roughness: 0.85, clearcoat: 0, clearcoatRoughness: 0.6 };
 const HOVER_TINT = new THREE.Color(hex("white"));
 const PULSE_TINT = new THREE.Color(hex("heat"));
 // Order UI: magenta-violet, apart from the telegraph's yellow/blue/red/white. Shape carries it too:
@@ -195,12 +198,9 @@ export function createBoardView(
 
   // Tissue between and under the cells, fading out at its edges.
   const tissue = new THREE.Mesh(
-    new THREE.PlaneGeometry(
-      board.width * TILE + TISSUE_MARGIN,
-      board.height * TILE + TISSUE_MARGIN,
-    ),
+    new THREE.PlaneGeometry(basePlaneUnits(board), basePlaneUnits(board)),
     new THREE.MeshStandardMaterial({
-      map: createTissueTexture(),
+      map: createTissueTexture(basePlaneUnits(board)),
       transparent: true,
       roughness: 1,
     }),
@@ -223,7 +223,11 @@ export function createBoardView(
     geo.translate(0, -(CELL_DEPTH + BEVEL_T), 0);
     const mesh = new THREE.Mesh(
       geo,
-      new THREE.MeshStandardMaterial({ roughness: 0.9, map: surface }),
+      new THREE.MeshPhysicalMaterial({
+        ...GLOSS,
+        map: surface,
+        specularIntensity: 0.6,
+      }),
     );
     mesh.position.copy(toWorld(coordOf(board, id)));
     group.add(mesh);
@@ -245,7 +249,7 @@ export function createBoardView(
   // Per-tile shade (up to 4%) and breathing phase, from the same hash as the shape.
   const bases = board.tiles.map((_, id) => {
     const c = coordOf(board, id);
-    return BASE.clone().multiplyScalar(
+    return new THREE.Color(1, 1, 1).multiplyScalar(
       1 + (cellHash(c.x, c.y, 1) - 0.5) * 0.08,
     );
   });
@@ -364,8 +368,16 @@ export function createBoardView(
     if (level > 0) {
       h.material = heatMats[Math.min(level, heatMats.length) - 1]!;
     }
-    const mat = meshes[id]!.material as THREE.MeshStandardMaterial;
-    mat.color.copy(base).lerp(INFLAMED, t * 0.7);
+    const mat = meshes[id]!.material as THREE.MeshPhysicalMaterial;
+    // Pink to coral at level 1, then on to red at level 3.
+    if (t < 1 / 3) mat.color.copy(HEALTHY).lerp(STRESSED, t * 3);
+    else mat.color.copy(STRESSED).lerp(DAMAGED, (t - 1 / 3) * 1.5);
+    mat.color.multiply(base);
+    mat.roughness = GLOSS.roughness + (MATTE.roughness - GLOSS.roughness) * t;
+    mat.clearcoat = GLOSS.clearcoat * (1 - t);
+    mat.clearcoatRoughness =
+      GLOSS.clearcoatRoughness +
+      (MATTE.clearcoatRoughness - GLOSS.clearcoatRoughness) * t;
     if (pulses[id]! > 0) mat.color.lerp(PULSE_TINT, pulses[id]! * 0.8);
     if (hover && sameCoord(hover, c)) mat.color.lerp(HOVER_TINT, 0.25);
   };
