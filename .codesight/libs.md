@@ -43,7 +43,10 @@
   - interface SwarmPose
   - interface SwarmView
 - `src/render/telegraphView.ts` — function createTelegraphView: (scene, tilePosition) => void, interface TelegraphView
-- `src/render/tissueTexture.ts` — function createTissueTexture: () => THREE.CanvasTexture
+- `src/render/tissueTexture.ts`
+  - function basePlaneUnits: (board) => void
+  - function createAuraTexture: (planeUnits) => THREE.CanvasTexture
+  - function createTissueTexture: (planeUnits) => THREE.CanvasTexture
 - `src/sim/battle/bots.ts`
   - function playBattle: (bot, start, seed, support) => void
   - interface BotTurn
@@ -141,7 +144,7 @@
   - function findPlaced: (life, card) => void
   - function slotCost: (life, day, p) => number
   - function energyPlan: (life, plan) => number[][]
-  - _...16 more_
+  - _...17 more_
 - `src/sim/life/cards.ts`
   - function exposureKind: (card, i) => PathogenKindId
   - function isCardId: (id) => id is CardId

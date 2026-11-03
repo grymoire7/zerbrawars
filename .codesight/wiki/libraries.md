@@ -40,6 +40,7 @@
 - `src/render/orderView.ts` — createOrderView, DoseMarks, OrderView
 - `src/render/pathogenView.ts` — createPathogenView, PathogenView, KIND_COLOR
 - `src/render/swarmView.ts` — createSwarmView, SwarmPose, SwarmView
+- `src/render/tissueTexture.ts` — basePlaneUnits, createAuraTexture, createTissueTexture
 - `src/render/auraView.ts` — createAuraView, AuraView
 - `src/render/fxView.ts` — createFxView, FxView
 - `src/render/granulomaView.ts` — createGranulomaView, GranulomaView
@@ -47,7 +48,6 @@
 - `src/render/playbackView.ts` — createPlaybackView, PlaybackView
 - `src/render/scene.ts` — createScene, SceneContext
 - `src/render/telegraphView.ts` — createTelegraphView, TelegraphView
-- `src/render/tissueTexture.ts` — createTissueTexture
 
 ## Ui (11 files)
 

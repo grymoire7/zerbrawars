@@ -104,6 +104,11 @@ export interface LifeState {
   readonly plan: readonly (readonly (Placement | null)[])[];
   /** Every dose, oldest first, including the pre-week days that seed the window. */
   readonly doses: readonly Dose[];
+  /**
+   * Choices for days after today, set ahead of time: true taken, false skipped, null undecided
+   * (the default, taken). A day's choice moves into `doses` when that day starts.
+   */
+  readonly planned: readonly (boolean | null)[];
   /** Doses taken in a row, up to and including the latest one. */
   readonly streak: number;
   /** 0..1, share of doses taken over the last PARAMS.life.meds.window days. */

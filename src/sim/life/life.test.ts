@@ -10,6 +10,7 @@ import {
   medForecast,
   placeCard,
   placementProblems,
+  setDose,
   setPackPills,
   skipMeds,
   takeMeds,
@@ -21,6 +22,8 @@ import { CARD_IDS, cardDef, HAND, versionsOf } from "./cards";
 import { battleDue, battleSeed, loadoutFromLife } from "./loadout";
 import { medLevelOf } from "./meds";
 import { cardPreview, exposurePreview } from "./preview";
+import { plannedChoices, weekChoices } from "../score";
+import { PARAMS as P } from "../params";
 import type { CardId, Dose, LifeEvent, LifeState } from "./types";
 
 const L = PARAMS.life;
@@ -245,6 +248,104 @@ describe("meds", () => {
     expect(s.medLevel).toBe(1);
     expect(todayDose(s)?.cause).toBe("tapped");
     expect(s.doses.filter((d) => d.week === 1)).toHaveLength(1);
+  });
+});
+
+describe("setDose, the per-day toggle", () => {
+  const forecast = (s: LifeState) => medForecast(s).map((f) => f.taken);
+
+  it("toggles any unplayed day both ways, as often as wanted", () => {
+    let s = createLife({ seed: 2 });
+    s = setDose(s, 2, false).state;
+    expect(forecast(s)).toEqual([true, true, false]);
+    expect(exposurePreview(s).medLevel).toBeCloseTo(2 / 3);
+    s = setDose(s, 2, true).state;
+    expect(forecast(s)).toEqual([true, true, true]);
+    expect(exposurePreview(s).medLevel).toBe(1);
+    s = setDose(setDose(s, 1, false).state, 2, false).state;
+    expect(exposurePreview(s).medLevel).toBeCloseTo(1 / 3);
+    s = setDose(s, 1, true).state;
+    expect(exposurePreview(s).medLevel).toBeCloseTo(2 / 3);
+    // Future days wait in the plan; the dose history and today's level are untouched.
+    expect(s.doses.filter((d) => d.week === 1)).toHaveLength(0);
+    expect(s.medLevel).toBe(1);
+  });
+
+  it("changes today's dose at once and back again", () => {
+    let s = setDose(createLife({ seed: 2 }), 0, false).state;
+    expect(s.medLevel).toBeCloseTo(2 / 3);
+    s = setDose(s, 0, true).state;
+    expect(s.medLevel).toBe(1);
+    expect(s.doses.filter((d) => d.week === 1)).toHaveLength(1);
+  });
+
+  it("plays a planned skip on its day and an untouched day as taken", () => {
+    let s = setDose(createLife({ seed: 2 }), 1, false).state;
+    const r = advanceDay(s);
+    expect(r.events).toContainEqual({
+      type: "MedsTaken",
+      day: 0,
+      cause: "default",
+      streak: 4,
+    });
+    expect(r.events).toContainEqual({
+      type: "MedsSkipped",
+      day: 1,
+      cause: "skipped",
+    });
+    s = r.state;
+    expect(todayDose(s)).toMatchObject({ day: 1, taken: false });
+    expect(s.medLevel).toBeCloseTo(2 / 3);
+    s = advanceDay(s).state;
+    expect(s.doses.at(-1)).toMatchObject({ day: 1, taken: false });
+    s = advanceDay(s).state;
+    expect(s.doses.filter((d) => d.week === 1).map((d) => d.cause)).toEqual([
+      "default",
+      "skipped",
+      "default",
+    ]);
+  });
+
+  it("refuses played days, other weeks and a finished week", () => {
+    const s = advanceDay(createLife({ seed: 2 })).state;
+    expect(() => setDose(s, 0, false)).toThrow(/played/);
+    expect(() => setDose(s, 3, false)).toThrow(/no such day/);
+    expect(() => setDose(finish(s), 1, false)).toThrow(/over/);
+  });
+
+  it("locks the friction day, planned or already lost", () => {
+    let s = placeCard(createLife({ seed: 4 }), 0, 1, "sleepover", false).state;
+    expect(() => setDose(s, 1, true)).toThrow(/home/);
+    expect(forecast(s)).toEqual([true, false, true]);
+    s = advanceDay(s).state;
+    expect(() => setDose(s, 1, true)).toThrow(/home/);
+    expect(() => takeMeds(s)).toThrow(/home/);
+    setDose(s, 2, false);
+  });
+
+  it("friction beats a choice made before the sleepover was planned", () => {
+    let s = setDose(createLife({ seed: 4 }), 1, true).state;
+    s = placeCard(s, 0, 1, "sleepover", false).state;
+    expect(forecast(s)).toEqual([true, false, true]);
+    s = advanceDay(s).state;
+    expect(todayDose(s)).toMatchObject({ taken: false, cause: "friction" });
+  });
+
+  it("keeps the score meds part right after toggles", () => {
+    const per = P.score.perDose;
+    let s = createLife({ seed: 2 });
+    expect(plannedChoices(s).meds).toBe(3 * per);
+    s = setDose(s, 2, false).state;
+    expect(plannedChoices(s).meds).toBe(2 * per);
+    s = setDose(s, 2, true).state;
+    expect(plannedChoices(s).meds).toBe(3 * per);
+    s = setDose(s, 0, false).state;
+    expect(weekChoices(s).meds).toBe(0);
+    expect(plannedChoices(s).meds).toBe(2 * per);
+    s = setDose(s, 0, true).state;
+    expect(weekChoices(s).meds).toBe(per);
+    s = finish(setDose(s, 1, false).state);
+    expect(weekChoices(s).meds).toBe(2 * per);
   });
 });
 

@@ -66,8 +66,6 @@ export interface LifePanelModel {
   readonly meds: {
     readonly level: number;
     readonly streak: number;
-    /** What the day's dose button should offer. */
-    readonly dose: "open" | "taken" | "skipped" | "lost" | "over";
     readonly strip: readonly DoseCell[];
     readonly note: string;
   };
@@ -104,8 +102,8 @@ export interface LifePanelHandlers {
   onSwap(base: string): void;
   onPills(base: string, packed: boolean): void;
   onSlot(day: number, slot: number): void;
-  onTakeMeds(): void;
-  onSkipMeds(): void;
+  /** A day chip was tapped: plan that day's dose as taken or skipped. */
+  onSetDose(day: number, taken: boolean): void;
   /** Plays the rest of the week, stopping on a symptom or a missed-dose morning. */
   onPlay(): void;
   /** Plays just today. */
@@ -303,22 +301,34 @@ export function createLifePanel(
     );
     const strip = el("div", "display:flex;gap:6px;");
     for (const c of meds.strip) {
-      const cell = el(
-        "div",
+      const css =
         `flex:1 1 0;min-width:0;border-radius:6px;padding:4px 6px;font-size:12px;line-height:1.25;box-sizing:border-box;` +
-          (c.taken
-            ? `border:1px solid ${MINT};background:rgba(91,227,198,${c.decided ? 0.18 : 0.06});`
-            : "border:1px dashed var(--zw-notice);background:rgba(217,163,92,0.14);"),
-      );
-      cell.append(
-        el(
-          "div",
-          "font-weight:600;",
-          `Day ${c.day + 1} ${c.taken ? "✓" : "✗"}`,
-        ),
+        `text-align:left;color:inherit;font-family:inherit;` +
+        (c.taken
+          ? `border:1px solid ${MINT};background:rgba(91,227,198,${c.decided ? 0.18 : 0.06});`
+          : "border:1px dashed var(--zw-notice);background:rgba(217,163,92,0.14);");
+      const cell = c.toggle ? el("button", css) : el("div", css);
+      const mark = c.taken ? "✓" : "✗";
+      const lines = [
+        el("div", "font-weight:600;", `Day ${c.day + 1} ${mark}`),
         el("div", "opacity:0.85;", c.why),
         el("div", "opacity:0.7;", `→ ${Math.round(c.level * 100)}%`),
-      );
+      ];
+      cell.append(...lines);
+      if (c.toggle) {
+        const b = cell as HTMLButtonElement;
+        b.type = "button";
+        b.style.minHeight = "44px";
+        b.style.cursor = "pointer";
+        b.dataset.key = `dose-${c.day}`;
+        b.setAttribute("aria-pressed", String(c.taken));
+        b.setAttribute(
+          "aria-label",
+          `Day ${c.day + 1} meds: ${c.why}, medication ${Math.round(c.level * 100)} percent. ` +
+            `Press to ${c.taken ? "skip" : "take"}.`,
+        );
+        b.addEventListener("click", () => h.onSetDose(c.day, !c.taken));
+      }
       strip.append(cell);
     }
     medsBox.replaceChildren(head, strip);
@@ -326,32 +336,6 @@ export function createLifePanel(
       medsBox.append(
         el("div", "font-size:12px;opacity:0.85;line-height:1.3;", meds.note),
       );
-    }
-    if (meds.dose === "open") {
-      const row = el("div", "display:flex;gap:6px;");
-      row.append(
-        button(
-          "Take meds",
-          h.onTakeMeds,
-          `flex:1 1 auto;font-weight:700;border-color:${MINT};`,
-          "meds",
-        ),
-        button(
-          "Skip today",
-          h.onSkipMeds,
-          "flex:0 0 auto;opacity:0.85;",
-          "skip",
-        ),
-      );
-      medsBox.append(row);
-    } else {
-      const text = {
-        taken: "Today's meds are taken.",
-        skipped: "Today's dose is skipped.",
-        lost: "Today's dose is missed: the pills are in the other bag.",
-        over: "",
-      }[meds.dose];
-      if (text) medsBox.append(el("div", "font-size:13px;", text));
     }
   }
 

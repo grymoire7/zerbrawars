@@ -101,7 +101,10 @@ export interface DoseCell {
   /** Already decided (tapped, skipped, defaulted or lost) rather than a forecast. */
   readonly decided: boolean;
   readonly level: number;
+  /** The state in plain words: "taken", "skipped" or why the dose is lost. */
   readonly why: string;
+  /** True when tapping the chip flips the dose: the day is not played and not locked. */
+  readonly toggle: boolean;
 }
 
 const WHY = {
@@ -126,6 +129,7 @@ export function doseStrip(life: LifeState): DoseCell[] {
       decided: true,
       level: medLevelOf(life.doses.slice(0, i + 1)),
       why: WHY[d.cause],
+      toggle: false,
     });
   }
   if (life.day < L.days) {
@@ -138,7 +142,8 @@ export function doseStrip(life: LifeState): DoseCell[] {
         taken: f.taken,
         decided,
         level: f.level,
-        why: decided || !f.taken ? WHY[f.cause] : "planned",
+        why: WHY[f.cause],
+        toggle: f.cause !== "friction",
       });
     }
   }

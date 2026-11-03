@@ -83,6 +83,7 @@ export function createLife(opts: LifeOptions): LifeState {
       Array.from({ length: L.slotsPerDay }, () => null),
     ),
     doses,
+    planned: Array.from({ length: L.days }, () => null),
     streak: streakOf(doses),
     medLevel: medLevelOf(doses),
     goal: { points: 0, target: L.goalTarget },
@@ -310,34 +311,55 @@ function recordDose(life: LifeState, dose: Dose): LifeStep {
   return { state: { ...life, doses, medLevel, streak }, events };
 }
 
-function medsProblem(life: LifeState): string | null {
+/** Why a day's dose cannot be set, or null when it can. */
+function doseProblem(life: LifeState, day: number): string | null {
   if (weekOver(life)) return "the week is over";
-  if (todayDose(life)?.cause === "friction") return "the pills are at home";
+  if (!Number.isInteger(day) || day < 0 || day >= L.days) {
+    return "no such day";
+  }
+  if (day < life.day) return "that day is already played";
+  if (day === life.day && todayDose(life)?.cause === "friction") {
+    return "the pills are at home";
+  }
+  if (frictionFor(life, day)) return "the pills are at home";
   return null;
 }
 
-/** The one-tap default. A day that ends untapped counts as taken anyway. */
-export function takeMeds(life: LifeState): LifeStep {
-  const p = medsProblem(life);
+/**
+ * Sets the planned dose for `day`, any day of the current week not yet played: true taken, false
+ * skipped. It can be called again to change the choice, as often as wanted, until the day is
+ * played. Today's choice lands in the dose history at once (and moves the med level); a later
+ * day's waits in `planned` until that day starts. A day whose pills are in the other bag (an
+ * unpacked sleepover the night before) is locked and throws. A day left undecided is taken when
+ * it is played.
+ */
+export function setDose(
+  life: LifeState,
+  day: number,
+  taken: boolean,
+): LifeStep {
+  const p = doseProblem(life, day);
   if (p) throw new Error(p);
-  return recordDose(life, {
-    week: life.week,
-    day: life.day,
-    taken: true,
-    cause: "tapped",
-  });
+  if (day === life.day) {
+    const r = recordDose(life, {
+      week: life.week,
+      day,
+      taken,
+      cause: taken ? "tapped" : "skipped",
+    });
+    return r;
+  }
+  const planned = life.planned.map((v, i) => (i === day ? taken : v));
+  return { state: { ...life, planned }, events: [] };
 }
 
-export function skipMeds(life: LifeState): LifeStep {
-  const p = medsProblem(life);
-  if (p) throw new Error(p);
-  return recordDose(life, {
-    week: life.week,
-    day: life.day,
-    taken: false,
-    cause: "skipped",
-  });
-}
+/** Takes today's dose (setDose for today). */
+export const takeMeds = (life: LifeState): LifeStep =>
+  setDose(life, life.day, true);
+
+/** Skips today's dose (setDose for today). */
+export const skipMeds = (life: LifeState): LifeStep =>
+  setDose(life, life.day, false);
 
 /** The overnight card on the evening before `day` that left the pills at home, if any. */
 export function frictionFor(life: LifeState, day: number): CardId | null {
@@ -518,6 +540,16 @@ export function advanceDay(life: LifeState): LifeStep {
     });
     s = { ...r.state, flags: { ...r.state.flags, frictionFired: true } };
     events.push(...r.events);
+  } else if (s.planned[s.day] !== null) {
+    const taken = s.planned[s.day] === true;
+    const r = recordDose(s, {
+      week: s.week,
+      day: s.day,
+      taken,
+      cause: taken ? "tapped" : "skipped",
+    });
+    s = r.state;
+    events.push(...r.events);
   }
   return { state: s, events };
 }
@@ -559,19 +591,27 @@ export interface DoseForecast {
 
 /**
  * The dose and med level for each day from today to the week's end if the player keeps the
- * default: decided doses as they are, friction where an unpacked sleepover is planned, taken
- * otherwise. The last entry's level is what the battle gets.
+ * default: decided doses as they are, friction where an unpacked sleepover is planned, the
+ * player's planned choice for a later day, taken otherwise. The last entry's level is what the battle gets.
  */
 export function medForecast(life: LifeState): DoseForecast[] {
   const out: DoseForecast[] = [];
   let doses = [...life.doses];
   for (let day = life.day; day < L.days; day++) {
     const decided = doses.find((d) => d.week === life.week && d.day === day);
+    const choice = life.planned[day];
     const dose: Dose =
       decided ??
       (frictionFor(life, day)
         ? { week: life.week, day, taken: false, cause: "friction" }
-        : { week: life.week, day, taken: true, cause: "default" });
+        : choice === null
+          ? { week: life.week, day, taken: true, cause: "default" }
+          : {
+              week: life.week,
+              day,
+              taken: choice,
+              cause: choice ? "tapped" : "skipped",
+            });
     if (!decided) doses = [...doses, dose];
     out.push({
       day,

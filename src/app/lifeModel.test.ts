@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { advanceDay, createLife, placeCard } from "../sim/life/calendar";
+import {
+  advanceDay,
+  createLife,
+  placeCard,
+  setDose,
+} from "../sim/life/calendar";
 import type { LifeState } from "../sim/life/types";
 import {
   doseStrip,
@@ -78,6 +83,26 @@ describe("doseStrip", () => {
       why: "pills in the other bag",
     });
     expect(strip[2].level).toBeLessThan(1);
+    expect(strip.map((c) => c.toggle)).toEqual([true, false, true]);
+  });
+
+  it("follows the toggles with a word, a level and which chips can be tapped", () => {
+    let l = createLife({ seed: 1 });
+    expect(doseStrip(l).map((c) => c.why)).toEqual(["taken", "taken", "taken"]);
+    l = setDose(l, 2, false).state;
+    let strip = doseStrip(l);
+    expect(strip.map((c) => c.taken)).toEqual([true, true, false]);
+    expect(strip[2]).toMatchObject({ why: "skipped", toggle: true });
+    expect(strip[2].level).toBeCloseTo(2 / 3);
+    l = setDose(l, 2, true).state;
+    strip = doseStrip(l);
+    expect(strip.map((c) => c.taken)).toEqual([true, true, true]);
+    expect(strip[2].level).toBe(1);
+    // A played day shows what happened and no longer toggles.
+    l = advanceDay(setDose(l, 1, false).state).state;
+    strip = doseStrip(l);
+    expect(strip.map((c) => c.toggle)).toEqual([false, true, true]);
+    expect(strip[1]).toMatchObject({ taken: false, why: "skipped" });
   });
 });
 

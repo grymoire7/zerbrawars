@@ -4,9 +4,7 @@ import {
   findPlaced,
   placeCard,
   setPackPills,
-  skipMeds,
-  takeMeds,
-  todayDose,
+  setDose,
   unplaceCard,
   weekOver,
 } from "../sim/life/calendar";
@@ -167,7 +165,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     const sel = selOf();
     const week = exposurePreview(life);
     const over = weekOver(life);
-    const dose = todayDose(life);
     const strip = doseStrip(life);
     const lost = week.frictionDays;
     const noteParts: string[] = [];
@@ -283,15 +280,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       meds: {
         level: life.medLevel,
         streak: life.streak,
-        dose: over
-          ? "over"
-          : !dose
-            ? "open"
-            : dose.cause === "friction"
-              ? "lost"
-              : dose.taken
-                ? "taken"
-                : "skipped",
         strip,
         note: noteParts.join(" "),
       },
@@ -445,12 +433,8 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       runEffect(r.effect);
       draw();
     },
-    onTakeMeds: () => {
-      apply(() => takeMeds(life));
-      draw();
-    },
-    onSkipMeds: () => {
-      apply(() => skipMeds(life));
+    onSetDose: (day, taken) => {
+      apply(() => setDose(life, day, taken));
       draw();
     },
     onPlay: () => {

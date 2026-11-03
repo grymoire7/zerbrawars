@@ -3,8 +3,8 @@
 > **Stack:** raw-http | none | unknown | typescript
 
 > 0 routes | 0 models | 0 components | 51 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,100 tokens. Without it, AI exploration would cost ~22,400 tokens. **Saves ~18,200 tokens per conversation.**
-> **Last scanned:** 2026-11-03 04:48 — re-run after significant changes
+> **Token savings:** this file is ~4,200 tokens. Without it, AI exploration would cost ~22,400 tokens. **Saves ~18,200 tokens per conversation.**
+> **Last scanned:** 2026-11-03 04:52 — re-run after significant changes
 
 ---
 
@@ -53,7 +53,10 @@
   - interface SwarmPose
   - interface SwarmView
 - `src/render/telegraphView.ts` — function createTelegraphView: (scene, tilePosition) => void, interface TelegraphView
-- `src/render/tissueTexture.ts` — function createTissueTexture: () => THREE.CanvasTexture
+- `src/render/tissueTexture.ts`
+  - function basePlaneUnits: (board) => void
+  - function createAuraTexture: (planeUnits) => THREE.CanvasTexture
+  - function createTissueTexture: (planeUnits) => THREE.CanvasTexture
 - `src/sim/battle/bots.ts`
   - function playBattle: (bot, start, seed, support) => void
   - interface BotTurn
@@ -151,7 +154,7 @@
   - function findPlaced: (life, card) => void
   - function slotCost: (life, day, p) => number
   - function energyPlan: (life, plan) => number[][]
-  - _...16 more_
+  - _...17 more_
 - `src/sim/life/cards.ts`
   - function exposureKind: (card, i) => PathogenKindId
   - function isCardId: (id) => id is CardId
@@ -294,7 +297,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/sim/params.ts` — imported by **45** files
+- `src/sim/params.ts` — imported by **46** files
 - `src/sim/types.ts` — imported by **44** files
 - `src/sim/pathogens.ts` — imported by **21** files
 - `src/sim/rng.ts` — imported by **18** files
@@ -309,15 +312,15 @@
 - `src/sim/battle/resolve.ts` — imported by **13** files
 - `src/sim/campaign.ts` — imported by **12** files
 - `src/sim/battle/outcome.ts` — imported by **11** files
-- `src/sim/life/calendar.ts` — imported by **8** files
 - `src/sim/life/cards.ts` — imported by **8** files
+- `src/sim/life/calendar.ts` — imported by **7** files
 - `src/app/run.ts` — imported by **7** files
+- `src/sim/score.ts` — imported by **6** files
 - `src/sim/battle/orders.ts` — imported by **6** files
-- `src/sim/battle/bots.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
-- `src/sim/params.ts` ← `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts` +40 more
+- `src/sim/params.ts` ← `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts` +41 more
 - `src/sim/types.ts` ← `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +39 more
 - `src/sim/pathogens.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/render/insetView.ts`, `src/sim/battle/bots.ts` +16 more
 - `src/sim/rng.ts` ← `src/sim/battle/bots.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/intents.ts`, `src/sim/battle/orders.test.ts` +13 more
