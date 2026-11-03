@@ -91,6 +91,19 @@ visible on the life screen and the battle screen; the score appears on the arc-c
 best-score line; the board no longer reads as a grey right-angled grid; typecheck, lint, tests and
 build green; screenshots of life, battle and outcome attached to the commit.
 
+**B1b. Declutter, color and a brighter board (added 2026-11-02 from Tracy's playtest of B1a; before B1).**
+Four slices: (1) *Board:* cells bright pink and shiny, shading toward red and less shiny with inflammation;
+the underlying board neither green nor square, organic and flesh-toned, no sharp corners. (2) *Meds:* a
+per-day take/skip toggle on the day chips, undoable until that day is played; replaces "Take meds" and
+"Skip today". (3) *Declutter:* meters show a value or a bar, not both plus a sentence; drop text that repeats
+what is visible; explanations behind (?) icons (keep the selected-thing info card); odds as "Full battle
+odds: 45%"; card scores as "+5 points, +2 energy, +50 score". (4) *Cards:* each activity card gets its own
+color and icon. A battle-depth design pass (Opus, design only) follows before B1, since battles end in one
+or two turns with little strategy.
+*Done when:* the life and battle screens read at a glance without the explanatory text, no player
+action in the meds row is irreversible before the day is played, and the board has no green and no square
+frame; checks green and screenshots attached.
+
 **B1. Mobile layout and touch.** Real device pass (serve with `--host`, open on the user's phone).
 *Done when:* life screen, battle screen and outcome overlays are usable one-handed in portrait on a
 phone; End Turn and playback controls reachable; board stays large; nothing essential needs hover.

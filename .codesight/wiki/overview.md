@@ -22,4 +22,4 @@ Changes to these files have the widest blast radius across the codebase:
 - `src/sim/scenarios.ts` — imported by **17** files
 
 ---
-_Back to [index.md](./index.md) · Generated 2026-11-02_
+_Back to [index.md](./index.md) · Generated 2026-11-03_
