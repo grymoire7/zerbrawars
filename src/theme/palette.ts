@@ -62,6 +62,20 @@ export const PALETTE = {
   notice: "#D9A35C",
   "info-bg": "#22303A",
   "med-bg": "#173A33",
+  // Activity cards (B1b-4): a bright accent per family and a dark tint of it for the card body.
+  // Not green, teal or mint (medication) and not the germ colours; an icon always rides with them.
+  "card-yard": "#F2D24B",
+  "card-yard-bg": "#3F4039",
+  "card-lake": "#4DA3FF",
+  "card-lake-bg": "#2C3A4E",
+  "card-band": "#FF6FAE",
+  "card-band-bg": "#413444",
+  "card-sleepover": "#8A8CFF",
+  "card-sleepover-bg": "#33384E",
+  "card-doctor": "#F1EDE2",
+  "card-doctor-bg": "#3F434B",
+  "card-rest": "#93A3BA",
+  "card-rest-bg": "#343A46",
 } as const;
 
 export type PaletteName = keyof typeof PALETTE;

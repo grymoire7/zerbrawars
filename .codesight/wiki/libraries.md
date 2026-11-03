@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**52 library files** across 4 modules
+**53 library files** across 4 modules
 
 ## Sim (24 files)
 
@@ -49,10 +49,11 @@
 - `src/render/scene.ts` — createScene, SceneContext
 - `src/render/telegraphView.ts` — createTelegraphView, TelegraphView
 
-## Ui (12 files)
+## Ui (13 files)
 
 - `src/ui/hud.ts` — createHud, HudOrder, HudMedication, HudCharge, HudSupport, HudSupportCard, …
 - `src/ui/lifePanel.ts` — createLifePanel, LifeCardModel, LifeSlotModel, LifeSummaryModel, LifePanelModel, LifePanelHandlers, …
+- `src/ui/cardStyle.ts` — cardAccent, cardTint, cardBadge, CardFamily, CARD_FAMILY, CARD_ICON
 - `src/ui/debugPanel.ts` — createDebugPanel, DebugLoadout, SessionDebug, DebugPanelOptions, DebugPanel, DebugMode
 - `src/ui/statusStrip.ts` — createStatusStrip, cellLabel, StatusCell, StatusModel, StatusStrip, StatusBar
 - `src/ui/help.ts` — createHelp, Help, HelpOptions, BATTLE_LINES, LIFE_LINES

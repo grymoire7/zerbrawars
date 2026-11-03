@@ -186,6 +186,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
           name: slotName(slot),
           card: p
             ? {
+                version: p.card,
                 label: cardDef(p.card).label,
                 points: cardDef(p.card).points,
                 pills: cardDef(p.card).overnight

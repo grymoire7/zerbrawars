@@ -1,5 +1,6 @@
 import type { DoseCell } from "../app/lifeModel";
 import type { HudMounts } from "./hud";
+import { cardAccent, cardBadge, cardTint } from "./cardStyle";
 import { createInfoTips } from "./infoTip";
 
 // The calendar screen's side panel. Views are read-only: the app builds a LifePanelModel from the
@@ -36,6 +37,7 @@ export interface LifeSlotModel {
   readonly slot: number;
   readonly name: string;
   readonly card: {
+    readonly version: string;
     readonly label: string;
     readonly points: number;
     readonly pills: "packed" | "left" | null;
@@ -418,10 +420,14 @@ export function createLifePanel(
         );
         const name = `Day ${s.day + 1} ${s.name.toLowerCase()}`;
         if (s.card) {
-          b.append(
-            el("span", "font-weight:600;", s.card.label),
-            el("span", "opacity:0.8;", `+${s.card.points} pts`),
+          b.style.background = `var(--zw-${cardTint(s.card.version)})`;
+          b.style.borderLeft = `6px solid var(--zw-${cardAccent(s.card.version)})`;
+          const head = el("span", "display:flex;gap:5px;align-items:center;");
+          head.append(
+            cardBadge(s.card.version, 22),
+            el("span", "font-weight:600;min-width:0;", s.card.label),
           );
+          b.append(head, el("span", "opacity:0.8;", `+${s.card.points} pts`));
           if (s.card.pills) {
             b.append(
               el(
@@ -475,9 +481,11 @@ export function createLifePanel(
         "div",
         PANEL +
           "padding:8px 10px;display:flex;flex-direction:column;gap:6px;" +
+          `background:var(--zw-${cardTint(c.version)});` +
           (c.selected
             ? `border-color:${MINT};box-shadow:0 0 0 1px ${MINT};`
             : "") +
+          `border-left:6px solid var(--zw-${cardAccent(c.version)});` +
           (c.played ? "opacity:0.55;" : ""),
       );
       const pick = button(
@@ -521,16 +529,21 @@ export function createLifePanel(
       pick.style.flex = "1 1 auto";
       pick.style.width = "auto";
       pick.style.minWidth = "0";
-      cardRow.append(pick, cardTip.button);
+      const badge = cardBadge(c.version);
+      badge.style.marginTop = "8px";
+      cardRow.append(badge, pick, cardTip.button);
       box.append(cardRow, cardTip.note);
       if (c.alt && !c.played) {
         const alt = button(
-          c.alt.text,
+          "",
           () => h.onSwap(c.base),
-          "text-align:left;padding:6px 10px;font-size:13px;min-height:44px;",
+          "text-align:left;padding:6px 10px;font-size:13px;min-height:44px;display:flex;align-items:center;gap:8px;" +
+            `background:var(--zw-${cardTint(c.alt.version)});border-left:6px solid var(--zw-${cardAccent(c.alt.version)});`,
           `swap-${c.base}`,
         );
-        alt.append(el("span", "display:block;opacity:0.8;", c.alt.odds));
+        const altText = el("span", "min-width:0;", c.alt.text);
+        altText.append(el("span", "display:block;opacity:0.8;", c.alt.odds));
+        alt.append(cardBadge(c.alt.version, 24), altText);
         alt.addEventListener("pointerenter", () =>
           h.onPreview(c.alt?.version ?? null),
         );
@@ -561,14 +574,16 @@ export function createLifePanel(
     const rest = button(
       "",
       h.onPickRest,
-      `text-align:left;padding:8px 12px;display:flex;flex-direction:column;gap:2px;align-items:flex-start;` +
+      `text-align:left;padding:8px 12px;display:flex;flex-direction:row;gap:10px;align-items:center;` +
+        `background:var(--zw-card-rest-bg);border-left:6px solid var(--zw-card-rest);` +
         (m.restSelected
           ? `border-color:${MINT};box-shadow:0 0 0 1px ${MINT};`
           : ""),
       "rest",
     );
     rest.setAttribute("aria-pressed", String(m.restSelected));
-    rest.append(
+    const restText = el("span", "display:flex;flex-direction:column;gap:2px;");
+    restText.append(
       el("span", "font-weight:700;font-size:15px;", "Rest"),
       el(
         "span",
@@ -576,6 +591,7 @@ export function createLifePanel(
         "+1 energy, no exposure",
       ),
     );
+    rest.append(cardBadge("rest"), restText);
     handBox.append(rest);
   }
 

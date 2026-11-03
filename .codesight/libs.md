@@ -221,6 +221,13 @@
   - function createBroughtStrip: (root, onDismiss) => void
   - interface BroughtView
   - interface BroughtStrip
+- `src/ui/cardStyle.ts`
+  - function cardAccent: (id) => PaletteName
+  - function cardTint: (id) => PaletteName
+  - function cardBadge: (id, size) => HTMLElement
+  - type CardFamily
+  - const CARD_FAMILY: Readonly<Record<string, CardFamily>>
+  - const CARD_ICON: Readonly<Record<string, string>>
 - `src/ui/debugPanel.ts`
   - function createDebugPanel: (root, opts) => DebugPanel
   - interface DebugLoadout
