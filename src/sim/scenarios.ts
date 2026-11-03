@@ -1,5 +1,5 @@
 import { battleFromLoadout } from "./battle/setup";
-import { skirmishExposures, type Loadout } from "./life/loadout";
+import { skirmishExposures, skirmishWaves, type Loadout } from "./life/loadout";
 import { PARAMS } from "./params";
 import { rngFromSeed } from "./rng";
 import type { BattleState } from "./types";
@@ -66,7 +66,7 @@ export function skirmishLoadout(seed: number, medLevel = 1): Loadout {
     ...firstBoardLoadout(seed, medLevel),
     scenario: "skirmish",
     kind: "skirmish",
-    exposures: skirmishExposures(rngFromSeed(seed)),
+    ...skirmishWaves(skirmishExposures(rngFromSeed(seed))),
   };
 }
 

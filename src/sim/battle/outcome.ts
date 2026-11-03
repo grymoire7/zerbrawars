@@ -13,16 +13,30 @@ export function freePathogens(battle: BattleState): number {
 }
 
 /**
- * Over once tissue health reaches the backup line (backup arrives at once), once no visible
- * pathogen is left ("all clear"; no arrivals exist yet), or once `maxTurns` turns have resolved
- * (turn is then maxTurns + 1). Reasons in that order of priority.
+ * A sealed germ carried inside a swarm is "alive inside" (its carried-load residual roll goes on
+ * each turn). Walled-off contents are not: a granuloma holds them for good.
+ */
+export function aliveInside(battle: BattleState): number {
+  return battle.swarms.reduce((n, s) => n + s.load.length, 0);
+}
+
+/**
+ * Over once tissue health reaches the backup line (backup arrives at once), once "all clear" (no
+ * visible pathogen on the board, nothing alive inside a swarm and no arrival still due; a swallowed
+ * sealed germ keeps the fight open until its carried roll kills it, it is walled off or the clock
+ * runs out), or once `maxTurns` turns have resolved (turn is then maxTurns + 1). Reasons in that
+ * order of priority; the all-clear reason keeps the name "noFreePathogens".
  */
 export function battleStatus(battle: BattleState): BattleStatus {
   const turnsLeft = Math.max(0, battle.maxTurns - battle.turn + 1);
   if (battle.tissueHealth <= PARAMS.outcome.backupTissueHealth) {
     return { over: true, reason: "backup", turnsLeft: 0 };
   }
-  if (freePathogens(battle) === 0) {
+  if (
+    freePathogens(battle) === 0 &&
+    aliveInside(battle) === 0 &&
+    battle.arrivals.length === 0
+  ) {
     return { over: true, reason: "noFreePathogens", turnsLeft: 0 };
   }
   if (turnsLeft === 0) return { over: true, reason: "maxTurns", turnsLeft };

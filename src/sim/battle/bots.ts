@@ -106,7 +106,17 @@ function landingTargets(
   skip: (p: Pathogen) => boolean = () => false,
 ): Coord[] {
   return telegraph(t.battle, t.orders).flatMap((m) => {
-    const p = t.battle.pathogens.find((q) => q.id === m.pathogenId);
+    // An arrival has no pathogen yet: stand in for it with one of its kind.
+    const p =
+      m.type === "arrive" && m.kind
+        ? {
+            id: m.pathogenId,
+            kind: m.kind,
+            size: m.sizeAfter,
+            at: m.from,
+            hidden: false,
+          }
+        : t.battle.pathogens.find((q) => q.id === m.pathogenId);
     return m.to && !m.blockedBy && !m.cancelledBy && p && !skip(p)
       ? [m.to]
       : [];
@@ -137,6 +147,13 @@ function carefulPlay(
     t.swarm.at,
     visible(t.battle).filter((p) => canTake(t.swarm)(p) && !leave(p)),
   );
+  // With the fight kept open by what is swallowed, a loaded swarm with no leaky germ left to
+  // chase would just sit heating its tile: wall the load off.
+  if (
+    t.swarm.load.length > 0 &&
+    !visible(t.battle).some((p) => wallOf(p) === "leaky")
+  )
+    return wallOff(t);
   return goal ? (toward(t, goal.at, true) ?? toward(t, goal.at)) : null;
 }
 

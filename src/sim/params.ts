@@ -167,6 +167,21 @@ export const PARAMS = {
     ],
     maxReservoirs: 2,
   },
+  /**
+   * Arrivals (battle-depth slice 2). A full battle's exposures each send a second group `delay`
+   * turns in (turn 1 + delay), for at most `maxSecondGroups` of them, of size exposure size -
+   * `sizeDrop` (at least 1), to a free door from setup.doors. A skirmish puts `skirmishFirst` of
+   * its threats on the board at the start; the rest arrive `skirmishDelay` turns in, at the tile
+   * they were drawn on, early enough to be fought inside its 4 turns. Tuned with the survey in
+   * sim/battleDepth.balance.test.ts.
+   */
+  waves: {
+    delay: 3,
+    sizeDrop: 1,
+    maxSecondGroups: 4,
+    skirmishDelay: 2,
+    skirmishFirst: 1,
+  },
   maxTissueHealth: 20,
   /**
    * A full battle ends after this many turns, or sooner on "all clear" (no visible pathogen left)

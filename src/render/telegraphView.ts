@@ -278,6 +278,8 @@ export function createTelegraphView(
       group.clear();
       for (const m of marks) {
         if (m.cancelledBy || m.cancelledByCharge) continue;
+        // The incoming mark is battle-depth slice 4; until then arrivals are not drawn.
+        if (m.type === "arrive") continue;
         if (m.type === "stall") drawStall(m);
         else if (m.type === "grow" || !m.to) {
           const size = state.pathogens.find((p) => p.id === m.pathogenId)?.size;

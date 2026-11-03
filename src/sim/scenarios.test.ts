@@ -92,9 +92,12 @@ describe("skirmish", () => {
     for (let seed = 1; seed <= 200; seed++) {
       const battle = loadScenario("skirmish", seed) as BattleState;
       expect(battle).toMatchObject({ kind: "skirmish", maxTurns: S.maxTurns });
-      expect(battle.pathogens.length).toBeGreaterThanOrEqual(S.threats.min);
-      expect(battle.pathogens.length).toBeLessThanOrEqual(S.threats.max);
+      const threats = battle.pathogens.length + battle.arrivals.length;
+      expect(threats).toBeGreaterThanOrEqual(S.threats.min);
+      expect(threats).toBeLessThanOrEqual(S.threats.max);
+      expect(battle.pathogens).toHaveLength(PARAMS.waves.skirmishFirst);
       expect(battle.pathogens.every((p) => wallOf(p) === "leaky")).toBe(true);
+      expect(battle.arrivals.every((a) => wallOf(a) === "leaky")).toBe(true);
       expect(turnOneTargets(battle)).toEqual([]);
       for (const p of battle.pathogens) {
         expect(PARAMS.setup.doors.some((d) => sameCoord(d, p.at))).toBe(true);

@@ -155,6 +155,8 @@ export function playCampaign(
   bot: CampaignBot,
   seed: number,
   opts: Omit<CampaignOptions, "seed"> = {},
+  /** Called with each battle's opening state before it is played (for surveys). */
+  onBattle?: (start: BattleState) => void,
 ): Campaign {
   let rng = rngFromSeed(seed * 31 + 7);
   const roll = () => {
@@ -167,6 +169,7 @@ export function playCampaign(
     c = playLifeWeek(c, bot(roll));
     c = endWeek(c).state;
     if (c.mode === "battle") {
+      onBattle?.(c.battle as BattleState);
       c = syncBattle(
         c,
         thoughtfulPlay(c.battle as BattleState, seed).final,

@@ -2,7 +2,7 @@ import { sameCoord } from "../board";
 import { PARAMS } from "../params";
 import type { PathogenKindId } from "../pathogens";
 import { rngInt, type RngState } from "../rng";
-import type { BattleKind, Coord } from "../types";
+import type { Arrival, BattleKind, Coord } from "../types";
 import { battleDueReasons, battleKindOf, weekOver } from "./calendar";
 import { cardDef } from "./cards";
 import type { BattleReason, LifeState } from "./types";
@@ -39,6 +39,8 @@ export interface Loadout {
   /** 0..1 adherence over the last days; sets the aura and the support charges. */
   readonly medLevel: number;
   readonly exposures: readonly Exposure[];
+  /** Later groups (see Arrival); omitted = none, so the battle is just its exposures. */
+  readonly arrivals?: readonly Arrival[];
   /** Exposure dose: added to every exposure's size (capped at the max size). 0 = as listed. */
   readonly load: number;
   /** At most PARAMS.setup.maxReservoirs are used, in list order. */
@@ -79,6 +81,53 @@ export function skirmishExposures(rng: RngState): Exposure[] {
 }
 
 /**
+ * A skirmish's threats in two groups: the first PARAMS.waves.skirmishFirst start on the board, the
+ * rest arrive PARAMS.waves.skirmishDelay turns later at the tile they were drawn on.
+ */
+export function skirmishWaves(
+  threats: readonly Exposure[],
+): Pick<Loadout, "exposures" | "arrivals"> {
+  const W = PARAMS.waves;
+  return {
+    exposures: threats.slice(0, W.skirmishFirst),
+    arrivals: threats.slice(W.skirmishFirst).map((e) => ({
+      turn: 1 + W.skirmishDelay,
+      kind: e.kind,
+      size: e.size,
+      door: e.at as Coord,
+    })),
+  };
+}
+
+/**
+ * A full battle's second groups: one per exposure (at most PARAMS.waves.maxSecondGroups), `PARAMS.waves.delay` turns in, a size smaller
+ * (at least 1), each at the first door of PARAMS.setup.doors that no earlier arrival uses,
+ * preferring doors no exposure starts on. A group with no door left is dropped.
+ */
+export function fullWaves(exposures: readonly Exposure[]): Arrival[] {
+  const W = PARAMS.waves;
+  const starts: Coord[] = exposures.flatMap((e) => (e.at ? [e.at] : []));
+  const used: Coord[] = [];
+  const free = (d: Coord, list: readonly Coord[]) =>
+    !list.some((u) => sameCoord(u, d));
+  return exposures.slice(0, W.maxSecondGroups).flatMap((e): Arrival[] => {
+    const door =
+      PARAMS.setup.doors.find((d) => free(d, used) && free(d, starts)) ??
+      PARAMS.setup.doors.find((d) => free(d, used));
+    if (!door) return [];
+    used.push(door);
+    return [
+      {
+        turn: 1 + W.delay,
+        kind: e.kind,
+        size: Math.max(1, e.size - W.sizeDrop),
+        door,
+      },
+    ];
+  });
+}
+
+/**
  * Builds the battle's loadout from the life phase as it stands (normally once the week is over):
  * the week-end med level, every pathogen that landed, the carried reservoirs, the doctor flag and
  * the energy left. Flared reservoirs start visible. Each exposure takes the first tile of its
@@ -94,7 +143,7 @@ export function loadoutFromLife(life: LifeState): Loadout {
       kind: "skirmish",
       seed: battleSeed(life),
       medLevel: life.medLevel,
-      exposures: skirmishExposures(life.rng),
+      ...skirmishWaves(skirmishExposures(life.rng)),
       load: 0,
       reservoirs: [],
       doctorVisit: false,
@@ -115,15 +164,17 @@ export function loadoutFromLife(life: LifeState): Loadout {
   const fallback = PARAMS.setup.doors.filter(
     (c) => !taken.some((t) => sameCoord(t, c)),
   );
+  const placed = exposures.map((e) =>
+    e.at ? e : { ...e, at: fallback.shift() as Coord },
+  );
   return {
     schema: 1,
     scenario: `life-week-${life.week}`,
     kind: "full",
     seed: battleSeed(life),
     medLevel: life.medLevel,
-    exposures: exposures.map((e) =>
-      e.at ? e : { ...e, at: fallback.shift() as Coord },
-    ),
+    exposures: placed,
+    arrivals: fullWaves(placed),
     load: 0,
     // A flared reservoir is an active infection now, so it starts visible.
     reservoirs: life.reservoirs.map((r) => {

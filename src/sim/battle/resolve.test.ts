@@ -44,6 +44,18 @@ function promise(battle: BattleState): {
       events.push(i.type === "spread" ? "Spread" : "Spored");
     }
   }
+  // Arrivals land after the intents, on a free tile (no swarm moves with zero orders).
+  for (const a of battle.arrivals.filter((q) => q.turn <= battle.turn)) {
+    if (pathogens.some((q) => sameCoord(q.at, a.door))) continue;
+    pathogens.push({
+      id: `p${nextId++}`,
+      kind: a.kind,
+      size: a.size,
+      at: a.door,
+      hidden: false,
+    });
+    events.push("Arrived");
+  }
   return { pathogens, events };
 }
 
@@ -68,7 +80,7 @@ const ACTIONS: Record<string, string[]> = {
   duel: ["Blocked", "Grew", "Spored", "Spread"],
   "first-board": ["Blocked", "Grew", "Spored", "Spread"],
   "lake-week": ["Blocked", "Grew", "Spored", "Spread"],
-  skirmish: ["Grew", "Spread"],
+  skirmish: ["Arrived", "Grew", "Spread"],
 };
 
 describe.each(Object.keys(ACTIONS))(
@@ -90,11 +102,13 @@ describe.each(Object.keys(ACTIONS))(
           );
           expect(acts.map((e) => e.type)).toEqual(expected.events);
           const acting = battle.intents.filter((i) => i.type !== "stall");
-          acts.forEach((e, k) => {
-            expect("pathogenId" in e && e.pathogenId).toBe(
-              acting[k].pathogenId,
-            );
-          });
+          acts
+            .filter((e) => e.type !== "Arrived")
+            .forEach((e, k) => {
+              expect("pathogenId" in e && e.pathogenId).toBe(
+                acting[k].pathogenId,
+              );
+            });
           for (const e of acts) seen.add(e.type);
           expect(state.swarms).toEqual(battle.swarms);
           expect(state.turn).toBe(battle.turn + 1);

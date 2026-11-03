@@ -78,6 +78,7 @@
   - _...15 more_
 - `src/sim/battle/outcome.ts`
   - function freePathogens: (battle) => number
+  - function aliveInside: (battle) => number
   - function battleStatus: (battle) => BattleStatus
   - function reservoirs: (battle) => Reservoir[]
   - function gradeOutcome: (battle) => BattleOutcome
@@ -119,7 +120,7 @@
 - `src/sim/campaignBots.ts`
   - function thoughtfulPlay: (start, seed) => void
   - function playLifeWeek: (c, plan) => Campaign
-  - function playCampaign: (bot, seed, opts, "seed">) => Campaign
+  - function playCampaign: (bot, seed, opts, "seed">, /** Called with each battle's opening state before it is played (for surveys) => void
   - interface CampaignPlan
   - type DoctorPolicy
   - type CampaignBot
@@ -156,11 +157,11 @@
 - `src/sim/life/loadout.ts`
   - function battleSeed: (life) => number
   - function skirmishExposures: (rng) => Exposure[]
+  - function skirmishWaves: (threats) => Pick<Loadout, "exposures" | "arrivals">
+  - function fullWaves: (exposures) => Arrival[]
   - function loadoutFromLife: (life) => Loadout
   - function battleDue: (life) => BattleDue
-  - interface Exposure
-  - interface CarriedReservoir
-  - _...2 more_
+  - _...4 more_
 - `src/sim/life/meds.ts`
   - function medLevelOf: (doses) => number
   - function streakOf: (doses) => number

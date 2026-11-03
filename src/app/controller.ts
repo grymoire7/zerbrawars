@@ -743,6 +743,10 @@ export function describeEvent(e: SimEvent): string {
       return `${e.swarmId} revealed a hidden ${pathogenKind(e.kind).label} ${e.pathogenId} (size ${e.size}) at ${xy(e.at)}`;
     case "ResidualKill":
       return `${e.swarmId} residual kill: ${e.success ? "succeeded" : "failed"} (${pct(e.chance)})`;
+    case "Arrived":
+      return `${pathogenKind(e.kind).label} ${e.pathogenId} (size ${e.size}) arrived at ${xy(e.at)}`;
+    case "ArrivalBlocked":
+      return `${pathogenKind(e.kind).label} arrival at ${xy(e.at)} ${e.fate === "died" ? "died on" : "delayed by"} ${e.swarmId ?? "something in the way"}`;
     case "Walled":
       return `${e.swarmId} walled off a granuloma at ${xy(e.at)}`;
     case "Loaded":

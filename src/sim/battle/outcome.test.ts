@@ -4,7 +4,7 @@ import { loadScenario } from "../scenarios";
 import type { BattleState, Contained, Order } from "../types";
 import { validateBattle } from "../validate";
 import { BOTS, playBattle } from "./bots";
-import { battleStatus, gradeOutcome, reservoirs } from "./outcome";
+import { aliveInside, battleStatus, gradeOutcome, reservoirs } from "./outcome";
 import { resolveTurn } from "./resolve";
 
 // Duel board: s1 1,6  s2 3,6  s3 5,6; p1 strep (leaky) size 2 at 1,2; p2 aspergillus (sealed)
@@ -55,20 +55,69 @@ describe("battleStatus", () => {
     expect(() => resolveTurn(battle, [])).toThrow("the battle is over");
   });
 
-  it("ends as soon as no visible pathogen is left; hidden tokens do not count", () => {
+  it("ends once the board is clear and nothing is alive inside a swarm; hidden tokens do not count", () => {
+    // s1 kills the strep, s3 swallows the mold, which then keeps the fight open.
     const { battle, orders } = bothInReach(0);
     const r = resolveTurn(battle, orders);
-    expect(r.status).toEqual({
+    expect(r.state.pathogens).toEqual([]);
+    expect(r.state.swarms.find((s) => s.id === "s3")?.load).toEqual([MOLD]);
+    expect(r.status.over).toBe(false);
+    expect(r.state.intents).toEqual([]);
+    // Walled off, the mold no longer keeps it open.
+    const walled = resolveTurn(r.state, [{ type: "wallOff", swarmId: "s3" }]);
+    expect(walled.status).toEqual({
       over: true,
       reason: "noFreePathogens",
       turnsLeft: 0,
     });
-    expect(r.state.intents).toEqual([]);
     const hiddenOnly: BattleState = {
       ...load(),
       pathogens: load().pathogens.map((p) => ({ ...p, hidden: true })),
     };
     expect(battleStatus(hiddenOnly).reason).toBe("noFreePathogens");
+  });
+
+  it("keeps the fight open while a sealed germ is alive inside a swarm, up to the clock", () => {
+    const { battle, orders } = bothInReach(0);
+    let state = resolveTurn(battle, orders).state;
+    // The carried roll never succeeds at 0, so only the clock ends it.
+    let turns = 1;
+    while (!battleStatus(state).over) {
+      const r = resolveTurn({ ...state, tissueHealth: 20 }, []);
+      state = r.state;
+      turns++;
+      expect(aliveInside(state) > 0 || r.status.over).toBe(true);
+    }
+    expect(battleStatus(state).reason).toBe("maxTurns");
+    expect(turns).toBe(PARAMS.maxTurns);
+    expect(gradeOutcome(state).grade).toBe("contained");
+  });
+
+  it("ends as soon as the carried germ dies inside", () => {
+    const { battle, orders } = bothInReach(0);
+    const r = resolveTurn(battle, orders);
+    // A residual chance of 1 from now on: the roll is made the turn after the swallow.
+    const next = resolveTurn({ ...r.state, residualKillChance: 1 }, []);
+    expect(aliveInside(next.state)).toBe(0);
+    expect(next.status).toMatchObject({
+      over: true,
+      reason: "noFreePathogens",
+    });
+    expect(gradeOutcome(next.state).grade).toBe("cleared");
+  });
+
+  it("is not over while an arrival is pending, and over once it has landed and been cleared", () => {
+    const base = { ...load(), pathogens: [], intents: [] } as BattleState;
+    const due: BattleState = {
+      ...base,
+      arrivals: [{ turn: 2, kind: "strep", size: 1, door: { x: 3, y: 0 } }],
+    };
+    expect(battleStatus(base)).toMatchObject({ over: true });
+    expect(battleStatus(due)).toMatchObject({ over: false });
+    expect(battleStatus({ ...due, turn: PARAMS.maxTurns + 1 })).toMatchObject({
+      over: true,
+      reason: "maxTurns",
+    });
   });
 });
 

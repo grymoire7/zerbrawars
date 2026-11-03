@@ -3,8 +3,8 @@
 > **Stack:** raw-http | none | unknown | typescript
 
 > 0 routes | 0 models | 0 components | 53 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,600 tokens per conversation.**
-> **Last scanned:** 2026-11-03 15:52 — re-run after significant changes
+> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,500 tokens per conversation.**
+> **Last scanned:** 2026-11-03 18:00 — re-run after significant changes
 
 ---
 
@@ -88,6 +88,7 @@
   - _...15 more_
 - `src/sim/battle/outcome.ts`
   - function freePathogens: (battle) => number
+  - function aliveInside: (battle) => number
   - function battleStatus: (battle) => BattleStatus
   - function reservoirs: (battle) => Reservoir[]
   - function gradeOutcome: (battle) => BattleOutcome
@@ -129,7 +130,7 @@
 - `src/sim/campaignBots.ts`
   - function thoughtfulPlay: (start, seed) => void
   - function playLifeWeek: (c, plan) => Campaign
-  - function playCampaign: (bot, seed, opts, "seed">) => Campaign
+  - function playCampaign: (bot, seed, opts, "seed">, /** Called with each battle's opening state before it is played (for surveys) => void
   - interface CampaignPlan
   - type DoctorPolicy
   - type CampaignBot
@@ -166,11 +167,11 @@
 - `src/sim/life/loadout.ts`
   - function battleSeed: (life) => number
   - function skirmishExposures: (rng) => Exposure[]
+  - function skirmishWaves: (threats) => Pick<Loadout, "exposures" | "arrivals">
+  - function fullWaves: (exposures) => Arrival[]
   - function loadoutFromLife: (life) => Loadout
   - function battleDue: (life) => BattleDue
-  - interface Exposure
-  - interface CarriedReservoir
-  - _...2 more_
+  - _...4 more_
 - `src/sim/life/meds.ts`
   - function medLevelOf: (doses) => number
   - function streakOf: (doses) => number
@@ -308,46 +309,46 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/sim/params.ts` — imported by **47** files
-- `src/sim/types.ts` — imported by **44** files
-- `src/sim/pathogens.ts` — imported by **21** files
+- `src/sim/params.ts` — imported by **49** files
+- `src/sim/types.ts` — imported by **46** files
+- `src/sim/pathogens.ts` — imported by **22** files
+- `src/sim/battle/setup.ts` — imported by **18** files
+- `src/sim/scenarios.ts` — imported by **18** files
+- `src/sim/board.ts` — imported by **18** files
 - `src/sim/rng.ts` — imported by **18** files
-- `src/sim/battle/setup.ts` — imported by **17** files
-- `src/sim/scenarios.ts` — imported by **17** files
-- `src/sim/board.ts` — imported by **17** files
+- `src/sim/battle/intents.ts` — imported by **16** files
+- `src/sim/life/loadout.ts` — imported by **16** files
 - `src/theme/palette.ts` — imported by **16** files
-- `src/sim/battle/intents.ts` — imported by **15** files
-- `src/sim/life/loadout.ts` — imported by **15** files
-- `src/sim/battle/outcome.ts` — imported by **14** files
-- `src/sim/validate.ts` — imported by **14** files
+- `src/sim/battle/outcome.ts` — imported by **15** files
+- `src/sim/validate.ts` — imported by **15** files
+- `src/sim/battle/resolve.ts` — imported by **14** files
 - `src/sim/life/types.ts` — imported by **13** files
-- `src/sim/battle/resolve.ts` — imported by **13** files
 - `src/sim/campaign.ts` — imported by **12** files
 - `src/sim/life/cards.ts` — imported by **9** files
+- `src/sim/battle/bots.ts` — imported by **8** files
 - `src/sim/life/calendar.ts` — imported by **7** files
 - `src/app/run.ts` — imported by **7** files
 - `src/sim/score.ts` — imported by **6** files
-- `src/sim/battle/orders.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
-- `src/sim/params.ts` ← `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts` +42 more
-- `src/sim/types.ts` ← `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +39 more
-- `src/sim/pathogens.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/render/insetView.ts`, `src/sim/battle/bots.ts` +16 more
+- `src/sim/params.ts` ← `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts`, `src/app/campaignModel.ts` +44 more
+- `src/sim/types.ts` ← `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +41 more
+- `src/sim/pathogens.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/render/insetView.ts`, `src/sim/battle/bots.ts` +17 more
+- `src/sim/battle/setup.ts` ← `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts`, `src/app/main.ts` +13 more
+- `src/sim/scenarios.ts` ← `src/app/battleScreen.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts`, `src/app/loadoutOptions.ts`, `src/app/main.ts` +13 more
+- `src/sim/board.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/render/boardView.ts`, `src/render/orderView.ts`, `src/sim/battle/arrivals.test.ts` +13 more
 - `src/sim/rng.ts` ← `src/sim/battle/bots.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/intents.ts`, `src/sim/battle/orders.test.ts` +13 more
-- `src/sim/battle/setup.ts` ← `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts`, `src/app/main.ts` +12 more
-- `src/sim/scenarios.ts` ← `src/app/battleScreen.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts`, `src/app/loadoutOptions.ts`, `src/app/main.ts` +12 more
-- `src/sim/board.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/render/boardView.ts`, `src/render/orderView.ts`, `src/sim/battle/bots.ts` +12 more
+- `src/sim/battle/intents.ts` ← `src/app/battleScreen.ts`, `src/app/controller.ts`, `src/app/info.test.ts`, `src/app/info.ts`, `src/render/telegraphView.ts` +11 more
+- `src/sim/life/loadout.ts` ← `src/app/campaignModel.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.ts`, `src/app/run.ts` +11 more
 - `src/theme/palette.ts` ← `src/app/main.ts`, `src/render/boardView.ts`, `src/render/granulomaView.ts`, `src/render/insetView.ts`, `src/render/labels.ts` +11 more
-- `src/sim/battle/intents.ts` ← `src/app/battleScreen.ts`, `src/app/controller.ts`, `src/app/info.test.ts`, `src/app/info.ts`, `src/render/telegraphView.ts` +10 more
-- `src/sim/life/loadout.ts` ← `src/app/campaignModel.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.ts`, `src/app/run.ts` +10 more
 
 ---
 
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 33 test files found
+> 35 test files found
 
 ---
 

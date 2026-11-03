@@ -1,7 +1,10 @@
-import { sameCoord, tileId } from "../board";
+import { distance, sameCoord, tileId } from "../board";
 import { PARAMS } from "../params";
+import { wallOf } from "../pathogens";
 import type {
+  Arrival,
   BattleState,
+  Coord,
   BattleStatus,
   Order,
   Pathogen,
@@ -134,8 +137,101 @@ const runIntents: Phase = (battle) => {
       parentSize,
     });
   }
-  return { state: { ...battle, pathogens, intents: [], nextId }, events };
+  const landed = runArrivals(battle, pathogens, nextId, events);
+  return {
+    state: {
+      ...battle,
+      pathogens: landed.pathogens,
+      arrivals: landed.arrivals,
+      intents: [],
+      nextId: landed.nextId,
+    },
+    events,
+  };
 };
+
+/**
+ * The nearest door of PARAMS.setup.doors (ties in list order) with nobody on it and no arrival
+ * already headed there on `turn`; `from` itself if every door is taken.
+ */
+function freeDoor(
+  battle: BattleState,
+  pathogens: readonly Pathogen[],
+  pending: readonly Arrival[],
+  from: Coord,
+  turn: number,
+): Coord {
+  const taken = (c: Coord) =>
+    battle.swarms.some((s) => sameCoord(s.at, c)) ||
+    pathogens.some((p) => sameCoord(p.at, c)) ||
+    battle.granulomas.some((g) => sameCoord(g.at, c)) ||
+    pending.some((a) => a.turn === turn && sameCoord(a.door, c));
+  const free = PARAMS.setup.doors.filter((d) => !taken(d));
+  return (
+    [...free].sort((a, b) => distance(from, a) - distance(from, b))[0] ?? from
+  );
+}
+
+/**
+ * Lands the arrivals due this turn, after the pathogens' intents (a spread never targets a due
+ * door). A swarm on the door blocks the group: leaky dies, sealed (or any group whose door holds a
+ * pathogen or granuloma) tries again next turn at the nearest free door.
+ */
+function runArrivals(
+  battle: BattleState,
+  pathogens: Pathogen[],
+  nextId: number,
+  events: SimEvent[],
+): { pathogens: Pathogen[]; arrivals: Arrival[]; nextId: number } {
+  const arrivals: Arrival[] = [];
+  const due = battle.arrivals.filter((a) => a.turn <= battle.turn);
+  const later = battle.arrivals.filter((a) => a.turn > battle.turn);
+  const retries: Arrival[] = [];
+  for (const a of due) {
+    const swarm = battle.swarms.find((s) => sameCoord(s.at, a.door));
+    const busy =
+      pathogens.some((p) => sameCoord(p.at, a.door)) ||
+      battle.granulomas.some((g) => sameCoord(g.at, a.door));
+    if (!swarm && !busy) {
+      const id = `p${nextId++}`;
+      pathogens.push({
+        id,
+        kind: a.kind,
+        size: a.size,
+        at: a.door,
+        hidden: false,
+      });
+      events.push({
+        type: "Arrived",
+        pathogenId: id,
+        kind: a.kind,
+        size: a.size,
+        at: a.door,
+      });
+      continue;
+    }
+    const dies = swarm !== undefined && wallOf(a) === "leaky";
+    events.push({
+      type: "ArrivalBlocked",
+      kind: a.kind,
+      size: a.size,
+      at: a.door,
+      swarmId: swarm?.id ?? null,
+      fate: dies ? "died" : "delayed",
+    });
+    if (!dies) {
+      const turn = battle.turn + 1;
+      retries.push({
+        ...a,
+        turn,
+        door: freeDoor(battle, pathogens, [...later, ...retries], a.door, turn),
+      });
+    }
+  }
+  arrivals.push(...later, ...retries);
+  arrivals.sort((x, y) => x.turn - y.turn);
+  return { pathogens, arrivals, nextId };
+}
 
 /** Player orders, pathogen intents, then the inflammation and damage tick. */
 function runPhases(

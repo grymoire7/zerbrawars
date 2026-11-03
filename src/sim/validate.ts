@@ -102,6 +102,20 @@ export function validateBattle(battle: BattleState): string[] {
       : PARAMS.maxTurns;
   if (battle.maxTurns !== turns)
     problems.push(`a ${battle.kind} battle with ${battle.maxTurns} turns`);
+  const doorsDue = new Set<string>();
+  for (const a of battle.arrivals) {
+    const at = `arrival of ${a.kind} at ${a.door.x},${a.door.y}`;
+    checkKindAndSize(at, a);
+    if (!Number.isInteger(a.turn) || a.turn < battle.turn)
+      problems.push(`${at} has invalid turn ${a.turn}`);
+    if (!inBounds(board, a.door)) problems.push(`${at} is out of bounds`);
+    else {
+      const key = `${a.turn}:${tileId(board, a.door)}`;
+      if (doorsDue.has(key))
+        problems.push(`two arrivals at ${at} on turn ${a.turn}`);
+      doorsDue.add(key);
+    }
+  }
   const chance = battle.residualKillChance;
   if (!(chance >= 0 && chance <= 1))
     problems.push(`residualKillChance ${chance} is outside 0..1`);

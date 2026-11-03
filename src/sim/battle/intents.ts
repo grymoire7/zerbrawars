@@ -8,7 +8,7 @@ import {
   tileId,
 } from "../board";
 import { PARAMS } from "../params";
-import { pathogenKind } from "../pathogens";
+import { pathogenKind, type PathogenKindId } from "../pathogens";
 import { rngInt, rngNext, type RngState } from "../rng";
 import type {
   BattleState,
@@ -27,13 +27,17 @@ import { supportProblem } from "./support";
 
 /**
  * Tiles a spread or spore may target right now: in bounds and holding no pathogen (hidden ones
- * included) or granuloma. Swarm tiles stay legal; a swarm there blocks the action at resolve.
+ * included) or granuloma, and not the door of an arrival due this turn or the next (a spread landing there would block it). Swarm tiles stay legal; a
+ * swarm there blocks the action at resolve.
  */
 export function landingBlockers(battle: BattleState): Set<TileId> {
   const { board } = battle;
   return new Set([
     ...battle.pathogens.map((p) => tileId(board, p.at)),
     ...battle.granulomas.map((g) => tileId(board, g.at)),
+    ...battle.arrivals
+      .filter((a) => a.turn <= battle.turn + 1)
+      .map((a) => tileId(board, a.door)),
   ]);
 }
 
@@ -138,10 +142,15 @@ export function initBattle(battle: BattleState): BattleState {
   return generateIntents(battle);
 }
 
-/** What the telegraph draws for one pathogen. */
+/**
+ * What the telegraph draws for one pathogen, or for an arrival due this turn (type "arrive":
+ * `from` and `to` are both its door, `pathogenId` is "arrive:<index>" and `kind` is set).
+ */
 export interface TelegraphMark {
   readonly pathogenId: PathogenId;
-  readonly type: Intent["type"];
+  readonly type: Intent["type"] | "arrive";
+  /** Set on arrive marks only. */
+  readonly kind?: PathogenKindId;
   readonly from: Coord;
   /** Target tile for spread/spore, null for grow and stall. */
   readonly to: Coord | null;
@@ -180,7 +189,25 @@ export function telegraph(
     supportProblem(current, orders, support) === null
       ? support
       : null;
-  return battle.intents.flatMap((i): TelegraphMark[] => {
+  const arrivals = battle.arrivals.flatMap((a, index): TelegraphMark[] => {
+    if (a.turn > battle.turn) return [];
+    const swarm = battle.swarms.find((s) => sameCoord(s.at, a.door));
+    return [
+      {
+        pathogenId: `arrive:${index}`,
+        type: "arrive",
+        kind: a.kind,
+        from: a.door,
+        to: a.door,
+        sizeAfter: a.size,
+        childSize: a.size,
+        blockedBy: swarm?.id ?? null,
+        cancelledBy: null,
+        cancelledByCharge: null,
+      },
+    ];
+  });
+  const marks = battle.intents.flatMap((i): TelegraphMark[] => {
     const p = battle.pathogens.find((q) => q.id === i.pathogenId);
     if (!p) return [];
     const cancelledBy = engulfedBy.get(p.id) ?? null;
@@ -216,4 +243,5 @@ export function telegraph(
       },
     ];
   });
+  return [...marks, ...arrivals];
 }

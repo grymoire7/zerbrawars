@@ -89,6 +89,7 @@ export function battleFromLoadout(loadout: Loadout): BattleState {
     swarms,
     pathogens,
     granulomas: [],
+    arrivals: [...(loadout.arrivals ?? [])].sort((a, b) => a.turn - b.turn),
     intents: [],
     meds: medStateFor(loadout.medLevel, loadout.doctorVisit),
     tissueHealth: PARAMS.maxTissueHealth,

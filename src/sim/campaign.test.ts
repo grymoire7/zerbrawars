@@ -501,8 +501,18 @@ describe("skirmishes", () => {
       const b = c.battle as BattleState;
       expect(c).toMatchObject({ mode: "battle", battleKind: "skirmish" });
       expect(b).toMatchObject({ kind: "skirmish", maxTurns: S.maxTurns });
-      expect(b.pathogens.length).toBeGreaterThanOrEqual(S.threats.min);
-      expect(b.pathogens.length).toBeLessThanOrEqual(S.threats.max);
+      // The threats come in two groups: the first on the board, the rest arriving.
+      const threats = b.pathogens.length + b.arrivals.length;
+      expect(threats).toBeGreaterThanOrEqual(S.threats.min);
+      expect(threats).toBeLessThanOrEqual(S.threats.max);
+      expect(b.pathogens).toHaveLength(PARAMS.waves.skirmishFirst);
+      for (const a of b.arrivals) {
+        expect(a).toMatchObject({
+          turn: 1 + PARAMS.waves.skirmishDelay,
+          kind: S.threats.kind,
+          size: S.threats.size,
+        });
+      }
       for (const p of b.pathogens) {
         expect(p).toMatchObject({
           kind: S.threats.kind,

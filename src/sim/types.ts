@@ -163,6 +163,19 @@ export interface BattleRng {
   readonly resolution: RngState;
 }
 
+/**
+ * A group of one pathogen kind due at a door on `turn` (it lands in that turn's intents phase,
+ * after the player's orders). A swarm standing on the door blocks it: a leaky group dies there, a
+ * sealed one comes back next turn at the nearest free door. A door that is taken some other way
+ * (a pathogen or granuloma on it) also sends the group on to the next turn.
+ */
+export interface Arrival {
+  readonly turn: number;
+  readonly kind: PathogenKindId;
+  readonly size: number;
+  readonly door: Coord;
+}
+
 /** A full battle (something landed, flared or was found), or the always-on patrol's skirmish. */
 export type BattleKind = "full" | "skirmish";
 
@@ -176,6 +189,8 @@ export interface BattleState {
   readonly swarms: readonly Swarm[];
   readonly pathogens: readonly Pathogen[];
   readonly granulomas: readonly Granuloma[];
+  /** Groups still to arrive, in turn order. The battle is not over while any are pending. */
+  readonly arrivals: readonly Arrival[];
   /** Telegraphed intents for the coming resolve, at most one per pathogen. */
   readonly intents: readonly Intent[];
   readonly meds: MedState;
@@ -295,6 +310,26 @@ export type SimEvent =
       readonly intent: "spread" | "spore";
       readonly at: Coord;
       readonly swarmId: SwarmId;
+    }
+  | {
+      /** A group arrived at its door (see Arrival). */
+      readonly type: "Arrived";
+      readonly pathogenId: PathogenId;
+      readonly kind: PathogenKindId;
+      readonly size: number;
+      readonly at: Coord;
+    }
+  | {
+      /**
+       * An arrival could not land on `at`: a swarm stood there (swarmId) or something else did
+       * (null). "died" = a leaky group met a swarm; "delayed" = it tries again next turn.
+       */
+      readonly type: "ArrivalBlocked";
+      readonly kind: PathogenKindId;
+      readonly size: number;
+      readonly at: Coord;
+      readonly swarmId: SwarmId | null;
+      readonly fate: "died" | "delayed";
     }
   | {
       readonly type: "Walled";
