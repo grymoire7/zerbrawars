@@ -7,6 +7,8 @@ import {
   type DoctorPolicy,
 } from "./campaignBots";
 import type { CarriedReservoir } from "./life/loadout";
+import { LIFE_BOTS } from "./life/bots";
+import { PARAMS } from "./params";
 import { validateCampaign } from "./validate";
 
 // Whole-campaign balance: each strategy plays the same seeded two-week campaigns, every battle by
@@ -253,3 +255,68 @@ describe.each(Object.keys(RESERVOIRS))(
     }
   },
 );
+
+// Battle length (battle-depth slice 1: doors, a 6-turn / 4-turn clock, the backup stop). Without
+// arrivals (slice 2) the thoughtful player still empties the board by turn 2-3, so the design's
+// "full battles average 3.5+ turns" is not reachable yet; these pin what slice 1 does deliver.
+describe("battle length", () => {
+  const LENGTH_SEEDS = 150;
+  const careless: CampaignBot = () => ({
+    ...LIFE_BOTS.riskySkipMeds(() => 0),
+    packPills: false,
+    doctor: "never",
+  });
+  const BOTS: Record<string, CampaignBot> = { ...CAMPAIGN_BOTS, careless };
+
+  function lengths(name: string, kind: "full" | "skirmish") {
+    let n = 0;
+    let turns = 0;
+    let maxLost = 0;
+    let maxTurns = 0;
+    for (let seed = 1; seed <= LENGTH_SEEDS; seed++) {
+      for (const h of playCampaign(BOTS[name], seed).history) {
+        if (h.result.kind === "quiet" || h.result.battleKind !== kind) continue;
+        const o = h.result.outcome;
+        n++;
+        turns += o.turnsPlayed;
+        maxLost = Math.max(maxLost, o.tissue.lost);
+        maxTurns = Math.max(maxTurns, o.turnsPlayed);
+      }
+    }
+    return { n, mean: turns / Math.max(1, n), maxLost, maxTurns };
+  }
+
+  it("runs skirmishes past turn 1 (first contact is on turn 2) and within the clock", () => {
+    for (const name of ["home", "smarter", "risky", "mixed", "skipMeds"]) {
+      const r = lengths(name, "skirmish");
+      expect(r.n, name).toBeGreaterThan(0);
+      expect(r.mean, name).toBeGreaterThan(1.6);
+      expect(r.maxTurns, name).toBeLessThanOrEqual(
+        PARAMS.campaign.skirmish.maxTurns,
+      );
+    }
+  });
+
+  it("makes full battles last longer than one turn for anyone who takes a risk", () => {
+    for (const name of ["risky", "mixed", "skipMeds", "careless"]) {
+      const r = lengths(name, "full");
+      expect(r.mean, name).toBeGreaterThan(1.5);
+      expect(r.maxTurns, name).toBeLessThanOrEqual(PARAMS.maxTurns);
+    }
+    expect(lengths("careless", "full").mean).toBeGreaterThan(2.2);
+  });
+
+  it("stops at the backup line, so tissue never drains toward zero", () => {
+    // The line is 10 and one turn can cost a few more, so the worst battle ends in the low teens
+    // of tissue lost at most; before the stop careless battles lost 16-20.
+    const line = PARAMS.maxTissueHealth - PARAMS.outcome.backupTissueHealth;
+    for (const name of ["careless", "riskyNoDoctor", "mixed"]) {
+      expect(lengths(name, "full").maxLost, name).toBeLessThanOrEqual(line + 5);
+    }
+  });
+
+  it("is deterministic: the same seed plays the same campaign", () => {
+    for (const name of ["smarter", "careless"])
+      expect(playCampaign(BOTS[name], 7)).toEqual(playCampaign(BOTS[name], 7));
+  });
+});

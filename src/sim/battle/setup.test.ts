@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdjacent } from "../board";
+import { distance, isAdjacent, sameCoord } from "../board";
 import type { Loadout } from "../life/loadout";
 import { PARAMS } from "../params";
 import {
@@ -91,9 +91,9 @@ describe("battleFromLoadout", () => {
       }),
     );
     expect(b.pathogens.map((p) => [p.kind, p.size, p.at, p.hidden])).toEqual([
-      ["aspergillus", 3, PARAMS.setup.exposureTiles[0], false],
-      ["strep", PARAMS.maxPathogenSize, PARAMS.setup.exposureTiles[1], false],
-      ["strep", 3, PARAMS.setup.exposureTiles[2], false],
+      ["aspergillus", 3, PARAMS.setup.doors[0], false],
+      ["strep", PARAMS.maxPathogenSize, PARAMS.setup.doors[1], false],
+      ["strep", 3, PARAMS.setup.doors[2], false],
     ]);
   });
 
@@ -101,16 +101,16 @@ describe("battleFromLoadout", () => {
     const b = battleFromLoadout(
       base({
         exposures: [
-          { kind: "strep", size: 1, at: PARAMS.setup.exposureTiles[1] },
+          { kind: "strep", size: 1, at: PARAMS.setup.doors[1] },
           { kind: "strep", size: 1 },
           { kind: "strep", size: 1 },
         ],
       }),
     );
     expect(b.pathogens.map((p) => p.at)).toEqual([
-      PARAMS.setup.exposureTiles[1],
-      PARAMS.setup.exposureTiles[0],
-      PARAMS.setup.exposureTiles[2],
+      PARAMS.setup.doors[1],
+      PARAMS.setup.doors[0],
+      PARAMS.setup.doors[2],
     ]);
   });
 
@@ -217,5 +217,44 @@ describe("battleFromLoadout", () => {
     const reloaded = JSON.parse(JSON.stringify(battle)) as typeof battle;
     expect(reloaded).toEqual(battle);
     expect(resolveTurn(reloaded)).toEqual(resolveTurn(battle));
+  });
+});
+
+describe("doors", () => {
+  // A swarm moves swarmMoveRange steps and engulfs one tile further, so a germ at least that far
+  // plus one from every swarm start cannot be touched on turn 1.
+  const REACH = PARAMS.swarmMoveRange + 1;
+  const farFromSwarms = (c: { x: number; y: number }) =>
+    PARAMS.setup.swarmStarts.every((s) => distance(s, c) > REACH);
+
+  it("keeps every door out of turn-1 reach, so first contact is on turn 2", () => {
+    expect(PARAMS.setup.doors.length).toBeGreaterThanOrEqual(6);
+    for (const d of PARAMS.setup.doors) expect(farFromSwarms(d)).toBe(true);
+    for (const t of PARAMS.campaign.skirmish.tiles)
+      expect(PARAMS.setup.doors.some((d) => sameCoord(d, t))).toBe(true);
+    for (const card of Object.values(PARAMS.life.cards))
+      for (const at of card.at)
+        expect(PARAMS.setup.doors.some((d) => sameCoord(d, at))).toBe(true);
+  });
+
+  it("puts doors on the far edge: the top two rows, or a side column", () => {
+    for (const d of PARAMS.setup.doors)
+      expect(d.y <= 1 || d.x === 0 || d.x === PARAMS.boardWidth - 1).toBe(true);
+  });
+
+  it("places default exposures on doors, none within reach on turn 1", () => {
+    const b = battleFromLoadout(
+      base({
+        exposures: [
+          { kind: "strep", size: 2 },
+          { kind: "staph", size: 2 },
+          { kind: "aspergillus", size: 2 },
+        ],
+      }),
+    );
+    for (const p of b.pathogens) expect(farFromSwarms(p.at)).toBe(true);
+    const turn1 = resolveTurn(b, []).state;
+    // Nothing was engulfed or killed on turn 1; the germs are still all there.
+    expect(turn1.pathogens.length).toBeGreaterThanOrEqual(b.pathogens.length);
   });
 });

@@ -143,15 +143,21 @@ export const PARAMS = {
       { x: 3, y: 6 },
       { x: 5, y: 6 },
     ],
-    exposureTiles: [
-      { x: 1, y: 2 },
-      { x: 5, y: 2 },
-      { x: 3, y: 0 },
-      { x: 6, y: 4 },
-      { x: 0, y: 4 },
-      { x: 3, y: 2 },
+    /**
+     * Doors: where exposures and skirmish threats enter, on the far edge (row 0 or the side
+     * columns, rows 0-2). Each is 5+ steps from every swarm start, one more than a swarm can
+     * move (3) and engulf (1) in a turn, so nothing can be touched on turn 1 and first contact is
+     * on turn 2. Exposures without a card tile take the first free door.
+     */
+    doors: [
       { x: 1, y: 0 },
       { x: 5, y: 0 },
+      { x: 3, y: 0 },
+      { x: 6, y: 2 },
+      { x: 0, y: 2 },
+      { x: 3, y: 1 },
+      { x: 0, y: 1 },
+      { x: 6, y: 1 },
     ],
     reservoirTiles: [
       { x: 2, y: 4 },
@@ -162,11 +168,15 @@ export const PARAMS = {
     maxReservoirs: 2,
   },
   maxTissueHealth: 20,
-  /** The battle ends after this many turns, or sooner once no visible pathogen is left. */
+  /**
+   * A full battle ends after this many turns, or sooner on "all clear" (no visible pathogen left)
+   * or at the backup line (outcome.backupTissueHealth).
+   */
   maxTurns: 6,
   outcome: {
     /**
-     * At or below this tissue health the grade is neededBackup whatever else is true. Half of 20:
+     * At or below this tissue health backup arrives at once: the battle ends and the grade is
+     * neededBackup whatever else is true. Half of 20:
      * a do-nothing battle loses all 20; careful play typically ends at 16-17.
      */
     backupTissueHealth: 10,
@@ -191,7 +201,7 @@ export const PARAMS = {
    *   later, so the aura dims for as long as the dose would have lasted.
    * - cards: tuning per card. `chance` is the honest landing odds of the card's exposure, rolled
    *   once when its day ends; when it lands it brings `count` pathogens of `size`, entering at the
-   *   first free tile of `at` (then PARAMS.setup.exposureTiles). Risky versions pay more points
+   *   first free tile of `at` (then PARAMS.setup.doors). Risky versions pay more points
    *   than their smarter versions. Tuned in life/balance.test.ts. The lake brings one strep and
    *   one staph (cards.ts lists the kinds), so only the antibacterial charge of a full week kills
    *   its sealed half. The yard's mold arrives at size 2, inside chargeMaxSize, so each charge tier
@@ -216,7 +226,7 @@ export const PARAMS = {
         chance: 0.45,
         size: 2,
         count: 1,
-        at: [{ x: 5, y: 2 }],
+        at: [{ x: 5, y: 0 }],
       },
       yardIndoor: {
         points: 3,
@@ -224,7 +234,7 @@ export const PARAMS = {
         chance: 0.1,
         size: 1,
         count: 1,
-        at: [{ x: 5, y: 2 }],
+        at: [{ x: 5, y: 0 }],
       },
       lake: {
         points: 5,
@@ -233,7 +243,7 @@ export const PARAMS = {
         size: 2,
         count: 2,
         at: [
-          { x: 1, y: 2 },
+          { x: 1, y: 0 },
           { x: 3, y: 0 },
         ],
       },
@@ -243,7 +253,7 @@ export const PARAMS = {
         chance: 0.15,
         size: 1,
         count: 1,
-        at: [{ x: 1, y: 2 }],
+        at: [{ x: 1, y: 0 }],
       },
       band: {
         points: 2,
@@ -251,7 +261,7 @@ export const PARAMS = {
         chance: 0.05,
         size: 1,
         count: 1,
-        at: [{ x: 6, y: 4 }],
+        at: [{ x: 6, y: 2 }],
       },
       sleepover: {
         points: 3,
@@ -259,7 +269,7 @@ export const PARAMS = {
         chance: 0.1,
         size: 1,
         count: 1,
-        at: [{ x: 0, y: 4 }],
+        at: [{ x: 0, y: 2 }],
       },
       /** Only in hand once a symptom shows; its energy is set by PARAMS.campaign.doctor. */
       doctor: {
@@ -323,15 +333,15 @@ export const PARAMS = {
     weekRecovery: 4,
     quietWeekEnergy: 2,
     skirmish: {
-      maxTurns: 3,
+      maxTurns: 4,
       threats: { min: 2, max: 3, kind: "strep", size: 1 },
       tiles: [
-        { x: 1, y: 2 },
-        { x: 5, y: 2 },
-        { x: 3, y: 2 },
-        { x: 0, y: 4 },
-        { x: 6, y: 4 },
+        { x: 1, y: 0 },
+        { x: 5, y: 0 },
         { x: 3, y: 1 },
+        { x: 0, y: 2 },
+        { x: 6, y: 2 },
+        { x: 3, y: 0 },
       ],
       energy: { cleared: 2, loose: 1 },
       aftermathEnergy: 1,

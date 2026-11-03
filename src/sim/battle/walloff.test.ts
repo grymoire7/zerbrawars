@@ -13,7 +13,7 @@ import type {
 } from "../types";
 import { validateBattle } from "../validate";
 import { generateIntents, landingBlockers } from "./intents";
-import { inflammationAt } from "./inflammation";
+import { applyInflammation, inflammationAt } from "./inflammation";
 import {
   engulfTargets,
   moveOptions,
@@ -299,7 +299,8 @@ describe("inflammation", () => {
       tissueHealth: battle.tissueHealth - damage,
     });
     expect(state.tissueHealth).toBe(battle.tissueHealth - damage);
-    const low = resolveTurn({ ...battle, tissueHealth: 1 }, []);
+    // The tick clamps at zero (resolveTurn would refuse a battle already at the backup line).
+    const low = applyInflammation({ ...battle, tissueHealth: 1 });
     expect(low.state.tissueHealth).toBe(0);
     expect(low.events[low.events.length - 1]).toMatchObject({ amount: 1 });
   });

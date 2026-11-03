@@ -68,6 +68,7 @@ export const SKIRMISH_COPY = {
 const ENDED = {
   noFreePathogens: "No loose germs were left.",
   maxTurns: "The turns ran out.",
+  backup: "Backup arrived.",
 } as const;
 
 const BACKUP_REASON = {

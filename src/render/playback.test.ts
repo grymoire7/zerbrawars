@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { battleStatus } from "../sim/battle/outcome";
 import { resolveTurn } from "../sim/battle/resolve";
 import { loadScenario } from "../sim/scenarios";
 import type { BattleState, Order, SimEvent, SupportOrder } from "../sim/types";
@@ -119,6 +120,7 @@ describe("buildTimeline", () => {
     for (let seed = 1; seed <= 200; seed++) {
       let before = load(seed);
       for (let turn = 0; turn < 6; turn++) {
+        if (battleStatus(before).over) break;
         const orders = turn === 0 ? ORDERS : [];
         const r = resolveTurn(before, orders);
         const t = buildTimeline(before, r.events);

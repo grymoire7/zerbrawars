@@ -64,7 +64,7 @@ export function battleFromLoadout(loadout: Loadout): BattleState {
         PARAMS.maxPathogenSize,
         e.size + Math.max(0, loadout.load),
       ),
-      at: place(e.at, PARAMS.setup.exposureTiles),
+      at: place(e.at, PARAMS.setup.doors),
       hidden: false,
     });
   }

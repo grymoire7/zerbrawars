@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdjacent, reachableTiles, swarmBlockers } from "./board";
+import { isAdjacent, reachableTiles, sameCoord, swarmBlockers } from "./board";
 import { PARAMS } from "./params";
 import { wallOf } from "./pathogens";
 import { rngNext } from "./rng";
@@ -87,18 +87,19 @@ describe("duel", () => {
 });
 
 describe("skirmish", () => {
-  it("is a short battle of 2-3 size-1 leaky threats, mostly reachable on turn 1", () => {
+  it("is a short battle of 2-3 size-1 leaky threats at the doors, none reachable on turn 1", () => {
     const S = PARAMS.campaign.skirmish;
-    let reachable = 0;
     for (let seed = 1; seed <= 200; seed++) {
       const battle = loadScenario("skirmish", seed) as BattleState;
       expect(battle).toMatchObject({ kind: "skirmish", maxTurns: S.maxTurns });
       expect(battle.pathogens.length).toBeGreaterThanOrEqual(S.threats.min);
       expect(battle.pathogens.length).toBeLessThanOrEqual(S.threats.max);
       expect(battle.pathogens.every((p) => wallOf(p) === "leaky")).toBe(true);
-      if (turnOneTargets(battle).length > 0) reachable++;
+      expect(turnOneTargets(battle)).toEqual([]);
+      for (const p of battle.pathogens) {
+        expect(PARAMS.setup.doors.some((d) => sameCoord(d, p.at))).toBe(true);
+      }
     }
-    expect(reachable).toBeGreaterThan(150);
   });
 
   it("keeps every other scenario a full battle", () => {

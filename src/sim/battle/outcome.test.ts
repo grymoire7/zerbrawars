@@ -39,12 +39,12 @@ describe("battleStatus", () => {
       reason: null,
       turnsLeft: PARAMS.maxTurns,
     });
-    for (let t = 1; t <= PARAMS.maxTurns; t++) {
-      const r = resolveTurn(battle, []);
-      expect(r.status).toEqual(battleStatus(r.state));
-      expect(r.status.over).toBe(t === PARAMS.maxTurns);
-      battle = r.state;
-    }
+    // Do-nothing play drains tissue to the backup line first, so start the last turns fresh:
+    // full tissue on the board, the clock is the only thing that can end it.
+    const start = { ...battle, tissueHealth: PARAMS.maxTissueHealth };
+    const before = resolveTurn({ ...start, turn: PARAMS.maxTurns - 1 }, []);
+    expect(before.status).toEqual({ over: false, reason: null, turnsLeft: 1 });
+    battle = resolveTurn({ ...start, turn: PARAMS.maxTurns }, []).state;
     expect(battleStatus(battle)).toEqual({
       over: true,
       reason: "maxTurns",
@@ -69,6 +69,42 @@ describe("battleStatus", () => {
       pathogens: load().pathogens.map((p) => ({ ...p, hidden: true })),
     };
     expect(battleStatus(hiddenOnly).reason).toBe("noFreePathogens");
+  });
+});
+
+describe("backup stop", () => {
+  it("ends the battle the moment tissue reaches the backup line", () => {
+    const line = PARAMS.outcome.backupTissueHealth;
+    const battle = load();
+    expect(battleStatus({ ...battle, tissueHealth: line + 1 }).over).toBe(
+      false,
+    );
+    expect(battleStatus({ ...battle, tissueHealth: line })).toEqual({
+      over: true,
+      reason: "backup",
+      turnsLeft: 0,
+    });
+    // A turn that drains tissue to the line ends the battle there, with no telegraph.
+    let r = resolveTurn({ ...battle, tissueHealth: line + 1 }, []);
+    for (let i = 0; i < 3 && !r.status.over; i++) r = resolveTurn(r.state, []);
+    expect(r.state.tissueHealth).toBeLessThanOrEqual(line);
+    expect(r.status.reason).toBe("backup");
+    expect(r.state.intents).toEqual([]);
+    expect(gradeOutcome(r.state)).toMatchObject({
+      grade: "neededBackup",
+      turnsPlayed: r.state.turn - 1,
+    });
+    expect(gradeOutcome(r.state).backupReasons).toContain("tissue");
+  });
+
+  it("stops a do-nothing battle early and never lets tissue fall far below the line", () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      let battle = load(seed);
+      while (!battleStatus(battle).over) battle = resolveTurn(battle, []).state;
+      expect(battleStatus(battle).reason).toBe("backup");
+      expect(battle.turn - 1).toBeLessThan(PARAMS.maxTurns);
+      expect(battle.tissueHealth).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -118,6 +154,7 @@ describe("gradeOutcome", () => {
   });
 
   it("needs backup when free pathogens remain or tissue is too low", () => {
+    // Doing nothing: tissue wears down to the backup line before the clock runs out.
     let battle = load();
     while (!battleStatus(battle).over) battle = resolveTurn(battle, []).state;
     const idle = gradeOutcome(battle);
@@ -126,8 +163,21 @@ describe("gradeOutcome", () => {
     expect(idle.freePathogens).toBe(
       battle.pathogens.filter((p) => !p.hidden).length,
     );
-    expect(idle.turnsPlayed).toBe(PARAMS.maxTurns);
     expect(idle.energy).toBe(PARAMS.outcome.energy.neededBackup);
+
+    // Out of time with germs still loose is backup too, for that one reason.
+    const slow = resolveTurn(
+      {
+        ...load(),
+        tissueHealth: PARAMS.maxTissueHealth,
+        turn: PARAMS.maxTurns,
+      },
+      [],
+    );
+    expect(slow.status.reason).toBe("maxTurns");
+    const late = gradeOutcome(slow.state);
+    expect(late.backupReasons).toEqual(["freePathogens"]);
+    expect(late.turnsPlayed).toBe(PARAMS.maxTurns);
 
     const hurt: BattleState = {
       ...load(),

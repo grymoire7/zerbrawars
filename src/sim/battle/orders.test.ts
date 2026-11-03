@@ -13,6 +13,7 @@ import {
   validateOrders,
   withOrder,
 } from "./orders";
+import { battleStatus } from "./outcome";
 import { resolveTurn } from "./resolve";
 
 function load(seed = 1): BattleState {
@@ -327,6 +328,7 @@ describe("resolveTurn with moves", () => {
     for (let seed = 1; seed <= 200; seed++) {
       let battle = load(seed);
       for (let t = 0; t < 6; t++) {
+        if (battleStatus(battle).over) break;
         let orders: Order[] = [];
         for (const s of battle.swarms) {
           const options = moveOptions(battle, s.id, orders);

@@ -7,6 +7,7 @@ import { validateBattle } from "../validate";
 import { BOTS } from "./bots";
 import { telegraph } from "./intents";
 import { orderProblems } from "./orders";
+import { battleStatus } from "./outcome";
 import { inflammationPreview, resolveTurn } from "./resolve";
 import { battleFromLoadout } from "./setup";
 import { supportProblem } from "./support";
@@ -200,7 +201,7 @@ describe("hidden tokens", () => {
         energy: 0,
       });
       const rng = { state: rngFromSeed(seed) };
-      for (let t = 0; t < 6 && battle.pathogens.some((p) => !p.hidden); t++) {
+      for (let t = 0; t < 6 && !battleStatus(battle).over; t++) {
         let orders: Order[] = [];
         for (const swarm of battle.swarms) {
           const o = BOTS.random({ battle, swarm, orders, rng });

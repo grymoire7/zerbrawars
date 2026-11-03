@@ -13,11 +13,15 @@ export function freePathogens(battle: BattleState): number {
 }
 
 /**
- * Over once no visible pathogen is left, or once `maxTurns` turns have resolved (turn is then
- * maxTurns + 1). No free pathogens wins over the turn limit as the reason.
+ * Over once tissue health reaches the backup line (backup arrives at once), once no visible
+ * pathogen is left ("all clear"; no arrivals exist yet), or once `maxTurns` turns have resolved
+ * (turn is then maxTurns + 1). Reasons in that order of priority.
  */
 export function battleStatus(battle: BattleState): BattleStatus {
   const turnsLeft = Math.max(0, battle.maxTurns - battle.turn + 1);
+  if (battle.tissueHealth <= PARAMS.outcome.backupTissueHealth) {
+    return { over: true, reason: "backup", turnsLeft: 0 };
+  }
   if (freePathogens(battle) === 0) {
     return { over: true, reason: "noFreePathogens", turnsLeft: 0 };
   }

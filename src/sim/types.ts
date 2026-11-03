@@ -192,7 +192,7 @@ export type BattleGrade = "cleared" | "contained" | "neededBackup";
 export interface BattleStatus {
   readonly over: boolean;
   /** Why it ended; null while it goes on. */
-  readonly reason: "noFreePathogens" | "maxTurns" | null;
+  readonly reason: "noFreePathogens" | "maxTurns" | "backup" | null;
   /** Turns still to play, counting the current one. 0 once over. */
   readonly turnsLeft: number;
 }

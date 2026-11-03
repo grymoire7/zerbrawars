@@ -15,7 +15,7 @@ export interface Exposure {
   readonly kind: PathogenKindId;
   /** Starting size before the loadout's `load` bonus. */
   readonly size: number;
-  /** Where it enters; omitted = the first free tile of PARAMS.setup.exposureTiles. */
+  /** Where it enters; omitted = the first free tile of PARAMS.setup.doors. */
   readonly at?: Coord;
 }
 
@@ -112,7 +112,7 @@ export function loadoutFromLife(life: LifeState): Loadout {
       : { kind: e.kind, size: e.size };
   });
   // Exposures without a tile fall back to setup's list; keep it from reusing a card tile.
-  const fallback = PARAMS.setup.exposureTiles.filter(
+  const fallback = PARAMS.setup.doors.filter(
     (c) => !taken.some((t) => sameCoord(t, c)),
   );
   return {

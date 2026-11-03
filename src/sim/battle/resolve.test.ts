@@ -50,6 +50,8 @@ function promise(battle: BattleState): {
 function run(seed: number, turns = TURNS): BattleState[] {
   const states = [load(seed)];
   for (let t = 0; t < turns; t++) {
+    // A do-nothing battle can end early now (the backup stop), so stop where it does.
+    if (battleStatus(states[states.length - 1]).over) break;
     states.push(resolveTurn(states[states.length - 1], []).state);
   }
   return states;
@@ -203,6 +205,7 @@ describe("resolveTurn", () => {
   it("survives a JSON round-trip of every state and event list", () => {
     let battle = load(11);
     for (let t = 0; t < TURNS; t++) {
+      if (battleStatus(battle).over) break;
       const result = resolveTurn(battle, []);
       expect(JSON.parse(JSON.stringify(result))).toEqual(result);
       const reloaded = JSON.parse(JSON.stringify(battle)) as BattleState;
