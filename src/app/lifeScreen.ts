@@ -60,6 +60,9 @@ import {
   type Pending,
   type PickEffect,
   weekPlayStops,
+  stopBanner,
+  earliestDoctorSlot,
+  type StopBanner,
   weekSummary,
 } from "./lifeModel";
 import { createStatusStrip } from "../ui/statusStrip";
@@ -77,6 +80,8 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   let pending: Pending = NO_PENDING;
   let hover: CardId | null = null;
   let message = "";
+  let banner: StopBanner | null = null;
+  let bookNote = "";
   const opening = weekOpening(run.lastEvents());
   let beats: { day: string; lines: string[] }[] =
     run.campaign().cycle > 1 || opening.length > 0
@@ -302,10 +307,21 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       feel: {
         lines: symptomLines,
         nudge:
-          life.hand.includes("doctor") && !life.doctor && !over
+          life.hand.includes("doctor") &&
+          !life.doctor &&
+          !over &&
+          !canBookBanner()
             ? DOCTOR_NUDGE
             : null,
       },
+      banner:
+        banner && !over
+          ? {
+              text: banner.text,
+              canBook: canBookBanner(),
+              note: bookNote,
+            }
+          : null,
       endLabel: due.due ? end.button : run.standalone ? "" : end.button,
       aftermath:
         life.aftermath && life.day === 0
@@ -328,6 +344,29 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       ...beats,
     ].slice(0, 4);
     return events;
+  }
+
+  const clearBanner = () => {
+    banner = null;
+    bookNote = "";
+  };
+  const canBookBanner = () =>
+    banner?.kind === "symptom" &&
+    life.hand.includes("doctor") &&
+    !life.doctor &&
+    !placed("doctor");
+
+  /** Plays days until something needs a decision; shows why it stopped. */
+  function playWeek() {
+    // Each day goes through the same advanceDay as the one-day button; only the stop rule is new.
+    for (;;) {
+      const events = playOneDay();
+      if (events === null || weekOver(life)) break;
+      if (weekPlayStops(events)) {
+        banner = stopBanner(events, !placed("doctor") && !life.doctor);
+        break;
+      }
+    }
   }
 
   /** Carries out a place or remove from the pick logic; a refused placement keeps the activity picked. */
@@ -372,6 +411,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   const panel = createLifePanel(panels, {
     onHelp: () => help.open(),
     onPickCard: (base) => {
+      clearBanner();
       const r = tapActivity(pending, base);
       pending = r.pending;
       message = "";
@@ -381,6 +421,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         panel.showCalendar();
     },
     onPickRest: () => {
+      clearBanner();
       const r = tapActivity(pending, "rest");
       pending = r.pending;
       message = "";
@@ -388,6 +429,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       draw();
     },
     onSwap: (base) => {
+      clearBanner();
       const b = base as HandCardId;
       const [first, second] = versionsOf(b);
       const next = versionOf(b) === first ? second : first;
@@ -402,6 +444,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       draw();
     },
     onPills: (base, on) => {
+      clearBanner();
       const b = base as HandCardId;
       packed = on;
       const at = placed(b);
@@ -411,6 +454,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       draw();
     },
     onSlot: (day, slot) => {
+      clearBanner();
       if (day < life.day) return;
       const occupant = life.plan[day][slot];
       const r = tapSlot(
@@ -425,20 +469,37 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       draw();
     },
     onSetDose: (day, taken) => {
+      clearBanner();
       apply(() => setDose(life, day, taken));
       draw();
     },
     onPlay: () => {
-      // Each day goes through the same advanceDay as the one-day button; only the stop rule is new.
-      for (;;) {
-        const events = playOneDay();
-        if (events === null || weekPlayStops(events) || weekOver(life)) break;
-      }
+      clearBanner();
+      playWeek();
       pending = NO_PENDING;
       draw();
     },
     onPlayDay: () => {
+      clearBanner();
       playOneDay();
+      pending = NO_PENDING;
+      draw();
+    },
+    onPlayOn: () => {
+      clearBanner();
+      playWeek();
+      draw();
+    },
+    onBookDoctor: () => {
+      const at = earliestDoctorSlot(life);
+      if (!at) {
+        bookNote =
+          "The doctor needs an empty slot with enough energy, and none is free. Clear a slot in your week, then tap the doctor card.";
+        draw();
+        return;
+      }
+      apply(() => placeCard(life, at.day, at.slot, "doctor"));
+      clearBanner();
       pending = NO_PENDING;
       draw();
     },

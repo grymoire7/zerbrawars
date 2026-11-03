@@ -19,6 +19,8 @@ import {
   particleCount,
   placementCheck,
   weekPlayStops,
+  stopBanner,
+  earliestDoctorSlot,
   weekSummary,
   battleOddsText,
   scoreLine,
@@ -321,5 +323,70 @@ describe("weekPlayStops", () => {
 
   it("does not stop on a plain day", () => {
     expect(weekPlayStops([{ type: "DayStarted", day: 1 }])).toBe(false);
+  });
+});
+
+describe("stopBanner", () => {
+  const sym = (kind: "lowFever" | "soreSpot" | "tired", day: number) => ({
+    type: "SymptomAppeared" as const,
+    symptom: { kind, day },
+  });
+
+  it("names the day and the symptom, and offers the doctor without pushing", () => {
+    const b = stopBanner([sym("lowFever", 1)], true);
+    expect(b?.kind).toBe("symptom");
+    expect(b?.day).toBe(2);
+    expect(b?.symptoms).toEqual(["a low fever"]);
+    expect(b?.text).toBe(
+      "A low fever showed up on Day 2. You can book the doctor now, or play on for now.",
+    );
+    expect(b?.text).not.toMatch(
+      /should|recommend|urgent|better|must|careful|worry/i,
+    );
+  });
+
+  it("names several symptoms in one banner", () => {
+    const b = stopBanner([sym("lowFever", 1), sym("soreSpot", 1)], true);
+    expect(b?.text).toContain(
+      "A low fever and a sore spot showed up on Day 2.",
+    );
+  });
+
+  it("leaves the offer out when the doctor is already booked", () => {
+    expect(stopBanner([sym("tired", 2)], false)?.text).toBe(
+      "Tiredness showed up on Day 3.",
+    );
+  });
+
+  it("explains the missed dose from the friction event", () => {
+    const b = stopBanner(
+      [{ type: "FrictionEvent", day: 1, card: "sleepover" }],
+      true,
+    );
+    expect(b?.kind).toBe("friction");
+    expect(b?.text).toBe(
+      "Day 2: your pills stayed at Sam's, so Day 2's dose is missed.",
+    );
+  });
+
+  it("is null when nothing but the end of the week stopped it", () => {
+    expect(
+      stopBanner(
+        [{ type: "WeekEnded", battleDue: false, battleKind: null }],
+        true,
+      ),
+    ).toBeNull();
+    expect(stopBanner([], true)).toBeNull();
+  });
+});
+
+describe("earliestDoctorSlot", () => {
+  it("is the first empty slot from today once the doctor is in hand", () => {
+    const l = {
+      ...createLife({ seed: 1 }),
+      hand: [...createLife({ seed: 1 }).hand, "doctor" as const],
+    };
+    const filled = put(l, 0, 0, "band");
+    expect(earliestDoctorSlot(filled)).toEqual({ day: 0, slot: 1 });
   });
 });

@@ -224,6 +224,82 @@ export function weekPlayStops(events: readonly LifeEvent[]): boolean {
   );
 }
 
+export interface StopBanner {
+  readonly kind: "symptom" | "friction";
+  /** 1-based day number the event belongs to, as the player sees it. */
+  readonly day: number;
+  /** Plain names of the symptoms that showed ("a low fever"); empty for friction. */
+  readonly symptoms: readonly string[];
+  readonly text: string;
+}
+
+const SYMPTOM_NAME: Record<string, string> = {
+  lowFever: "a low fever",
+  soreSpot: "a sore spot",
+  tired: "tiredness",
+};
+
+const joinWords = (xs: readonly string[]) =>
+  xs.length <= 1
+    ? (xs[0] ?? "")
+    : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
+
+/**
+ * Why "Play the week" stopped, in words, from the events of the day just played. A symptom wins
+ * over the missed dose; null when nothing but the week's end stopped it. `canBook` says the
+ * doctor card is still free to place, which decides whether the text offers it.
+ */
+export function stopBanner(
+  events: readonly LifeEvent[],
+  canBook: boolean,
+): StopBanner | null {
+  const shown = events.flatMap((e) =>
+    e.type === "SymptomAppeared" ? [e.symptom] : [],
+  );
+  if (shown.length > 0) {
+    const day = shown[0].day + 1;
+    const names = shown.map((s) => SYMPTOM_NAME[s.kind] ?? s.kind);
+    const said = joinWords(names);
+    const lead = `${said.charAt(0).toUpperCase()}${said.slice(1)} showed up on Day ${day}.`;
+    return {
+      kind: "symptom",
+      day,
+      symptoms: names,
+      text: canBook
+        ? `${lead} You can book the doctor now, or play on for now.`
+        : lead,
+    };
+  }
+  for (const e of events) {
+    if (e.type === "FrictionEvent") {
+      const day = e.day + 1;
+      return {
+        kind: "friction",
+        day,
+        symptoms: [],
+        text: `Day ${day}: your pills stayed at Sam's, so Day ${day}'s dose is missed.`,
+      };
+    }
+  }
+  return null;
+}
+
+/** The earliest empty slot from today on where the doctor card is allowed, or null. */
+export function earliestDoctorSlot(
+  life: LifeState,
+): { day: number; slot: number } | null {
+  for (let day = life.day; day < L.days; day++) {
+    for (let slot = 0; slot < L.slotsPerDay; slot++) {
+      if (
+        !life.plan[day][slot] &&
+        placementProblems(life, day, slot, "doctor").length === 0
+      )
+        return { day, slot };
+    }
+  }
+  return null;
+}
+
 export interface WeekSummary {
   readonly landed: readonly { readonly text: string }[];
   readonly dodged: number;

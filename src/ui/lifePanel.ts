@@ -94,6 +94,13 @@ export interface LifePanelModel {
     readonly lines: readonly string[];
     readonly nudge: string | null;
   };
+  /** Why the week stopped playing, with the choices that are open right now; null when none. */
+  readonly banner: {
+    readonly text: string;
+    readonly canBook: boolean;
+    /** Why booking could not happen, shown under the text. */
+    readonly note: string;
+  } | null;
   /** A lost skirmish's aftermath: flavor, not a symptom. */
   readonly aftermath: { readonly title: string; readonly text: string } | null;
   /** The button that ends a finished week: the battle, or on to the next beat. */
@@ -113,6 +120,10 @@ export interface LifePanelHandlers {
   onSetDose(day: number, taken: boolean): void;
   /** Plays the rest of the week, stopping on a symptom or a missed-dose morning. */
   onPlay(): void;
+  /** The stop banner's [Play on]: carries on with the week. */
+  onPlayOn(): void;
+  /** The stop banner's [Book the doctor]. */
+  onBookDoctor(): void;
   /** Plays just today. */
   onPlayDay(): void;
   onStartBattle(): void;
@@ -302,7 +313,27 @@ export function createLifePanel(
     "min-height:52px;width:100%;font-weight:700;font-size:16px;",
     "again",
   );
-  mounts.bar.append(playBtn, playDayBtn, battleBtn, againBtn);
+  const bannerBox = el(
+    "div",
+    PANEL +
+      "padding:8px 10px;display:none;flex-direction:column;gap:6px;font-size:13px;line-height:1.3;",
+  );
+  bannerBox.setAttribute("role", "status");
+  bannerBox.setAttribute("aria-live", "polite");
+  bannerBox.dataset.key = "banner";
+  const bookBtn = button(
+    "Book the doctor",
+    h.onBookDoctor,
+    "min-height:44px;flex:1 1 0;font-size:14px;font-weight:600;",
+    "banner-book",
+  );
+  const playOnBtn = button(
+    "Play on",
+    h.onPlayOn,
+    "min-height:44px;flex:1 1 0;font-size:14px;font-weight:600;",
+    "banner-play-on",
+  );
+  mounts.bar.append(bannerBox, playBtn, playDayBtn, battleBtn, againBtn);
 
   const activeKey = () =>
     (document.activeElement as HTMLElement | null)?.dataset?.key ?? null;
@@ -409,7 +440,7 @@ export function createLifePanel(
           "",
           () => h.onSlot(s.day, s.slot),
           "display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:flex-start;" +
-            "text-align:left;padding:6px 7px;min-height:76px;width:100%;box-sizing:border-box;font-size:12px;line-height:1.25;overflow:hidden;overflow-wrap:anywhere;" +
+            "text-align:left;padding:5px 5px 5px 6px;min-height:76px;min-width:0;width:100%;box-sizing:border-box;font-size:12px;line-height:1.25;overflow:hidden;overflow-wrap:break-word;hyphens:manual;word-break:normal;" +
             (live ? `border-color:${MINT};box-shadow:0 0 0 1px ${MINT};` : "") +
             (s.pending
               ? `border:2px solid ${MINT};box-shadow:0 0 0 2px ${MINT};background:rgba(91,227,198,0.16);`
@@ -422,12 +453,15 @@ export function createLifePanel(
         if (s.card) {
           b.style.background = `var(--zw-${cardTint(s.card.version)})`;
           b.style.borderLeft = `6px solid var(--zw-${cardAccent(s.card.version)})`;
-          const head = el("span", "display:flex;gap:5px;align-items:center;");
-          head.append(
-            cardBadge(s.card.version, 22),
-            el("span", "font-weight:600;min-width:0;", s.card.label),
+          b.append(
+            cardBadge(s.card.version, 24),
+            el(
+              "span",
+              "font-weight:600;min-width:0;max-width:100%;overflow-wrap:break-word;hyphens:manual;",
+              s.card.label,
+            ),
+            el("span", "opacity:0.8;", `+${s.card.points} pts`),
           );
-          b.append(head, el("span", "opacity:0.8;", `+${s.card.points} pts`));
           if (s.card.pills) {
             b.append(
               el(
@@ -657,6 +691,20 @@ export function createLifePanel(
           ? [el("div", "font-size:13px;opacity:0.85;", m.feel.nudge)]
           : []),
       );
+      bannerBox.style.display = m.banner ? "flex" : "none";
+      if (m.banner) {
+        const buttons = el("div", "display:flex;gap:8px;");
+        buttons.append(
+          ...(m.banner.canBook ? [bookBtn, playOnBtn] : [playOnBtn]),
+        );
+        bannerBox.replaceChildren(
+          el("div", "", m.banner.text),
+          ...(m.banner.note
+            ? [el("div", "color:var(--zw-goal);", m.banner.note)]
+            : []),
+          buttons,
+        );
+      } else bannerBox.replaceChildren();
       renderMeds(m);
       renderCalendar(m);
       if (m.over && m.summary) renderSummary(m.summary);
