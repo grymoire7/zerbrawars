@@ -23,7 +23,7 @@ export function basePlaneUnits(board: { width: number; height: number }) {
 }
 
 /**
- * Mint medication glow hugging the inside of the organic outline, on the same plane as the base.
+ * Diffuse mint medication glow around the organic outline, on the same plane size as the base.
  * Transparent everywhere else, so nothing square shows.
  */
 export function createAuraTexture(planeUnits: number): THREE.CanvasTexture {
@@ -33,17 +33,14 @@ export function createAuraTexture(planeUnits: number): THREE.CanvasTexture {
   const g = canvas.getContext("2d");
   if (g) {
     const px = SIZE / planeUnits;
-    g.save();
-    organicPath(g, px, mulberry32(20261121));
-    g.clip();
+    // Stacked wide-to-narrow strokes of the same outline: a diffuse halo, brightest on the edge.
     g.lineJoin = "round";
-    g.strokeStyle = "rgba(120,240,205,0.9)";
-    g.shadowColor = "rgba(120,240,205,0.9)";
-    g.shadowBlur = px * 0.5;
-    g.lineWidth = px * 0.2;
-    organicPath(g, px, mulberry32(20261121));
-    g.stroke();
-    g.restore();
+    for (let k = 0; k < 9; k++) {
+      g.strokeStyle = `rgba(120,240,205,${0.12 + k * 0.02})`;
+      g.lineWidth = px * (0.9 - k * 0.1);
+      organicPath(g, px, mulberry32(20261121));
+      g.stroke();
+    }
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;

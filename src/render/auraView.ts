@@ -28,8 +28,8 @@ export function createAuraView(
   const geo = new THREE.PlaneGeometry(units, units);
   geo.rotateX(-Math.PI / 2);
   const plane = new THREE.Mesh(geo, mat);
-  plane.position.y = 0.012;
-  plane.renderOrder = -1;
+  // Same height as the base (just above it) and the same centre, so there is no parallax gap.
+  plane.position.y = -0.19;
   plane.visible = false;
   group.add(plane);
   let level = 0;
