@@ -430,3 +430,35 @@ describe("buildTimeline: reveals and doses", () => {
     }
   });
 });
+
+describe("arrival beats", () => {
+  it("plays Arrived and ArrivalBlocked in the pathogen phase", () => {
+    const before = load();
+    const events: SimEvent[] = [
+      {
+        type: "Arrived",
+        pathogenId: "p9",
+        kind: "staph",
+        size: 3,
+        bonus: 1,
+        at: { x: 3, y: 0 },
+      },
+      {
+        type: "ArrivalBlocked",
+        kind: "strep",
+        size: 2,
+        at: { x: 1, y: 0 },
+        swarmId: "s1",
+        fate: "died",
+      },
+    ];
+    const t = buildTimeline(before, events);
+    expect(t.beats.map((b) => b.kind)).toEqual(["arrive", "arriveBlocked"]);
+    expect(t.beats.every((b) => b.phase === "pathogen")).toBe(true);
+    const [a] = t.beats;
+    expect(a?.kind === "arrive" && a.bonus).toBe(1);
+    const pb = createPlayback(before, events, before);
+    pb.skip();
+    expect(pb.revealed()).toHaveLength(2);
+  });
+});

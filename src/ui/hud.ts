@@ -1,4 +1,5 @@
 import type { BattleKind } from "../sim/types";
+import { turnText } from "../app/arrivalModel";
 import { createInfoTips } from "./infoTip";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 export interface HudOrder {
@@ -59,6 +60,10 @@ export interface HudKey {
   readonly charges: boolean;
   /** Germ kinds on the board right now (hidden ones left out), for the shape and rim key. */
   readonly kinds: readonly PathogenKindId[];
+  /** An incoming-germ ring is on the board. */
+  readonly incoming: boolean;
+  /** A swarm is standing on a door with a group due. */
+  readonly incomingBlocked: boolean;
 }
 
 export interface HudOdds {
@@ -97,6 +102,8 @@ export interface HudModel {
   readonly turn: number;
   readonly over: boolean;
   readonly maxTurns: number;
+  /** "Next: 1 Staph, turn 3" (terse) and its full-sentence aria text. */
+  readonly next: { readonly text: string; readonly aria: string };
   /** A skirmish is labelled in the turn line. */
   readonly kind: BattleKind;
   readonly canEndTurn: boolean;
@@ -189,9 +196,12 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     "div",
     PANEL +
       "position:relative;overflow:hidden;padding:4px 4px 4px 10px;min-height:44px;" +
-      "box-sizing:border-box;display:flex;gap:14px;align-items:center;font-size:15px;",
+      "box-sizing:border-box;display:flex;gap:8px;align-items:center;font-size:15px;",
   );
   const turn = el("span", "font-weight:600;");
+  const next = el("span", "font-size:14px;color:var(--zw-text-muted);");
+  const turnBox = el("div", "flex:1 1 auto;min-width:0;line-height:1.25;");
+  turnBox.append(turn, " ", next);
   const help = button(
     "?",
     handlers.onHelp,
@@ -203,7 +213,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     "div",
     "position:absolute;left:0;bottom:0;height:3px;background:var(--zw-focus);width:0;",
   );
-  stats.append(turn, help, progress);
+  stats.append(turnBox, help, progress);
 
   // Medication: the note on the aura and the charge chips (the level is in the status strip).
   const medBox = el("div", PANEL + "padding:8px 10px;");
@@ -374,7 +384,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   keyTipRow.append(el("span", "", "Good to know"), keyTip.button);
   let keyText = "";
   const updateKey = (k: HudKey) => {
-    const sig = `${k.heatLevels.join()}|${k.forecast}|${k.aura}|${k.charges}|${k.kinds.join()}`;
+    const sig = `${k.heatLevels.join()}|${k.forecast}|${k.aura}|${k.charges}|${k.kinds.join()}|${k.incoming}|${k.incomingBlocked}`;
     if (sig === keyText) return;
     keyText = sig;
     const heat = [
@@ -421,6 +431,22 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
             keyRow(
               glyph("❚❚", "var(--zw-stall)"),
               "Green pause sign: held back by medication",
+            ),
+          ]
+        : []),
+      ...(k.incoming
+        ? [
+            keyRow(
+              glyph("◎", "var(--zw-incoming)"),
+              "Thick ring with a germ and its size: a germ arrives at this door",
+            ),
+          ]
+        : []),
+      ...(k.incomingBlocked
+        ? [
+            keyRow(
+              glyph("✕", "var(--zw-warn-line)"),
+              "Dashed ring with a cross: your swarm is on the door",
             ),
           ]
         : []),
@@ -573,11 +599,19 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       if (pb.playing) {
         turn.textContent = `Playing turn ${pb.turn}`;
         turn.style.color = "var(--zw-focus)";
+        turn.removeAttribute("aria-label");
+        next.style.display = "none";
       } else {
+        const line = turnText(m);
         turn.textContent = m.over
           ? `${m.kind === "skirmish" ? "Skirmish over" : "Finished"} after ${Math.min(m.turn - 1, m.maxTurns)} turns`
-          : `${m.kind === "skirmish" ? "Skirmish · " : ""}Turn ${m.turn} / ${m.maxTurns}`;
+          : line.text;
+        if (m.over) turn.removeAttribute("aria-label");
+        else turn.setAttribute("aria-label", line.aria);
         turn.style.color = "";
+        next.style.display = m.over ? "none" : "";
+        next.textContent = m.next.text;
+        next.setAttribute("aria-label", m.next.aria);
         progress.style.width = "0";
       }
 

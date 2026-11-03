@@ -37,6 +37,7 @@ import { sessionOptions } from "./sessionOptions";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
+import { incomingKey, nextArrival } from "./arrivalModel";
 import { createStatusStrip } from "../ui/statusStrip";
 import { weekChoices, weekScore } from "../sim/score";
 import { weekScoreLine } from "./summaryModel";
@@ -403,6 +404,7 @@ export function mountBattle(
       over: controller.over(),
       turn: s.turn,
       maxTurns: s.maxTurns,
+      next: nextArrival(s),
       kind: s.kind,
       canEndTurn: controller.canEndTurn(),
       log: logLines(controller.lastEvents()),
@@ -440,6 +442,8 @@ export function mountBattle(
         ),
         heatLevels: heatKey(s, forecast?.rising.length ?? 0).levels,
         forecast: (forecast?.rising.length ?? 0) > 0,
+        incoming: incomingKey(s).incoming,
+        incomingBlocked: incomingKey(s).blocked,
       },
       odds: controller.odds(),
       problems: controller.problems(),

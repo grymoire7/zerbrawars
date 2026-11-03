@@ -47,6 +47,7 @@ const SPORE = hex("spore");
 const GROW = hex("grow");
 const WALL = hex("granuloma");
 const DOSE = hex("med");
+const INCOMING = hex("incoming");
 const PING = hex("focus");
 const DOSE_HEIGHT = 4.2;
 
@@ -122,6 +123,12 @@ export function createPlaybackView(v: Views): PlaybackView {
         a = pos(beat.from);
         b = pos(beat.at);
         color = colorOf(before, beat.pathogenId);
+        break;
+      case "arrive":
+      case "arriveBlocked":
+        a = pos(beat.at);
+        b = a.clone();
+        color = KIND_COLOR[beat.germ];
         break;
       case "grow":
       case "killed":
@@ -671,6 +678,84 @@ export function createPlaybackView(v: Views): PlaybackView {
         label(t, time(hit), "BLOCKED", PALETTE.blocked, c.b, 0.95);
         return;
       }
+      case "arrive": {
+        // The germ drops in at the door with a small overshoot and a lime ping.
+        const u = seg(p, 0.1, 0.65);
+        v.pathogens.setPose(
+          beat.pathogenId,
+          Math.max(0, back(u)),
+          1,
+          0,
+          0.7 * (1 - easeOut(u)),
+          0,
+        );
+        const q = seg(p, 0.3, 1);
+        v.fx.ring(
+          c.a.x,
+          c.a.y + 0.04,
+          c.a.z,
+          0.25 + 0.5 * easeOut(q),
+          0.85 * (1 - q) * (p >= 0.3 ? 1 : 0),
+          INCOMING,
+        );
+        if (p >= 0.35) {
+          v.fx.burst(c.seed, c.a.x, c.a.y + 0.15, c.a.z, q, 10, 0.8, c.color);
+        }
+        label(t, time(0.4), "ARRIVED", PALETTE.incoming, c.a, 0.95);
+        if (beat.bonus > 0) {
+          label(
+            t,
+            time(0.5),
+            `+${beat.bonus} missed dose${beat.bonus > 1 ? "s" : ""}`,
+            PALETTE["text-muted"],
+            c.a,
+            1.25,
+            0.75,
+          );
+        }
+        return;
+      }
+      case "arriveBlocked": {
+        // The group drops onto the swarm at the door and bounces off.
+        const hit = 0.4;
+        const pose = beat.swarmId ? v.swarms.pose(beat.swarmId) : null;
+        if (pose) pose.jolt = bump(seg(p, hit, hit + 0.3));
+        const u = seg(p, 0.05, hit);
+        const bounce = seg(p, hit, 0.85);
+        const y =
+          p < hit
+            ? c.a.y + 0.45 + 1.2 * (1 - easeIn(u))
+            : c.a.y + 0.45 + 0.35 * bump(bounce * 0.8) - 0.25 * bounce * bounce;
+        v.fx.blob(
+          c.a.x,
+          y,
+          c.a.z,
+          0.14 * (1 - 0.7 * bounce),
+          c.color,
+          1 - bounce,
+        );
+        if (p >= hit) {
+          const q = seg(p, hit, 0.8);
+          v.fx.ring(
+            c.a.x,
+            c.a.y + 0.06,
+            c.a.z,
+            0.12 + 0.5 * easeOut(q),
+            1 - q,
+            BLOCK,
+          );
+          v.fx.burst(c.seed, c.a.x, c.a.y + 0.45, c.a.z, q, 14, 1.1, BLOCK);
+        }
+        label(
+          t,
+          time(hit),
+          beat.fate === "died" ? "CAUGHT" : "HELD OFF",
+          PALETTE.blocked,
+          c.a,
+          0.95,
+        );
+        return;
+      }
       case "inflame":
         v.board.setPulse(beat.at, bump(p));
         return;
@@ -721,7 +806,11 @@ export function createPlaybackView(v: Views): PlaybackView {
       const before = next.before;
       caches = next.timeline.beats.map((b, i) => cache(b, i, before));
       children = next.timeline.beats.flatMap((b) =>
-        b.kind === "spread" || b.kind === "spore" ? [b.newPathogenId] : [],
+        b.kind === "spread" || b.kind === "spore"
+          ? [b.newPathogenId]
+          : b.kind === "arrive"
+            ? [b.pathogenId]
+            : [],
       );
       const born = new Set(children);
       formed = next.timeline.beats.flatMap((b) =>

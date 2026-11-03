@@ -3,10 +3,12 @@ import { swarmMoveRange } from "../sim/battle/orders";
 import { PARAMS } from "../sim/params";
 import { pathogenKind } from "../sim/pathogens";
 import { sameCoord } from "../sim/board";
+import { arrivalCard, arrivalId, isDue } from "./arrivalModel";
 import type { BattleState, Coord, Order, SwarmId } from "../sim/types";
 
 export interface InfoRef {
-  readonly kind: "pathogen" | "swarm";
+  /** "arrival" ids are the incoming mark ids ("arrive:<index>"). */
+  readonly kind: "pathogen" | "swarm" | "arrival";
   readonly id: string;
 }
 
@@ -39,12 +41,16 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 
 const xy = (c: Coord) => `${c.x},${c.y}`;
 
-/** The pathogen or swarm on a tile (a swarm wins), or null. */
+/** The swarm, pathogen or incoming mark on a tile (in that order), or null. */
 export function entityAt(battle: BattleState, at: Coord): InfoRef | null {
   const s = battle.swarms.find((w) => sameCoord(w.at, at));
   if (s) return { kind: "swarm", id: s.id };
   const p = battle.pathogens.find((q) => !q.hidden && sameCoord(q.at, at));
-  return p ? { kind: "pathogen", id: p.id } : null;
+  if (p) return { kind: "pathogen", id: p.id };
+  const i = battle.arrivals.findIndex(
+    (a) => isDue(a, battle) && sameCoord(a.door, at),
+  );
+  return i >= 0 ? { kind: "arrival", id: arrivalId(i) } : null;
 }
 
 export function sameRef(a: InfoRef | null, b: InfoRef | null): boolean {
@@ -113,6 +119,10 @@ export function infoFor(
   ref: InfoRef,
   orders: readonly Order[] = [],
 ): InfoCard | null {
+  if (ref.kind === "arrival") {
+    const mark = marks.find((m) => m.pathogenId === ref.id);
+    return mark ? arrivalCard(battle, mark) : null;
+  }
   if (ref.kind === "pathogen") {
     const p = battle.pathogens.find((q) => q.id === ref.id);
     if (!p || p.hidden) return null;

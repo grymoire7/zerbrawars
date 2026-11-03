@@ -48,6 +48,8 @@ export const PALETTE = {
   grow: "#F2F2F2",
   blocked: "#FF8A7A",
   stall: "#7FE0C8",
+  // Incoming germs at a door (battle-depth slice 4): a thick ring, never the only cue.
+  incoming: "#C6F25A",
   // Drawn at 80% opacity under every telegraph and order mark.
   "mark-halo": "#15171C",
   kill: "#FFF3C4",

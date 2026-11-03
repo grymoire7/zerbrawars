@@ -9,6 +9,7 @@ import type {
   SimEvent,
   SwarmId,
 } from "../sim/types";
+import type { PathogenKindId } from "../sim/pathogens";
 
 export type Phase = "move" | "engulf" | "pathogen" | "tick";
 
@@ -112,6 +113,25 @@ export type Beat = BeatBase &
         readonly swarmId: SwarmId;
       }
     | {
+        /** A group arrived at its door (the new germ is in the after state). */
+        readonly kind: "arrive";
+        readonly pathogenId: PathogenId;
+        readonly germ: PathogenKindId;
+        readonly at: Coord;
+        readonly size: number;
+        /** Size added by missed doses (0 when none). */
+        readonly bonus: number;
+      }
+    | {
+        /** A swarm on the door met the group: it died there or tries again next turn. */
+        readonly kind: "arriveBlocked";
+        readonly germ: PathogenKindId;
+        readonly at: Coord;
+        readonly size: number;
+        readonly swarmId: SwarmId | null;
+        readonly fate: "died" | "delayed";
+      }
+    | {
         readonly kind: "inflame";
         readonly at: Coord;
         readonly inflammation: number;
@@ -159,6 +179,8 @@ export const TIMING = {
   spread: 0.65,
   spore: 0.85,
   blocked: 0.75,
+  arrive: 0.7,
+  arriveBlocked: 0.75,
   pathogenStagger: 0.24,
   tick: 0.55,
   phaseGap: 0.18,
@@ -413,6 +435,34 @@ export function buildTimeline(
           swarmId: e.swarmId,
           events: [i],
           duration: TIMING.blocked,
+          revealAt: 0.5,
+        });
+        break;
+      case "Arrived":
+        drafts.pathogen.push({
+          kind: "arrive",
+          phase: "pathogen",
+          pathogenId: e.pathogenId,
+          germ: e.kind,
+          at: e.at,
+          size: e.size,
+          bonus: e.bonus ?? 0,
+          events: [i],
+          duration: TIMING.arrive,
+          revealAt: 0.5,
+        });
+        break;
+      case "ArrivalBlocked":
+        drafts.pathogen.push({
+          kind: "arriveBlocked",
+          phase: "pathogen",
+          germ: e.kind,
+          at: e.at,
+          size: e.size,
+          swarmId: e.swarmId,
+          fate: e.fate,
+          events: [i],
+          duration: TIMING.arriveBlocked,
           revealAt: 0.5,
         });
         break;

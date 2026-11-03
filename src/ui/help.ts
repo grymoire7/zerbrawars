@@ -30,6 +30,10 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
     "Yellow arrow: spread to the next tile. Blue dotted arc: a spore lands further away. A germ that slowly swells, with a faint larger outline: it grows (grow 3 to 4). Red cross: blocked by your swarm. If you engulf a germ first, or hit it with a charge, its arrow disappears. A green pause sign and the word stalled: medication is holding that germ back, so it does nothing this turn.",
   ],
   [
+    "Germs arrive at doors",
+    "More germs come in from the edge of the board. A thick ring with a germ shape and its size marks the door where one arrives at the end of this turn. Tap the ring to read about it. Stand a swarm on the door to meet it there. A dashed ring with a cross means your swarm is already on the door. The side panel shows the turn count and the next arrival.",
+  ],
+  [
     "Medication",
     "The green glow around the board is your medication. The stronger it is, the more likely each germ is held back (stalled) on any given turn. It slows germs down but never stops them.",
   ],

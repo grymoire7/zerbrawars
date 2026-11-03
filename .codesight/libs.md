@@ -271,6 +271,7 @@
   - interface LifePanelHandlers
   - _...1 more_
 - `src/ui/outcome.ts`
+  - function outcomeHeading: (grade, reason) => void
   - function createOutcomeOverlay: (root, handlers) => OutcomeOverlay
   - interface OutcomeHandlers
   - interface OutcomeExtra

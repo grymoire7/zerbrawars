@@ -41,6 +41,7 @@ describe("palette", () => {
     "strep-ink",
     "staph-ink",
     "aspergillus-ink",
+    "incoming",
   ];
   for (const t of textTokens) {
     for (const s of surfaces) {
@@ -49,6 +50,11 @@ describe("palette", () => {
       });
     }
   }
+
+  it("incoming ring meets 3:1 on bg and on the dark halo", () => {
+    expect(contrast("incoming", "bg")).toBeGreaterThanOrEqual(3);
+    expect(contrast("incoming", "mark-halo")).toBeGreaterThanOrEqual(3);
+  });
 
   it("order on bg and text on control meet 4.5:1", () => {
     expect(contrast("order", "bg")).toBeGreaterThanOrEqual(4.5);

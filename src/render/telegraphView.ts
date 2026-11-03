@@ -3,6 +3,9 @@ import { telegraph, type TelegraphMark } from "../sim/battle/intents";
 import { labelSprite } from "./labels";
 import type { BattleState, Coord } from "../sim/types";
 import { hex } from "../theme/palette";
+import { arrivalMarkModel } from "../app/arrivalModel";
+import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
+import { KIND_COLOR } from "./pathogenView";
 
 export interface TelegraphView {
   readonly group: THREE.Group;
@@ -20,6 +23,8 @@ const GROW_COLOR = hex("grow");
 const BLOCKED_COLOR = hex("blocked");
 const STALL_COLOR = hex("stall");
 const HALO_COLOR = hex("mark-halo");
+const INCOMING_COLOR = hex("incoming");
+const RIM_COLOR = hex("sealed-rim");
 
 const LIFT = 0.5;
 const LABEL_HEIGHT = 0.26;
@@ -61,6 +66,8 @@ export function createTelegraphView(
       side: THREE.DoubleSide,
     }),
     blocked: mat(BLOCKED_COLOR),
+    incoming: mat(INCOMING_COLOR),
+    rim: mat(RIM_COLOR),
     stall: mat(STALL_COLOR),
     halo: new THREE.MeshBasicMaterial({
       color: HALO_COLOR,
@@ -69,8 +76,16 @@ export function createTelegraphView(
       opacity: 0.8,
     }),
   };
+  const kindMats = Object.fromEntries(
+    (Object.keys(KIND_COLOR) as PathogenKindId[]).map((k) => [
+      k,
+      mat(KIND_COLOR[k]),
+    ]),
+  ) as Record<PathogenKindId, THREE.MeshBasicMaterial>;
   const baseOpacity = new Map<THREE.Material, number>(
-    Object.values(mats).map((m) => [m, m.opacity] as const),
+    [...Object.values(mats), ...Object.values(kindMats)].map(
+      (m) => [m, m.opacity] as const,
+    ),
   );
   let dimmed = false;
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -79,6 +94,18 @@ export function createTelegraphView(
   const coneGeo = new THREE.ConeGeometry(0.18, 0.34, 3);
   const diamondGeo = new THREE.OctahedronGeometry(0.17);
   const dotGeo = new THREE.SphereGeometry(0.06, 8, 6);
+  // The incoming ring: thick, flat on the tile, with a wider dark band under it.
+  const doorRingGeo = new THREE.TorusGeometry(0.42, 0.075, 8, 40).rotateX(
+    Math.PI / 2,
+  );
+  const doorHaloGeo = new THREE.TorusGeometry(0.42, 0.13, 8, 40).rotateX(
+    Math.PI / 2,
+  );
+  const glyphGeo = new THREE.SphereGeometry(1, 12, 8);
+  const spikeGeo = new THREE.ConeGeometry(0.035, 0.12, 5);
+  const sealGeo = new THREE.TorusGeometry(0.2, 0.025, 6, 20).rotateX(
+    Math.PI / 2,
+  );
 
   const add = (
     geo: THREE.BufferGeometry,
@@ -211,6 +238,97 @@ export function createTelegraphView(
     label("stalled", tileY(m.from, 1.02), STALL_COLOR, 0.2);
   };
 
+  /**
+   * A germ due at its door: a thick ring (dashed and crossed when a swarm blocks it), the germ's
+   * own shape inside it (round cluster, shell ring for sealed, spikes for mold) and a name + size
+   * pill. Shape and words carry the meaning; the lime colour is only a helper.
+   */
+  const drawArrive = (state: BattleState, m: TelegraphMark) => {
+    const model = arrivalMarkModel(state, m);
+    if (!model) return;
+    const def = PATHOGEN_KINDS[model.kind];
+    const o = tileY(m.from, 0.06);
+    const ringMat = model.blocked ? mats.blocked : mats.incoming;
+    const halo = new THREE.Mesh(doorHaloGeo, mats.halo);
+    halo.position.copy(o);
+    halo.renderOrder = 9;
+    group.add(halo);
+    if (!model.blocked) {
+      const ring = new THREE.Mesh(doorRingGeo, ringMat);
+      ring.position.copy(o);
+      ring.renderOrder = 10;
+      group.add(ring);
+    } else {
+      // Dashed ring: eight arcs of short bars.
+      const n = 16;
+      for (let i = 0; i < n; i += 2) {
+        const a0 = (i / n) * Math.PI * 2;
+        const a1 = ((i + 1) / n) * Math.PI * 2;
+        const p0 = o
+          .clone()
+          .add(new THREE.Vector3(Math.cos(a0) * 0.42, 0, Math.sin(a0) * 0.42));
+        const p1 = o
+          .clone()
+          .add(new THREE.Vector3(Math.cos(a1) * 0.42, 0, Math.sin(a1) * 0.42));
+        segment(p0, p1, 0.14, ringMat);
+      }
+      cross(m.from);
+    }
+    // The germ inside, drawn flat-shaded and small so it does not hide the ring.
+    const body = kindMats[model.kind];
+    const g = tileY(m.from, 0.32);
+    const ball = (x: number, z: number, r: number) => {
+      const d = new THREE.Mesh(glyphGeo, mats.halo);
+      d.position.set(g.x + x, g.y, g.z + z);
+      d.scale.setScalar(r + 0.03);
+      d.renderOrder = 9.6;
+      group.add(d);
+      const b = new THREE.Mesh(glyphGeo, body);
+      b.position.set(g.x + x, g.y + 0.01, g.z + z);
+      b.scale.setScalar(r);
+      b.renderOrder = 10.2;
+      group.add(b);
+    };
+    if (def.form === "bacterium") {
+      ball(-0.1, 0.06, 0.1);
+      ball(0.1, 0.06, 0.1);
+      ball(0, -0.1, 0.1);
+    } else {
+      ball(0, 0, 0.13);
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const spike = new THREE.Mesh(spikeGeo, body);
+        spike.position.set(
+          g.x + Math.cos(a) * 0.17,
+          g.y + 0.01,
+          g.z + Math.sin(a) * 0.17,
+        );
+        spike.rotation.z = -Math.cos(a) * (Math.PI / 2);
+        spike.rotation.x = Math.sin(a) * (Math.PI / 2);
+        spike.renderOrder = 10.2;
+        group.add(spike);
+      }
+    }
+    if (def.wall === "sealed") {
+      const rim = new THREE.Mesh(sealGeo, mats.rim);
+      rim.position.copy(g);
+      rim.renderOrder = 10.3;
+      group.add(rim);
+    }
+    label(
+      model.badge,
+      tileY(m.from, 0.95),
+      model.blocked ? BLOCKED_COLOR : INCOMING_COLOR,
+      0.36,
+    );
+    label(
+      model.caption,
+      tileY(m.from, 0.62),
+      model.blocked ? BLOCKED_COLOR : INCOMING_COLOR,
+      0.22,
+    );
+  };
+
   const drawSpread = (m: TelegraphMark, to: Coord) => {
     const a = tileY(m.from, LIFT);
     const b = tileY(to, LIFT);
@@ -278,9 +396,8 @@ export function createTelegraphView(
       group.clear();
       for (const m of marks) {
         if (m.cancelledBy || m.cancelledByCharge) continue;
-        // The incoming mark is battle-depth slice 4; until then arrivals are not drawn.
-        if (m.type === "arrive") continue;
-        if (m.type === "stall") drawStall(m);
+        if (m.type === "arrive") drawArrive(state, m);
+        else if (m.type === "stall") drawStall(m);
         else if (m.type === "grow" || !m.to) {
           const size = state.pathogens.find((p) => p.id === m.pathogenId)?.size;
           drawGrow(m, size ?? m.sizeAfter);

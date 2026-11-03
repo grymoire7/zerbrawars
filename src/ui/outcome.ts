@@ -68,8 +68,25 @@ export const SKIRMISH_COPY = {
 const ENDED = {
   noFreePathogens: "No loose germs were left.",
   maxTurns: "The turns ran out.",
-  backup: "Backup arrived.",
 } as const;
+
+/**
+ * What a full battle's heading says. A battle that ended because tissue reached the backup line
+ * says "Backup arrived." with a kind line; no blame, backup is part of the plan.
+ */
+export function outcomeHeading(
+  grade: BattleGrade,
+  reason: BattleStatus["reason"],
+): { title: string; summary: string } {
+  if (reason === "backup") {
+    return {
+      title: "Backup arrived.",
+      summary:
+        "Your care team stepped in, which is exactly what backup is for. You did your part, and this fight is over.",
+    };
+  }
+  return GRADE[grade];
+}
 
 const BACKUP_REASON = {
   tissue: "The tissue was worn down by heat and infection.",
@@ -209,13 +226,15 @@ export function createOutcomeOverlay(
       const skirmish = kind === "skirmish";
       const g = skirmish
         ? SKIRMISH_COPY[outcome.grade === "cleared" ? "cleared" : "loose"]
-        : GRADE[outcome.grade];
+        : outcomeHeading(outcome.grade, status.reason);
       title.textContent = g.title;
       summary.textContent = g.summary;
       const lines = skirmish
         ? []
         : [
-            status.reason ? ENDED[status.reason] : "",
+            status.reason && status.reason !== "backup"
+              ? ENDED[status.reason]
+              : "",
             ...outcome.backupReasons.map((r) => BACKUP_REASON[r]),
           ].filter(Boolean);
       reasons.replaceChildren(
