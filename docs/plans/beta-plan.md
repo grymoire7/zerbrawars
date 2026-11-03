@@ -1,6 +1,6 @@
 # Zebra Wars: beta plan (target 2026-11-21)
 
-Builds on `prototype-plan.md` (Milestones 1-2 are done and committed on `feat/prototype-core-loop`).
+Builds on `prototype-plan.md` (Milestones 1-2 are done; merged to `main` on 2026-11-02).
 Clinical corrections in `../specs/fodder.md` still win. Open clinical questions live in `../specs/clinician-questions.md`.
 Items marked **(my call)** are defaults I picked; change them freely.
 
@@ -149,7 +149,7 @@ then fix the top three issues.
 ## 5. Build workflow
 
 Same as before: I coordinate and verify each task in a browser; Opus for game rules and balance, Sonnet for
-implementation; one feature branch (`feat/prototype-core-loop`, may rename to `feat/beta` at merge time),
+implementation; one feature branch (`feat/beta`, from `main` after the prototype merge),
 no worktrees, conventional commits, one commit per task, never run a formatter over files you do not own.
 
 ## 6. Risks
@@ -187,5 +187,5 @@ only the diagnosed part with the aura contrast).
 ## 9. Resuming after a break
 
 Conversation context does not carry over by itself. Read `../specs/fodder.md`, this plan and
-`git log --oneline` on `feat/prototype-core-loop`, then start at B0. Everything through the
+`git log --oneline` on `feat/beta`, then continue from the latest B task. Everything through the
 skirmish UI (commit `940af26`) is committed. Plans and specs are tracked in `docs/plans/` and `docs/specs/`; early brainstorming stays in the gitignored `docs/internal/`.
