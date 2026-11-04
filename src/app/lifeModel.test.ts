@@ -315,10 +315,10 @@ describe("weekPlayStops", () => {
     expect(life.day).toBeGreaterThanOrEqual(1);
   });
 
-  it("stops on the morning after a sleepover without the pills", () => {
-    const l = put(createLife({ seed: 1 }), 0, 1, "sleepover", false);
-    const { days } = playWeek(l);
-    expect(days).toEqual([0]);
+  it("does not stop for the sleepover's missed dose", () => {
+    expect(
+      weekPlayStops([{ type: "FrictionEvent", day: 1, card: "sleepover" }]),
+    ).toBe(false);
   });
 
   it("does not stop on a plain day", () => {
@@ -355,17 +355,6 @@ describe("stopBanner", () => {
   it("leaves the offer out when the doctor is already booked", () => {
     expect(stopBanner([sym("tired", 2)], false)?.text).toBe(
       "Tiredness showed up on Day 3.",
-    );
-  });
-
-  it("explains the missed dose from the friction event", () => {
-    const b = stopBanner(
-      [{ type: "FrictionEvent", day: 1, card: "sleepover" }],
-      true,
-    );
-    expect(b?.kind).toBe("friction");
-    expect(b?.text).toBe(
-      "Day 2: your pills stayed at Sam's, so Day 2's dose is missed.",
     );
   });
 

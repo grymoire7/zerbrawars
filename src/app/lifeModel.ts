@@ -212,23 +212,21 @@ export function lifeBeats(events: readonly LifeEvent[]): string[] {
 
 /**
  * Whether "Play the week" stops after a day that produced these events. It stops where the player
- * has something to decide on the new morning: a symptom showed (book the doctor) or the sleepover's
- * missed dose. It also stops when the week ends. The first day pressed is always played.
+ * has something to decide on the new morning: a symptom showed (book the doctor). It also stops
+ * when the week ends. The sleepover's missed dose does not stop it: that choice was made when the
+ * card was placed without the pills, and the day log reports it. The first day pressed is always played.
  */
 export function weekPlayStops(events: readonly LifeEvent[]): boolean {
   return events.some(
-    (e) =>
-      e.type === "SymptomAppeared" ||
-      e.type === "FrictionEvent" ||
-      e.type === "WeekEnded",
+    (e) => e.type === "SymptomAppeared" || e.type === "WeekEnded",
   );
 }
 
 export interface StopBanner {
-  readonly kind: "symptom" | "friction";
+  readonly kind: "symptom";
   /** 1-based day number the event belongs to, as the player sees it. */
   readonly day: number;
-  /** Plain names of the symptoms that showed ("a low fever"); empty for friction. */
+  /** Plain names of the symptoms that showed ("a low fever"). */
   readonly symptoms: readonly string[];
   readonly text: string;
 }
@@ -245,8 +243,7 @@ const joinWords = (xs: readonly string[]) =>
     : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
 
 /**
- * Why "Play the week" stopped, in words, from the events of the day just played. A symptom wins
- * over the missed dose; null when nothing but the week's end stopped it. `canBook` says the
+ * Why "Play the week" stopped, in words, from the events of the day just played. Null when nothing but the week's end stopped it. `canBook` says the
  * doctor card is still free to place, which decides whether the text offers it.
  */
 export function stopBanner(
@@ -269,17 +266,6 @@ export function stopBanner(
         ? `${lead} You can book the doctor now, or play on for now.`
         : lead,
     };
-  }
-  for (const e of events) {
-    if (e.type === "FrictionEvent") {
-      const day = e.day + 1;
-      return {
-        kind: "friction",
-        day,
-        symptoms: [],
-        text: `Day ${day}: your pills stayed at Sam's, so Day ${day}'s dose is missed.`,
-      };
-    }
   }
   return null;
 }

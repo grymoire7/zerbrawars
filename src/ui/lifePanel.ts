@@ -118,7 +118,7 @@ export interface LifePanelHandlers {
   onSlot(day: number, slot: number): void;
   /** A day chip was tapped: plan that day's dose as taken or skipped. */
   onSetDose(day: number, taken: boolean): void;
-  /** Plays the rest of the week, stopping on a symptom or a missed-dose morning. */
+  /** Plays the rest of the week, stopping on a symptom or when the week ends. */
   onPlay(): void;
   /** The stop banner's [Play on]: carries on with the week. */
   onPlayOn(): void;
