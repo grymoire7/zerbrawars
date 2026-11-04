@@ -60,6 +60,8 @@ export function friendlyProblem(problem: string): string {
   if (problem === "not enough energy") return "Not enough energy for this";
   if (problem === "that day is over") return "That day is already played";
   if (problem === "the week is over") return "The week is over";
+  if (problem === "game night is only in the evening")
+    return "Game night is only in the evening";
   if (problem.startsWith("a sleepover needs"))
     return "A sleepover needs an evening with a day after it";
   const done = /is already on day (\d+)/.exec(problem);
@@ -72,6 +74,80 @@ export interface PlacementCheck {
   readonly slot: number;
   readonly ok: boolean;
   readonly reasons: readonly string[];
+}
+
+const dayName = (day: number, slot: number) =>
+  `${slotName(slot).toLowerCase()} on Day ${day + 1}`;
+
+function tooTight(
+  life: LifeState,
+  day: number,
+  slot: number,
+  card: CardId,
+  packPills: boolean,
+): boolean {
+  return placementProblems(life, day, slot, card, packPills).includes(
+    "not enough energy",
+  );
+}
+
+/**
+ * What to do when `card` does not fit the energy in this slot: another slot where it does, or the
+ * placed card(s) that cost the fewest life points to drop. Plain and concrete, never a scolding.
+ * `life` must already have `card` lifted off any other spot.
+ */
+export function energyAdvice(
+  life: LifeState,
+  day: number,
+  slot: number,
+  card: CardId,
+  packPills: boolean,
+): string {
+  const lead = "Not enough energy.";
+  // A later slot has had more rests before it.
+  for (let d = life.day; d < L.days; d++) {
+    for (let s = 0; s < L.slotsPerDay; s++) {
+      if (d === day && s === slot) continue;
+      if (life.plan[d][s]) continue;
+      if (placementProblems(life, d, s, card, packPills).length === 0)
+        return `${lead} It fits in the ${dayName(d, s)}.`;
+    }
+  }
+  const placed: { label: string; points: number; day: number; slot: number }[] =
+    [];
+  for (let d = life.day; d < L.days; d++) {
+    for (let s = 0; s < L.slotsPerDay; s++) {
+      const p = life.plan[d][s];
+      if (p && !cardDef(p.card).doctor && !(d === day && s === slot))
+        placed.push({
+          label: cardDef(p.card).label,
+          points: cardDef(p.card).points,
+          day: d,
+          slot: s,
+        });
+    }
+  }
+  const without = (...xs: typeof placed) =>
+    xs.reduce((l, x) => unplaceCard(l, x.day, x.slot).state, life);
+  const fits = (l: LifeState) => !tooTight(l, day, slot, card, packPills);
+  const one = placed
+    .filter((x) => fits(without(x)))
+    .sort((a, b) => a.points - b.points)[0];
+  const swapWith = cardDef(card).label;
+  if (one)
+    return `${lead} Drop ${one.label} (${one.points} points) to fit ${swapWith}, or rest a slot first.`;
+  let best: [(typeof placed)[number], (typeof placed)[number]] | null = null;
+  for (let i = 0; i < placed.length; i++) {
+    for (let j = i + 1; j < placed.length; j++) {
+      if (!fits(without(placed[i], placed[j]))) continue;
+      const cost = placed[i].points + placed[j].points;
+      if (!best || cost < best[0].points + best[1].points)
+        best = [placed[i], placed[j]];
+    }
+  }
+  if (best)
+    return `${lead} Drop ${best[0].label} and ${best[1].label} to fit ${swapWith}, or rest a slot first.`;
+  return `${lead} Rest a slot first, or drop a card.`;
 }
 
 /**
@@ -91,7 +167,10 @@ export function placementCheck(
       ? unplaceCard(life, at.day, at.slot).state
       : life;
   const reasons = placementProblems(base, day, slot, card, packPills).map(
-    friendlyProblem,
+    (r) =>
+      r === "not enough energy"
+        ? energyAdvice(base, day, slot, card, packPills)
+        : friendlyProblem(r),
   );
   return { day, slot, ok: reasons.length === 0, reasons };
 }
@@ -123,6 +202,7 @@ const WORD = {
   default: "routine",
   skipped: "missed",
   friction: "pills at home",
+  slipped: "pills slipped",
 } as const;
 
 const DONE_WORD = { ...WORD, tapped: "taken", default: "taken" } as const;
@@ -134,14 +214,21 @@ function doseCell(
   level: number,
   chance: number | null,
 ): DoseCell {
-  const why = (decided ? DONE_WORD : WORD)[d.cause];
-  const glyph: DoseGlyph = d.taken
-    ? "check"
-    : d.cause === "friction"
-      ? "alert"
-      : "cross";
+  const risk = d.taken && chance !== null;
+  const why = risk ? "late night" : (decided ? DONE_WORD : WORD)[d.cause];
+  const glyph: DoseGlyph = risk
+    ? "alert"
+    : d.taken
+      ? "check"
+      : d.cause === "friction"
+        ? "alert"
+        : "cross";
   const detail =
-    d.cause === "friction" ? "the pills are at home after the sleepover" : why;
+    d.cause === "friction"
+      ? "the pills are at home after the sleepover"
+      : d.cause === "slipped"
+        ? "game night ran late and the evening pills slipped"
+        : why;
   const pctText =
     chance === null
       ? ""
@@ -187,7 +274,7 @@ export function doseStrip(life: LifeState): DoseCell[] {
           { week: life.week, day: f.day, taken: f.taken, cause: f.cause },
           decided,
           f.level,
-          null,
+          f.chance,
         ),
       );
     }
@@ -213,7 +300,9 @@ export function lifeBeats(events: readonly LifeEvent[]): string[] {
         out.push(
           e.cause === "friction"
             ? "That dose is missed."
-            : "Today's dose is missed.",
+            : e.cause === "slipped"
+              ? "Game night ran late; the evening pills slipped."
+              : "Today's dose is missed.",
         );
         break;
       case "CardPlayed":

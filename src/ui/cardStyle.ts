@@ -4,7 +4,7 @@ import type { PaletteName } from "../theme/palette";
 // apart at a glance. Colour never carries meaning alone: the icon and the title ride with it.
 
 export type CardFamily =
-  "yard" | "lake" | "band" | "sleepover" | "doctor" | "rest";
+  "yard" | "lake" | "band" | "sleepover" | "game" | "doctor" | "rest";
 
 /** The family colour of every card id (and "rest"). */
 export const CARD_FAMILY: Readonly<Record<string, CardFamily>> = {
@@ -14,6 +14,8 @@ export const CARD_FAMILY: Readonly<Record<string, CardFamily>> = {
   beach: "lake",
   band: "band",
   sleepover: "sleepover",
+  game: "game",
+  gameEarly: "game",
   doctor: "doctor",
   rest: "rest",
 };
@@ -34,6 +36,10 @@ export const CARD_ICON: Readonly<Record<string, string>> = {
   band: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
   // A crescent moon.
   sleepover: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+  // A die showing five.
+  game: '<rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01"/>',
+  // A clock: home in time.
+  gameEarly: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
   // A medical cross.
   doctor: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',
   // Two Zs.

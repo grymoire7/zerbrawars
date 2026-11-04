@@ -17,6 +17,10 @@ interface CardText {
   readonly kinds: readonly PathogenKindId[];
   /** Runs overnight: evening slot only, never the last day, and the next morning's dose is away. */
   readonly overnight?: boolean;
+  /** Evening slot only (nothing keeps the day free for it). */
+  readonly eveningOnly?: boolean;
+  /** Runs late: its day's evening pills may slip (PARAMS.life.meds.slip.lateNight). */
+  readonly lateNight?: boolean;
   /** The doctor visit: costs set by its timing (PARAMS.campaign.doctor), brings nothing in. */
   readonly doctor?: boolean;
 }
@@ -69,6 +73,25 @@ const TEXT: Record<CardId, CardText> = {
     kinds: ["strep"],
     overnight: true,
   },
+  game: {
+    label: "Game night at Alex's",
+    people: "Alex is hosting board games and pizza, and it always runs late.",
+    blurb:
+      "Crowded room, shared snacks. Past midnight the evening pills are easy to lose track of.",
+    base: "game",
+    smarter: "gameEarly",
+    kinds: ["strep"],
+    eveningOnly: true,
+    lateNight: true,
+  },
+  gameEarly: {
+    label: "Game night, home by 11",
+    people: "Same crowd at Alex's, but you head out in time for your pills.",
+    blurb: "Fewer rounds, fewer points, and the routine holds.",
+    base: "game",
+    kinds: ["strep"],
+    eveningOnly: true,
+  },
   doctor: {
     label: "See the doctor",
     people: "Your care team can fit you in today.",
@@ -105,13 +128,19 @@ export function exposureKind(card: CardId, i: number): PathogenKindId {
   return kinds[i % kinds.length];
 }
 
-/** The four cards dealt each week (the same hand every week in the prototype); see DOCTOR_CARD. */
-export const HAND: readonly HandCardId[] = [
+const HAND: readonly HandCardId[] = [
   "yard",
   "lake",
   "band",
   "sleepover",
+  "game",
 ];
+
+/** The five cards dealt in `week` (the same hand every week until week 2 gets its own); see DOCTOR_CARD. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- week 2 differs in slice 5
+export function handFor(_week: number): readonly HandCardId[] {
+  return HAND;
+}
 
 export function isCardId(id: string): id is CardId {
   return Object.hasOwn(TEXT, id);

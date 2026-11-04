@@ -7,6 +7,7 @@ import {
   placeCard,
   setDose,
 } from "../sim/life/calendar";
+import { slipRoll } from "../sim/life/calendar";
 import type { LifeState } from "../sim/life/types";
 import {
   doseStrip,
@@ -20,6 +21,7 @@ import {
   clearPending,
   particleCount,
   placementCheck,
+  energyAdvice,
   weekPlayStops,
   stopBanner,
   earliestDoctorSlot,
@@ -423,5 +425,111 @@ describe("earliestDoctorSlot", () => {
     };
     const filled = put(l, 0, 0, "band");
     expect(earliestDoctorSlot(filled)).toEqual({ day: 0, slot: 1 });
+  });
+});
+
+describe("game night in the UI model", () => {
+  it("shows the slip on the day chip before play: glyph, word and percent", () => {
+    const l = put(createLife({ seed: 1 }), 1, 1, "game");
+    const c = doseStrip(l)[1];
+    expect(c).toMatchObject({
+      taken: true,
+      why: "late night",
+      glyph: "alert",
+      chance: 0.5,
+    });
+    expect(c.label).toBe(
+      "Day 2 meds: late night, 50 percent chance the pills slip, medication 100 percent.",
+    );
+    expect(doseStrip(l)[0].chance).toBeNull();
+    expect(
+      doseStrip(put(createLife({ seed: 1 }), 1, 1, "gameEarly"))[1].glyph,
+    ).toBe("check");
+  });
+
+  it("tells the slip without blame, and shows the missed chip afterwards", () => {
+    expect(
+      lifeBeats([{ type: "MedsSkipped", day: 1, cause: "slipped" }]),
+    ).toEqual(["Game night ran late; the evening pills slipped."]);
+    let seed = 1;
+    let l = put(createLife({ seed }), 1, 1, "game");
+    while (slipRoll(seed, 1, 1) >= 0.5) {
+      seed++;
+      l = put(createLife({ seed }), 1, 1, "game");
+    }
+    l = advanceDay(advanceDay(l).state).state;
+    const c = doseStrip(l)[1];
+    expect(c).toMatchObject({
+      taken: false,
+      why: "pills slipped",
+      glyph: "cross",
+    });
+    expect(c.label).toMatch(/game night ran late/);
+    expect(c.label).not.toMatch(/skip/i);
+  });
+
+  it("refuses game night in the daytime with a clear message", () => {
+    const c = placementCheck(createLife({ seed: 1 }), 1, 0, "game", false);
+    expect(c.ok).toBe(false);
+    expect(c.reasons[0]).toBe("Game night is only in the evening");
+  });
+});
+
+describe("energy hint", () => {
+  const fill = (
+    ...xs: [number, number, Parameters<typeof placeCard>[3], boolean?][]
+  ) =>
+    xs.reduce(
+      (l, [d, s, c, p]) => put(l, d, s, c, p ?? false),
+      createLife({ seed: 1 }),
+    );
+
+  it("names the cheapest card to drop for the plan to fit", () => {
+    // 5 energy: yard (2), sleepover packed (2), band (1) and game night (1) leave no room, and no free slot suits the lake.
+    const l = fill(
+      [0, 0, "yard"],
+      [0, 1, "sleepover", true],
+      [1, 0, "band"],
+      [2, 1, "game"],
+    );
+    const c = placementCheck(l, 2, 0, "lake", false);
+    expect(c.ok).toBe(false);
+    expect(c.reasons[0]).toBe(
+      "Not enough energy. Drop Band practice (2 points) to fit The lake with Jordan, or rest a slot first.",
+    );
+  });
+
+  it("offers a slot where it fits when a later one works", () => {
+    const l = fill([0, 0, "yard"], [0, 1, "sleepover", true]);
+    expect(energyAdvice(l, 1, 0, "lake", false)).toBe(
+      "Not enough energy. It fits in the evening on Day 2.",
+    );
+  });
+
+  it("falls back to a plain line when nothing single helps", () => {
+    const l = createLife({ seed: 1, energy: 0 });
+    expect(energyAdvice(l, 0, 0, "lake", false)).toMatch(
+      /^Not enough energy\./,
+    );
+  });
+
+  it("with the full hand, the plan really does not fit and each refusal says what to drop", () => {
+    let l = createLife({ seed: 1 });
+    const order: [number, number, Parameters<typeof placeCard>[3], boolean][] =
+      [
+        [0, 0, "yard", false],
+        [0, 1, "sleepover", true],
+        [1, 1, "lake", false],
+        [2, 1, "game", false],
+        [2, 0, "band", false],
+      ];
+    const refused: string[] = [];
+    for (const [d, s, c, p] of order) {
+      const chk = placementCheck(l, d, s, c, p);
+      if (chk.ok) l = put(l, d, s, c, p);
+      else refused.push(chk.reasons[0]);
+    }
+    expect(refused.length).toBeGreaterThan(0);
+    for (const r of refused) expect(r).toMatch(/Not enough energy\. .*\./);
   });
 });

@@ -56,7 +56,8 @@ function survey(bot: CampaignBot): Row {
     const s = campaignSummary(c).score;
     for (const h of c.history) {
       for (const n of parts(h)) expect(n).toBeGreaterThanOrEqual(0);
-      expect(h.score.choices.living).toBeLessThanOrEqual(140);
+      // Slice 2: the all-risky week can reach 17 points with six energy (game night added), measured 170.
+      expect(h.score.choices.living).toBeLessThanOrEqual(180);
       expect(h.score.choices.dodged).toBeLessThanOrEqual(65);
       expect(h.score.choices.meds).toBeLessThanOrEqual(90);
       expect(h.score.choices.checked).toBeLessThanOrEqual(20);

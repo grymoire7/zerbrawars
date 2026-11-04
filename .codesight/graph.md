@@ -18,8 +18,8 @@
 - `src/sim/life/types.ts` — imported by **13** files
 - `src/sim/campaign.ts` — imported by **12** files
 - `src/sim/life/cards.ts` — imported by **9** files
+- `src/sim/life/calendar.ts` — imported by **8** files
 - `src/sim/battle/bots.ts` — imported by **8** files
-- `src/sim/life/calendar.ts` — imported by **7** files
 - `src/app/run.ts` — imported by **7** files
 - `src/sim/score.ts` — imported by **6** files
 

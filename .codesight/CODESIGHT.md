@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 53 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,500 tokens per conversation.**
-> **Last scanned:** 2026-11-04 16:45 — re-run after significant changes
+> **Last scanned:** 2026-11-04 17:14 — re-run after significant changes
 
 ---
 
@@ -155,14 +155,14 @@
   - function weekStartEvents: (life) => LifeEvent[]
   - function findPlaced: (life, card) => void
   - function slotCost: (life, day, p) => number
-  - _...18 more_
+  - _...20 more_
 - `src/sim/life/cards.ts`
   - function exposureKind: (card, i) => PathogenKindId
+  - function handFor: (_week) => readonly HandCardId[]
   - function isCardId: (id) => id is CardId
   - function cardDef: (id) => CardDef
   - function versionsOf: (base) => CardId[]
   - function placementCost: (card, packPills) => number
-  - interface CardDef
   - _...3 more_
 - `src/sim/life/loadout.ts`
   - function battleSeed: (life) => number
@@ -327,8 +327,8 @@
 - `src/sim/life/types.ts` — imported by **13** files
 - `src/sim/campaign.ts` — imported by **12** files
 - `src/sim/life/cards.ts` — imported by **9** files
+- `src/sim/life/calendar.ts` — imported by **8** files
 - `src/sim/battle/bots.ts` — imported by **8** files
-- `src/sim/life/calendar.ts` — imported by **7** files
 - `src/app/run.ts` — imported by **7** files
 - `src/sim/score.ts` — imported by **6** files
 

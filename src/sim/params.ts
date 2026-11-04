@@ -240,7 +240,11 @@ export const PARAMS = {
     maxEnergy: 6,
     restEnergy: 1,
     packPillsEnergy: 1,
-    meds: { window: 3 },
+    meds: {
+      window: 3,
+      /** Chance a dose slips, by what disrupted the routine; rolled once per seed, week and day. */
+      slip: { lateNight: 0.5 },
+    },
     cards: {
       yard: {
         points: 4,
@@ -292,6 +296,24 @@ export const PARAMS = {
         size: 1,
         count: 1,
         at: [{ x: 0, y: 2 }],
+      },
+      /** Evening only; a late night, so its day's pills may slip (meds.slip.lateNight). */
+      game: {
+        points: 3,
+        energy: 1,
+        chance: 0.05,
+        size: 1,
+        count: 1,
+        at: [{ x: 6, y: 1 }],
+      },
+      /** Same evening, home by 11: no late night, so no slip. Same landing odds as band. */
+      gameEarly: {
+        points: 2,
+        energy: 1,
+        chance: 0.05,
+        size: 1,
+        count: 1,
+        at: [{ x: 6, y: 1 }],
       },
       /** Only in hand once a symptom shows; its energy is set by PARAMS.campaign.doctor. */
       doctor: {

@@ -7,10 +7,19 @@ import type { CarriedReservoir } from "./loadout";
 
 /** Every card version. The hand holds base cards; a smarter version replaces its base when placed. */
 export type CardId =
-  "yard" | "yardIndoor" | "lake" | "beach" | "band" | "sleepover" | "doctor";
+  | "yard"
+  | "yardIndoor"
+  | "lake"
+  | "beach"
+  | "band"
+  | "sleepover"
+  | "game"
+  | "gameEarly"
+  | "doctor";
 
-/** The four cards dealt each week, plus the doctor once a symptom shows. */
-export type HandCardId = "yard" | "lake" | "band" | "sleepover" | "doctor";
+/** The five cards dealt each week, plus the doctor once a symptom shows. */
+export type HandCardId =
+  "yard" | "lake" | "band" | "sleepover" | "game" | "doctor";
 
 /** A card on the calendar. `packPills` only matters on an overnight card. */
 export interface Placement {
@@ -24,8 +33,11 @@ export interface Dose {
   /** 0-based day of that week. */
   readonly day: number;
   readonly taken: boolean;
-  /** "default": nobody tapped, so the day ended with the dose taken. */
-  readonly cause: "tapped" | "default" | "skipped" | "friction";
+  /**
+   * "default": nobody tapped, so the day ended with the dose taken. "friction": the pills were left
+   * at the sleepover. "slipped": a late night made the evening pills slip (no one's choice).
+   */
+  readonly cause: "tapped" | "default" | "skipped" | "friction" | "slipped";
 }
 
 /** One exposure roll, made for every card when its day ends (landed or not). */
@@ -169,7 +181,7 @@ export type LifeEvent =
   | {
       readonly type: "MedsSkipped";
       readonly day: number;
-      readonly cause: "skipped" | "friction";
+      readonly cause: "skipped" | "friction" | "slipped";
     }
   | {
       /** The sleepover's "pills are in the other bag": the next morning's dose is missed. */

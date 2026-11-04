@@ -74,6 +74,8 @@ export const PALETTE = {
   "card-band-bg": "#413444",
   "card-sleepover": "#8A8CFF",
   "card-sleepover-bg": "#33384E",
+  "card-game": "#FF8A4C",
+  "card-game-bg": "#44352E",
   "card-doctor": "#F1EDE2",
   "card-doctor-bg": "#3F434B",
   "card-rest": "#93A3BA",

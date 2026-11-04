@@ -145,14 +145,14 @@
   - function weekStartEvents: (life) => LifeEvent[]
   - function findPlaced: (life, card) => void
   - function slotCost: (life, day, p) => number
-  - _...18 more_
+  - _...20 more_
 - `src/sim/life/cards.ts`
   - function exposureKind: (card, i) => PathogenKindId
+  - function handFor: (_week) => readonly HandCardId[]
   - function isCardId: (id) => id is CardId
   - function cardDef: (id) => CardDef
   - function versionsOf: (base) => CardId[]
   - function placementCost: (card, packPills) => number
-  - interface CardDef
   - _...3 more_
 - `src/sim/life/loadout.ts`
   - function battleSeed: (life) => number

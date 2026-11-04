@@ -169,6 +169,11 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
           `Level ends at ${pct(week.medLevel)}.`,
       );
     }
+    for (const s of week.slipDays) {
+      noteParts.push(
+        `Day ${s.day + 1}: late night, ${pct(s.chance)} the pills slip. "Game night, home by 11" removes it.`,
+      );
+    }
     const grid = Array.from({ length: L.days }, (_, day) =>
       Array.from({ length: L.slotsPerDay }, (_, slot): LifeSlotModel => {
         const p = life.plan[day][slot];
@@ -226,13 +231,14 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         facts: scoreLine(pv.points, pv.energy, cardChoices(version).total),
         odds: oddsText(pv.chance, pv.kind),
         chance: pv.chance,
+        doseRisk: pv.doseRisk ? pv.doseRisk.text : null,
         alt: other
           ? {
               version: other.card,
               text: pv.smarter
                 ? `Back to: ${other.label}`
                 : `Try instead: ${other.label}`,
-              odds: `${oddsText(other.chance, other.kind)}. ${scoreLine(other.points, other.energy, cardChoices(other.card).total)}`,
+              odds: `${oddsText(other.chance, other.kind)}. ${scoreLine(other.points, other.energy, cardChoices(other.card).total)}${pv.doseRisk && !other.doseRisk ? ". No late night, the pills stay on routine" : ""}`,
             }
           : null,
         pills: pv.friction

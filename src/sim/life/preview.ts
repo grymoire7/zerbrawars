@@ -28,6 +28,8 @@ export interface CardPreview {
   readonly smarter: boolean;
   /** Overnight cards: what packing the pills costs, and that the next dose is lost otherwise. */
   readonly friction: { readonly packPillsEnergy: number } | null;
+  /** A late-night card: the chance that day's evening pills slip. Null for every other card. */
+  readonly doseRisk: { readonly chance: number; readonly text: string } | null;
 }
 
 /** Everything a card's face and hover need, before committing to it. */
@@ -54,6 +56,12 @@ export function cardPreview(_life: LifeState, card: CardId): CardPreview {
     smarter: d.id !== base.id,
     friction: d.overnight
       ? { packPillsEnergy: placementCost(card, true) - d.energy }
+      : null,
+    doseRisk: d.lateNight
+      ? {
+          chance: PARAMS.life.meds.slip.lateNight,
+          text: `late night: ${Math.round(PARAMS.life.meds.slip.lateNight * 100)}% the pills slip`,
+        }
       : null,
   };
 }
@@ -82,6 +90,11 @@ export interface WeekPreview {
   readonly charges: MedCharges;
   /** Days whose morning dose is planned to be lost to friction. */
   readonly frictionDays: readonly number[];
+  /** Days whose dose has a chance to slip (a late-night card), with that chance. */
+  readonly slipDays: readonly {
+    readonly day: number;
+    readonly chance: number;
+  }[];
 }
 
 /** The whole week's odds and consequences as the calendar stands. */
@@ -117,6 +130,9 @@ export function exposurePreview(life: LifeState): WeekPreview {
   for (let day = Math.max(1, life.day); day < PARAMS.life.days; day++) {
     if (frictionFor(life, day)) frictionDays.push(day);
   }
+  const slipDays = forecast.flatMap((f) =>
+    f.chance === null ? [] : [{ day: f.day, chance: f.chance }],
+  );
   return {
     pending,
     landed: life.exposures.length,
@@ -127,5 +143,6 @@ export function exposurePreview(life: LifeState): WeekPreview {
     medLevel,
     charges: chargesFor(medLevel, life.flags.doctorVisit),
     frictionDays,
+    slipDays,
   };
 }

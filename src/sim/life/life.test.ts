@@ -12,13 +12,14 @@ import {
   placementProblems,
   setDose,
   setPackPills,
+  slipRoll,
   skipMeds,
   takeMeds,
   todayDose,
   unplaceCard,
   weekOver,
 } from "./calendar";
-import { CARD_IDS, cardDef, HAND, versionsOf } from "./cards";
+import { CARD_IDS, cardDef, handFor, versionsOf } from "./cards";
 import { battleDue, battleSeed, loadoutFromLife } from "./loadout";
 import { medLevelOf } from "./meds";
 import { cardPreview, exposurePreview } from "./preview";
@@ -27,6 +28,7 @@ import { PARAMS as P } from "../params";
 import type { CardId, Dose, LifeEvent, LifeState } from "./types";
 
 const L = PARAMS.life;
+const HAND = handFor(1);
 
 /** Applies steps in order, keeping every event. */
 function run(
@@ -56,10 +58,12 @@ const place =
     placeCard(s, day, slot, card, pack);
 
 describe("cards", () => {
-  it("has a smarter version for exactly two hand cards", () => {
+  it("deals five cards, three of them with a smarter version", () => {
+    expect(HAND).toEqual(["yard", "lake", "band", "sleepover", "game"]);
     expect(HAND.filter((c) => versionsOf(c).length === 2)).toEqual([
       "yard",
       "lake",
+      "game",
     ]);
   });
 
@@ -68,11 +72,14 @@ describe("cards", () => {
       const [risky, smarter] = versionsOf(base).map(cardDef);
       if (!smarter) continue;
       expect(risky.points).toBeGreaterThan(smarter.points);
-      expect(smarter.points / risky.points).toBeGreaterThanOrEqual(0.75);
-      expect(smarter.exposure.chance).toBeLessThan(risky.exposure.chance);
-      expect(smarter.exposure.size * smarter.exposure.count).toBeLessThan(
-        risky.exposure.size * risky.exposure.count,
-      );
+      // Home by 11 is smarter by routine (no late night), not by exposure.
+      if (base !== "game") {
+        expect(smarter.points / risky.points).toBeGreaterThanOrEqual(0.75);
+        expect(smarter.exposure.chance).toBeLessThan(risky.exposure.chance);
+        expect(smarter.exposure.size * smarter.exposure.count).toBeLessThan(
+          risky.exposure.size * risky.exposure.count,
+        );
+      }
       expect(smarter.base).toBe(base);
     }
   });
@@ -648,5 +655,131 @@ describe("loadoutFromLife and battleDue", () => {
       return;
     }
     throw new Error("no yard exposure landed in 50 seeds");
+  });
+});
+
+describe("game night at Alex's", () => {
+  const G = P.life.meds.slip.lateNight;
+  const withGame = (seed: number, card: CardId, day = 1, slot = 1) =>
+    placeCard(createLife({ seed }), day, slot, card).state;
+  const lastDose = (l: LifeState, day: number) =>
+    l.doses.find((d) => d.week === l.week && d.day === day)!;
+
+  it("deals five cards to both weeks, game night evening only", () => {
+    expect(handFor(1)).toHaveLength(5);
+    expect(handFor(2)).toEqual(handFor(1));
+    const life = createLife({ seed: 1 });
+    expect(life.hand).toContain("game");
+    for (const card of ["game", "gameEarly"] as const) {
+      const p = placementProblems(life, 1, 0, card);
+      expect(p).toEqual(["game night is only in the evening"]);
+      expect(placementProblems(life, 1, 1, card)).toEqual([]);
+      expect(placementProblems(life, 2, 1, card)).toEqual([]);
+      expect(() => placeCard(life, 0, 0, card)).toThrow(/evening/);
+    }
+  });
+
+  it("pairs game night with its home-by-11 version", () => {
+    expect(versionsOf("game")).toEqual(["game", "gameEarly"]);
+    expect(cardDef("game")).toMatchObject({ points: 3, energy: 1 });
+    expect(cardDef("game").exposure.chance).toBe(0.05);
+    expect(cardDef("game").lateNight).toBe(true);
+    expect(cardDef("gameEarly")).toMatchObject({ points: 2, energy: 1 });
+    expect(cardDef("gameEarly").lateNight).toBeUndefined();
+    expect(cardDef("gameEarly").base).toBe("game");
+  });
+
+  it("puts the dose risk on the card preview", () => {
+    const life = createLife({ seed: 1 });
+    expect(cardPreview(life, "game").doseRisk).toEqual({
+      chance: 0.5,
+      text: "late night: 50% the pills slip",
+    });
+    expect(cardPreview(life, "gameEarly").doseRisk).toBeNull();
+    expect(cardPreview(life, "band").doseRisk).toBeNull();
+  });
+
+  it("forecasts the slip before the plan is played", () => {
+    const life = withGame(1, "game");
+    const f = medForecast(life);
+    expect(f.map((x) => x.chance)).toEqual([null, G, null]);
+    expect(f[1]).toMatchObject({ taken: true, cause: "default" });
+    expect(exposurePreview(life).slipDays).toEqual([{ day: 1, chance: G }]);
+    expect(
+      medForecast(withGame(1, "gameEarly")).every((x) => x.chance === null),
+    ).toBe(true);
+  });
+
+  it("rolls the slip once per seed, week and day: slipped in about half of seeds", () => {
+    let slipped = 0;
+    const N = 2000;
+    for (let seed = 1; seed <= N; seed++) {
+      expect(slipRoll(seed, 1, 1)).toBe(slipRoll(seed, 1, 1));
+      const end = finish(withGame(seed, "game"));
+      const miss = lastDose(end, 1);
+      if (!miss.taken) {
+        slipped++;
+        expect(miss.cause).toBe("slipped");
+      } else expect(miss.cause).toBe("default");
+      expect(slipRoll(seed, 1, 1) < G).toBe(!miss.taken);
+    }
+    expect(slipped / N).toBeGreaterThan(0.46);
+    expect(slipped / N).toBeLessThan(0.54);
+  });
+
+  it("slips only on a late-night evening, and never for home by 11", () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const early = finish(withGame(seed, "gameEarly"));
+      expect(early.doses.filter((d) => d.cause === "slipped")).toEqual([]);
+      const none = finish(createLife({ seed }));
+      expect(none.doses.filter((d) => d.cause === "slipped")).toEqual([]);
+    }
+  });
+
+  it("moving the card to another day changes which day, never the fairness", () => {
+    let both = 0;
+    for (let seed = 1; seed <= 400; seed++) {
+      for (const day of [0, 1, 2]) {
+        const end = finish(withGame(seed, "game", day));
+        const slipped = end.doses.filter((d) => d.cause === "slipped");
+        expect(slipped.length).toBe(slipRoll(seed, 1, day) < G ? 1 : 0);
+        if (slipped.length) expect(slipped[0].day).toBe(day);
+      }
+      both += slipRoll(seed, 1, 0) < G === slipRoll(seed, 1, 2) < G ? 1 : 0;
+    }
+    // Different days draw different rolls.
+    expect(both).toBeLessThan(400);
+  });
+
+  it("is deterministic: the same seed slips the same way twice", () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      expect(finish(withGame(seed, "game")).doses).toEqual(
+        finish(withGame(seed, "game")).doses,
+      );
+    }
+  });
+
+  it("treats a slip like any miss: the med level drops and the event is no-blame", () => {
+    let seed = 1;
+    while (slipRoll(seed, 1, 1) >= G) seed++;
+    let life = withGame(seed, "game");
+    life = advanceDay(life).state;
+    const r = advanceDay(life);
+    const ev = r.events.find((e) => e.type === "MedsSkipped");
+    expect(ev).toMatchObject({ cause: "slipped", day: 1 });
+    expect(r.state.medLevel).toBeCloseTo(2 / 3, 5);
+    expect(r.state.streak).toBe(0);
+    expect(r.events.some((e) => e.type === "MedLevelChanged")).toBe(true);
+  });
+
+  it("leaves an unpacked sleepover's friction alone", () => {
+    let l = placeCard(createLife({ seed: 3 }), 0, 1, "sleepover", false).state;
+    l = placeCard(l, 1, 1, "game").state;
+    const f = medForecast(l);
+    expect(f[1]).toMatchObject({
+      taken: false,
+      cause: "friction",
+      chance: null,
+    });
   });
 });

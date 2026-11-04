@@ -16,6 +16,8 @@ export interface LifeCardModel {
   readonly facts: string;
   readonly odds: string;
   readonly chance: number;
+  /** A late-night card: its risk to that day's pills, in words. Null otherwise. */
+  readonly doseRisk: string | null;
   /** The other version, offered as an easy swap. */
   readonly alt: {
     readonly version: string;
@@ -528,6 +530,15 @@ export function createLifePanel(
           : [
               el("span", "font-size:13px;", c.facts),
               el("span", "font-size:13px;font-weight:600;", c.odds),
+              ...(c.doseRisk
+                ? [
+                    el(
+                      "span",
+                      "font-size:13px;font-weight:600;color:var(--zw-notice);",
+                      `! ${c.doseRisk}`,
+                    ),
+                  ]
+                : []),
             ]),
         el(
           "span",

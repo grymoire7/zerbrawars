@@ -36,12 +36,13 @@ export interface CampaignPlan extends WeekPlan {
 
 export type CampaignBot = (roll: () => number) => CampaignPlan;
 
-/** Card slots (as in life/bots.ts), placed by points so a short week drops the cheapest first. */
+/** Card slots (as in life/bots.ts), placed by points so a short week drops the cheapest first (band, then game night). */
 const LAYOUT: readonly { base: HandCardId; day: number; slot: number }[] = [
   { base: "lake", day: 1, slot: 1 },
   { base: "yard", day: 0, slot: 0 },
   { base: "sleepover", day: 0, slot: 1 },
-  { base: "band", day: 2, slot: 1 },
+  { base: "game", day: 2, slot: 1 },
+  { base: "band", day: 2, slot: 0 },
 ];
 
 const withDoctor =
@@ -127,7 +128,7 @@ function bookDoctor(life: LifeState, policy: DoctorPolicy): LifeState {
         placementProblems(life, day, slot, "doctor").length === 0,
     );
     if (ok) return placeCard(life, ok.day, ok.slot, "doctor").state;
-    const cheapest = (["band", "sleepover", "yard", "lake"] as const)
+    const cheapest = (["band", "game", "sleepover", "yard", "lake"] as const)
       .map((card) => findPlaced(life, card))
       .find((at) => at && at.day >= life.day);
     if (!cheapest) return life;
