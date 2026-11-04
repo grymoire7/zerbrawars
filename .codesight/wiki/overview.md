@@ -14,7 +14,7 @@
 
 Changes to these files have the widest blast radius across the codebase:
 
-- `src/sim/params.ts` — imported by **49** files
+- `src/sim/params.ts` — imported by **50** files
 - `src/sim/types.ts` — imported by **48** files
 - `src/sim/pathogens.ts` — imported by **24** files
 - `src/sim/battle/setup.ts` — imported by **19** files

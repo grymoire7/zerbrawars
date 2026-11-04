@@ -693,7 +693,7 @@ export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
     bar: null,
     color: "goal",
     explain:
-      "Your score for this week's choices, if the plan plays out. Outcome is added after the fight." +
+      "Your score for this week's choices, if the plan plays out: points, odds pushed, routine kept and a bonus for meeting the goal. Outcome is added after the fight." +
       (earlier > 0 ? ` Earlier weeks: ${earlier}.` : ""),
   };
   return { cells: [pointsCell, energyCell, medCell, scoreCell] };

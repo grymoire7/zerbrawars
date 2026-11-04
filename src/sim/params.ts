@@ -410,7 +410,8 @@ export const PARAMS = {
    * Score (B1a, docs/specs/b1a-design.md section 1). Two parts per week, never negative, nothing
    * subtracted. Choices (no luck): `perPoint` per life point, `perDodgedPercent` per percentage
    * point of landing chance a smarter card avoids against its base card (the numbers printed on
-   * the card faces), `perDose` per dose taken this week, and `checked` for seeing the doctor when
+   * the card faces, rounded per card), `perDose` per dose the plan keeps safe ("Routine kept": a day
+   * counts one minus its slip chance), `goal` for meeting the life-points goal, and `checked` for seeing the doctor when
    * a symptom showed (a viral visit pays the same, so checking a fever is never wasted). Outcome
    * (luck plays a part): `perTissue` per tissue health kept (a quiet week counts as full), the
    * fight by result (`fight` by grade for a full battle, `skirmish` cleared or loose, `quiet`),
@@ -418,9 +419,10 @@ export const PARAMS = {
    * weight or tuning that moves the measured ranges changes, so best scores stay comparable.
    */
   score: {
-    version: 3,
+    version: 4,
     perPoint: 10,
-    perDodgedPercent: 1,
+    perDodgedPercent: 0.5,
+    goal: 40,
     perDose: 30,
     checked: { early: 20, late: 10 },
     perTissue: 2,

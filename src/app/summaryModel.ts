@@ -9,14 +9,16 @@ export const SCORE_FRAMING =
   "Infections happen whatever you do. Choices is what you chose, and the part you control. Outcome is how it went, and includes the dice.";
 
 export const choicesParts = (w: WeekScore) =>
-  `living ${w.choices.living}, dodged ${w.choices.dodged}, meds ${w.choices.meds}, checked ${w.choices.checked}`;
+  `living ${w.choices.living}, odds pushed ${w.choices.dodged}, routine kept ${w.choices.meds}, checked ${w.choices.checked}` +
+  (w.choices.goalMet > 0 ? `, goal met +${w.choices.goalMet}` : "");
 
 export const outcomeParts = (w: WeekScore) =>
   `tissue ${w.outcome.tissue}, fight ${w.outcome.fight}, clear ${w.outcome.clear}`;
 
-/** The one line on the week's outcome overlay. */
+/** The one line on the week's outcome overlay; a met goal adds its bonus. */
 export const weekScoreLine = (w: WeekScore) =>
-  `This week: ${w.total} (Choices ${w.choices.total} + Outcome ${w.outcome.total})`;
+  `This week: ${w.total} (Choices ${w.choices.total} + Outcome ${w.outcome.total})` +
+  (w.choices.goalMet > 0 ? `, goal met +${w.choices.goalMet}` : "");
 
 /** The best-score lines; empty when nothing could be saved. */
 export function bestLines(rec: RecordResult | null): string[] {

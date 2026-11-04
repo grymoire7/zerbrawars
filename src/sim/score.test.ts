@@ -84,15 +84,15 @@ describe("Choices", () => {
   });
 
   it("pays the avoided chance for a smarter card, nothing for a risky one", () => {
-    expect(weekChoices(week({ rolls: [roll("yardIndoor")] })).dodged).toBe(35);
-    expect(weekChoices(week({ rolls: [roll("beach")] })).dodged).toBe(30);
+    expect(weekChoices(week({ rolls: [roll("yardIndoor")] })).dodged).toBe(18);
+    expect(weekChoices(week({ rolls: [roll("beach")] })).dodged).toBe(15);
     expect(
       weekChoices(week({ rolls: [roll("yard"), roll("lake"), roll("band")] }))
         .dodged,
     ).toBe(0);
     expect(
       weekChoices(week({ rolls: [roll("yardIndoor"), roll("beach")] })).dodged,
-    ).toBe(65);
+    ).toBe(33);
   });
 
   it("pays per dose taken this week and drops that much per skipped dose", () => {
@@ -105,6 +105,43 @@ describe("Choices", () => {
     });
     expect(weekChoices(taken).meds).toBe(3 * PARAMS.score.perDose);
     expect(weekChoices(skipped).meds).toBe(2 * PARAMS.score.perDose);
+  });
+
+  it("adds the goal bonus only when the goal is met, and keeps the total consistent", () => {
+    const met = weekChoices(week({ goal: { points: 12, target: 12 } }));
+    expect(met.goalMet).toBe(PARAMS.score.goal);
+    expect(met.total).toBe(met.living + met.goalMet);
+    expect(
+      weekChoices(week({ goal: { points: 11, target: 12 } })).goalMet,
+    ).toBe(0);
+  });
+
+  it("counts a late night's dose at one minus its slip chance, slipped or not", () => {
+    let l = createLife({ seed: 1 });
+    l = placeCard(l, 1, 1, "game", false).state;
+    const taken = {
+      ...l,
+      doses: [dose(0, true), dose(1, true), dose(2, true)],
+    };
+    const slipped = {
+      ...l,
+      doses: [
+        dose(0, true),
+        { ...dose(1, false), cause: "slipped" as const },
+        dose(2, true),
+      ],
+    };
+    const per = PARAMS.score.perDose;
+    expect(weekChoices(taken).meds).toBe(2.5 * per);
+    expect(weekChoices(slipped).meds).toBe(2.5 * per);
+    // A forced or actual miss is 0 for the day.
+    expect(
+      weekChoices({
+        ...l,
+        doses: [dose(0, true), dose(1, false), dose(2, true)],
+      }).meds,
+    ).toBe(2 * per);
+    expect(plannedChoices(l).meds).toBe(2.5 * per);
   });
 
   it("pays for checking a symptom, early more than late, a viral visit the same", () => {
@@ -138,10 +175,11 @@ describe("Choices", () => {
     );
     expect(c).toEqual({
       living: 100,
-      dodged: 35,
+      dodged: 18,
       meds: 90,
       checked: 20,
-      total: 245,
+      goalMet: 0,
+      total: 228,
     });
   });
 });
@@ -236,8 +274,8 @@ describe("plannedChoices", () => {
     l = placeCard(l, 0, 0, "yardIndoor", false).state;
     const p = plannedChoices(l);
     expect(p.living).toBe(PARAMS.score.perPoint * cardDef("yardIndoor").points);
-    expect(p.dodged).toBe(35);
-    expect(p.total).toBe(p.living + p.dodged + p.meds + p.checked);
+    expect(p.dodged).toBe(18);
+    expect(p.total).toBe(p.living + p.dodged + p.meds + p.checked + p.goalMet);
   });
 
   it("matches weekChoices once nothing is left to play", () => {
@@ -259,10 +297,10 @@ describe("cardChoices", () => {
   it("adds the landing chance a smarter version avoids", () => {
     expect(cardChoices("yardIndoor")).toEqual({
       living: 30,
-      dodged: 35,
-      total: 65,
+      dodged: 18,
+      total: 48,
     });
-    expect(cardChoices("beach")).toEqual({ living: 40, dodged: 30, total: 70 });
+    expect(cardChoices("beach")).toEqual({ living: 40, dodged: 15, total: 55 });
   });
 
   it("keeps the risky version's life points above the smarter one's", () => {

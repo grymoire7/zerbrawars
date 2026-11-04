@@ -9,6 +9,7 @@ import type { CycleRecord } from "./campaign";
 // `npx vitest run src/sim/score.balance.test.ts --silent=false`.
 
 const SEEDS = 200;
+const PART_MAX: Record<string, number> = {};
 
 /** Risky cards, pills left, every dose skipped, never the doctor. Kept out of CAMPAIGN_BOTS. */
 const careless: CampaignBot = () => ({
@@ -56,9 +57,16 @@ function survey(bot: CampaignBot): Row {
     const s = campaignSummary(c).score;
     for (const h of c.history) {
       for (const n of parts(h)) expect(n).toBeGreaterThanOrEqual(0);
+      for (const [k, v] of Object.entries({
+        ...h.score.choices,
+        ...h.score.outcome,
+      }))
+        PART_MAX[k] = Math.max(PART_MAX[k] ?? 0, v);
       // Slice 2: the all-risky week can reach 17 points with six energy (game night added), measured 170.
       expect(h.score.choices.living).toBeLessThanOrEqual(180);
-      expect(h.score.choices.dodged).toBeLessThanOrEqual(65);
+      // Score v4: odds pushed halved (max 33), goal bonus 40 (slice 4 retunes).
+      expect(h.score.choices.dodged).toBeLessThanOrEqual(40);
+      expect(h.score.choices.goalMet).toBeLessThanOrEqual(40);
       expect(h.score.choices.meds).toBeLessThanOrEqual(90);
       expect(h.score.choices.checked).toBeLessThanOrEqual(20);
       expect(h.score.outcome.tissue).toBeLessThanOrEqual(40);
@@ -67,7 +75,7 @@ function survey(bot: CampaignBot): Row {
       expect(h.score.outcome.clear).toBeLessThanOrEqual(20);
     }
     expect(s.total).toBe(s.choices + s.outcome);
-    expect(s.total).toBeLessThanOrEqual(790);
+    expect(s.total).toBeLessThanOrEqual(830);
     r.choices += s.choices / SEEDS;
     r.outcome += s.outcome / SEEDS;
     r.total += s.total / SEEDS;
@@ -97,6 +105,7 @@ describe("score ranges", () => {
           f(r.max),
       ),
     ];
+    lines.push(`part maxima: ${JSON.stringify(PART_MAX)}`);
     (
       globalThis as unknown as { console: { log(s: string): void } }
     ).console.log(lines.join("\n"));
@@ -104,10 +113,10 @@ describe("score ranges", () => {
 
   it("keeps each bot near its measured range", () => {
     expect(rows.home.choices).toBeLessThanOrEqual(200);
-    expect(rows.careless.total).toBeLessThanOrEqual(450);
+    expect(rows.careless.total).toBeLessThanOrEqual(520);
     expect(rows.careless.total).toBeGreaterThanOrEqual(330);
     expect(rows.smarter.total).toBeGreaterThanOrEqual(740);
-    expect(rows.smarter.total).toBeLessThanOrEqual(790);
+    expect(rows.smarter.total).toBeLessThanOrEqual(830);
   });
 
   it("orders the strategies", () => {
