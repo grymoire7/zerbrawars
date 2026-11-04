@@ -1,5 +1,7 @@
 # Week phase: design pass
 
+> Status: built (all questions answered yes). Slices, commits and schedule are tracked in `../plans/beta-plan.md`, not here; the slice lists below are the original proposal.
+
 Design-only pass after Tracy's playtest of week 2 ("still trivial to play and win"; "odd that taking
 medication is always on by default... a patient may forget, but would not deliberately decide not
 to take them"). No code was changed. Numbers come from `src/sim/params.ts` on `feat/beta` at

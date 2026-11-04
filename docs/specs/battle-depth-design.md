@@ -1,5 +1,7 @@
 # Battle depth: design pass
 
+> Status: built (all questions answered yes). Slices, commits and schedule are tracked in `../plans/beta-plan.md`, not here; the slice lists below are the original proposal.
+
 Design-only pass requested in `../plans/beta-plan.md` (B1b, "a battle-depth design pass follows
 before B1"). No code was changed. Numbers come from `src/sim/params.ts` on `feat/beta` at `096ce1f`
 and from a throwaway survey (300 seeds, two-week campaigns, every battle played by `thoughtfulPlay`

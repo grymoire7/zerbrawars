@@ -4,6 +4,29 @@ Builds on `prototype-plan.md` (Milestones 1-2 are done; merged to `main` on 2026
 Clinical corrections in `../specs/fodder.md` still win. Open clinical questions live in `../specs/clinician-questions.md`.
 Items marked **(my call)** are defaults I picked; change them freely.
 
+**How the docs split.** `docs/specs/` says what a feature is and why (designs, rules, clinical notes); a
+spec does not carry the schedule. This plan says what is done, in which order, and in which commit. The
+status table below is the only place that tracks slices.
+
+## Status (updated 2026-11-04)
+
+| Task | State | Commits | Spec |
+| --- | --- | --- | --- |
+| B0 housekeeping | done | | |
+| B1a identity, meters, score | done | seven slices on `feat/beta` | `b1a-design.md` |
+| B1b declutter, colour, board | done | eff5720, c5ffb98 (meds toggle, later replaced), c0f43f8, 0e05f00, 096ce1f | |
+| B1c battle depth | done (slices 1-5) | 60295b4 doors and clock, 5cb1d0c arrivals, 924d7a5 missed doses, 5a760e5 UI marks, debfcf2 medicine roll | `battle-depth-design.md` |
+| Week-stop banner | done | 655f987, 2405a2f (friction stop removed) | |
+| B1d week phase | slices 1-4 done, 5 optional | c168283 no toggle and card-keyed dice, 4e42066 game night, 0171d52 score v4, cc8efaf bots and balance | `week-phase-design.md` |
+| B1 mobile layout and touch | not started (needs the phone session) | | |
+| B2 to B10 | not started | | |
+
+Open after B1d: the week goal is met in 96-100% of weeks by every card-playing bot, so the week is
+easy to "win" (the score still spreads plans by about 200 points); careless full battles need backup
+51% of the time (a battle knob); both wait for the patient session. `?goal=N` (debug URL parameter)
+compares a 12 and a 13 point week. B1d slice 5 (a week-2 farm hand) is the first cut of B1d, then more cards.
+Backlog: a larger card pool drawn per week, so the weeks differ.
+
 ## 1. Goal
 
 A playable beta that a CGD patient can pick up and understand without help, and that can be demoed at NIH
@@ -104,6 +127,17 @@ or two turns with little strategy.
 action in the meds row is irreversible before the day is played, and the board has no green and no square
 frame; checks green and screenshots attached.
 
+**B1c. Battle depth (added 2026-11-03).** Design in `../specs/battle-depth-design.md` (nine questions, all yes).
+Five slices: the clock, doors and backup stop; arrivals and swallowed germs keeping the fight open; missed
+doses making arrivals bigger; the incoming mark and turn clock in the UI; medicine helping cells finish
+swallowed germs. *Done when:* full battles last 4-6 turns, doses change the fight. Status above.
+
+**B1d. Week phase (added 2026-11-04).** Design in `../specs/week-phase-design.md` (fourteen questions, all
+yes). Slices: no dose toggle (doses by routine, forecast chips, card-keyed dice); Game night card and the
+late-night pill slip; score version 4 (goal +40, routine kept, odds pushed halved); bots and balance;
+optional week-2 farm hand. Reason: the week was trivial, and a player deliberately skipping medicine read
+as wrong. Status above.
+
 **B1. Mobile layout and touch.** Real device pass (serve with `--host`, open on the user's phone).
 *Done when:* life screen, battle screen and outcome overlays are usable one-handed in portrait on a
 phone; End Turn and playback controls reachable; board stays large; nothing essential needs hover.
@@ -184,8 +218,14 @@ only the diagnosed part with the aura contrast).
    surfaced in the UI (title/hub and arc-complete screen), or they mean nothing. Still no save/load of
    a run in progress.
 
+7. (2026-11-03) Battle depth: build Option A plus the medicine half of B before B1; pay for it by cutting
+   the epilogue (B6) if needed. Terrain lanes (Option C) are post-beta.
+8. (2026-11-04) Week phase: build Option A before B1. Missed doses come from routine breaking (an unpacked
+   sleepover, a late night), never from a player choice; the dose toggle is gone. More card variety is
+   wanted and is backlog.
+
 ## 9. Resuming after a break
 
-Conversation context does not carry over by itself. Read `../specs/fodder.md`, this plan and
-`git log --oneline` on `feat/beta`, then continue from the latest B task. Everything through the
-skirmish UI (commit `940af26`) is committed. Plans and specs are tracked in `docs/plans/` and `docs/specs/`; early brainstorming stays in the gitignored `docs/internal/`.
+Conversation context does not carry over by itself. Read `../specs/fodder.md`, this plan (the Status
+table first) and `git log --oneline` on `feat/beta`, then continue from the first not-started task.
+Everything in the Status table marked done is committed. Plans and specs are tracked in `docs/plans/` and `docs/specs/`; early brainstorming stays in the gitignored `docs/internal/`.
