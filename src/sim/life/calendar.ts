@@ -48,6 +48,8 @@ export interface LifeOptions {
   readonly doses?: readonly Dose[];
   /** Last week's skirmish ended with loose germs: the week opens with its aftermath. */
   readonly aftermath?: Aftermath["kind"];
+  /** Debug override (?goal=N) of PARAMS.life.goalTarget for this week. */
+  readonly goalTarget?: number;
 }
 
 /** Week 1 rolls from the seed itself; later weeks mix the week in so their dice differ. */
@@ -110,7 +112,7 @@ export function createLife(opts: LifeOptions): LifeState {
     planned: Array.from({ length: L.days }, () => null),
     streak: streakOf(doses),
     medLevel: medLevelOf(doses),
-    goal: { points: 0, target: L.goalTarget },
+    goal: { points: 0, target: opts.goalTarget ?? L.goalTarget },
     energy: Math.max(
       0,
       Math.min(L.maxEnergy, opts.energy ?? L.startEnergy) -

@@ -4,6 +4,7 @@ import { createCampaign, endWeek } from "../sim/campaign";
 import { medLevelOf } from "../sim/life/meds";
 import type { CampaignEvent } from "../sim/campaign";
 import {
+  parseGoal,
   aftermathText,
   bodyBeats,
   broughtItems,
@@ -34,6 +35,17 @@ describe("parseReservoirs", () => {
   });
   it("keeps at most the carry cap", () => {
     expect(parseReservoirs("strep,strep,strep,strep").length).toBe(2);
+  });
+});
+
+describe("parseGoal", () => {
+  it("accepts integers 6..20 and ignores everything else", () => {
+    expect(parseGoal("13")).toBe(13);
+    expect(parseGoal("6")).toBe(6);
+    expect(parseGoal("20")).toBe(20);
+    for (const bad of [null, "", "5", "21", "12.5", "abc", "-8", "1e1"]) {
+      expect(parseGoal(bad)).toBeUndefined();
+    }
   });
 });
 

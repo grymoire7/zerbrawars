@@ -31,6 +31,8 @@ export interface RunOptions {
   /** Debug start: the first week's med level, 0..1. */
   readonly med?: number;
   readonly energy?: number;
+  /** Debug start: the goal target (?goal=N), in place of PARAMS.life.goalTarget. */
+  readonly goalTarget?: number;
   /** ?mode=life: the calendar on its own, its battle a separate debug screen. */
   readonly standalone?: boolean;
   readonly now?: () => number;
@@ -79,6 +81,7 @@ export function createRun(opts: RunOptions): Run {
     seed: opts.seed,
     reservoirs: opts.reservoirs,
     energy: opts.energy,
+    goalTarget: opts.goalTarget,
   });
   let campaign = first.state;
   if (opts.med !== undefined) {
@@ -89,6 +92,7 @@ export function createRun(opts: RunOptions): Run {
         reservoirs: opts.reservoirs,
         energy: opts.energy,
         doses: dosesForMed(opts.med),
+        goalTarget: opts.goalTarget,
       }),
     };
   }

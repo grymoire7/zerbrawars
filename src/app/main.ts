@@ -7,7 +7,7 @@ import { getPanels, getUiRoot } from "../ui";
 import { mountBattle } from "./battleScreen";
 import { mountInterlude } from "./interludeScreen";
 import { mountLife } from "./lifeScreen";
-import { parseReservoirs } from "./campaignModel";
+import { parseGoal, parseReservoirs } from "./campaignModel";
 import { createRun, type Run } from "./run";
 import { loadoutFor, parseLoadoutParams } from "./loadoutOptions";
 import { parseMode, type Screen, type ScreenRequest } from "./screen";
@@ -39,6 +39,7 @@ function newRun(standalone: boolean, seed?: number): Run {
     seed: seed ?? fromUrl ?? PARAMS.defaultSeed,
     reservoirs: parseReservoirs(q.get("reservoirs")),
     med: Number.isFinite(med) ? Math.min(1, Math.max(0, med)) : undefined,
+    goalTarget: parseGoal(q.get("goal")),
     standalone,
   });
 }

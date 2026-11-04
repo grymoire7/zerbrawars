@@ -258,6 +258,13 @@ export function probeDue(turn: number, enabled: boolean): boolean {
   return enabled && turn >= 2 && turn <= 6 && turn % 2 === 0;
 }
 
+/** ?goal=N: an integer 6..20 overrides the goal target; anything else is ignored (undefined). */
+export function parseGoal(raw: string | null): number | undefined {
+  if (raw === null || !/^\d+$/.test(raw.trim())) return undefined;
+  const n = Number(raw);
+  return n >= 6 && n <= 20 ? n : undefined;
+}
+
 /** "aspergillus,staph:2" -> reservoirs (hidden, size 1 unless given). Unknown names are skipped. */
 export function parseReservoirs(raw: string | null): CarriedReservoir[] {
   if (!raw) return [];
@@ -331,7 +338,7 @@ export function weekLine(h: CycleRecord): WeekLine {
           .join(", ");
   return {
     week: h.week,
-    points: `${h.points} of ${PARAMS.life.goalTarget} points${h.goalMet ? " (goal met)" : ""}`,
+    points: `${h.points} of ${h.goalTarget} points${h.goalMet ? " (goal met)" : ""}`,
     result,
     doctor,
     carried,

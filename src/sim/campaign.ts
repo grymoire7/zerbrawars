@@ -64,6 +64,8 @@ export interface CycleRecord {
   readonly week: number;
   readonly points: number;
   readonly goalMet: boolean;
+  /** The goal the week was played against (12 unless ?goal= overrode it). */
+  readonly goalTarget: number;
   readonly medLevel: number;
   readonly symptoms: readonly Symptom[];
   readonly doctor: DoctorVisit | null;
@@ -150,6 +152,8 @@ export interface CampaignOptions {
   /** First week only, for the debug panel and tests: reservoirs carried in and starting energy. */
   readonly reservoirs?: readonly CarriedReservoir[];
   readonly energy?: number;
+  /** Debug override of the goal target (?goal=N); later weeks inherit it. */
+  readonly goalTarget?: number;
 }
 
 const lifeEvents = (events: readonly LifeEvent[]): CampaignEvent[] =>
@@ -181,6 +185,7 @@ export function createCampaign(opts: CampaignOptions): CampaignStep {
       week: 1,
       reservoirs: opts.reservoirs?.slice(0, C.carry.maxReservoirs),
       energy: opts.energy,
+      goalTarget: opts.goalTarget,
     }),
     loadout: null,
     battleKind: null,
@@ -361,6 +366,7 @@ export function nextCycle(c: Campaign): CampaignStep {
     week: life.week,
     points: life.goal.points,
     goalMet: life.goal.points >= life.goal.target,
+    goalTarget: life.goal.target,
     medLevel: life.medLevel,
     symptoms: life.symptoms,
     doctor: life.doctor,
@@ -398,6 +404,7 @@ export function nextCycle(c: Campaign): CampaignStep {
       energy: carry.energy.next,
       reservoirs: carry.kept,
       doses: life.doses,
+      goalTarget: life.goal.target,
       aftermath: lostSkirmish(c.result)
         ? aftermathKind(c.seed, life.week + 1)
         : undefined,

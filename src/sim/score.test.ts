@@ -288,6 +288,17 @@ describe("plannedChoices", () => {
   });
 });
 
+describe("a goal override", () => {
+  it("createLife takes the target, and the bonus follows it", () => {
+    expect(createLife({ seed: 1, goalTarget: 13 }).goal.target).toBe(13);
+    const at = (points: number) =>
+      weekChoices(week({ day: PARAMS.life.days, goal: { points, target: 13 } }))
+        .goalMet;
+    expect(at(12)).toBe(0);
+    expect(at(13)).toBe(PARAMS.score.goal);
+  });
+});
+
 describe("cardChoices", () => {
   it("is points only for a base card", () => {
     expect(cardChoices("yard")).toEqual({ living: 40, dodged: 0, total: 40 });
