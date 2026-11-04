@@ -84,15 +84,15 @@ describe("Choices", () => {
   });
 
   it("pays the avoided chance for a smarter card, nothing for a risky one", () => {
-    expect(weekChoices(week({ rolls: [roll("yardIndoor")] })).dodged).toBe(18);
-    expect(weekChoices(week({ rolls: [roll("beach")] })).dodged).toBe(15);
+    expect(weekChoices(week({ rolls: [roll("yardIndoor")] })).dodged).toBe(25);
+    expect(weekChoices(week({ rolls: [roll("beach")] })).dodged).toBe(21);
     expect(
       weekChoices(week({ rolls: [roll("yard"), roll("lake"), roll("band")] }))
         .dodged,
     ).toBe(0);
     expect(
       weekChoices(week({ rolls: [roll("yardIndoor"), roll("beach")] })).dodged,
-    ).toBe(33);
+    ).toBe(46);
   });
 
   it("pays per dose taken this week and drops that much per skipped dose", () => {
@@ -175,11 +175,11 @@ describe("Choices", () => {
     );
     expect(c).toEqual({
       living: 100,
-      dodged: 18,
+      dodged: 25,
       meds: 90,
       checked: 20,
       goalMet: 0,
-      total: 228,
+      total: 235,
     });
   });
 });
@@ -274,7 +274,7 @@ describe("plannedChoices", () => {
     l = placeCard(l, 0, 0, "yardIndoor", false).state;
     const p = plannedChoices(l);
     expect(p.living).toBe(PARAMS.score.perPoint * cardDef("yardIndoor").points);
-    expect(p.dodged).toBe(18);
+    expect(p.dodged).toBe(25);
     expect(p.total).toBe(p.living + p.dodged + p.meds + p.checked + p.goalMet);
   });
 
@@ -297,10 +297,10 @@ describe("cardChoices", () => {
   it("adds the landing chance a smarter version avoids", () => {
     expect(cardChoices("yardIndoor")).toEqual({
       living: 30,
-      dodged: 18,
-      total: 48,
+      dodged: 25,
+      total: 55,
     });
-    expect(cardChoices("beach")).toEqual({ living: 40, dodged: 15, total: 55 });
+    expect(cardChoices("beach")).toEqual({ living: 40, dodged: 21, total: 61 });
   });
 
   it("keeps the risky version's life points above the smarter one's", () => {

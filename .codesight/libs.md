@@ -124,7 +124,7 @@
   - interface CampaignPlan
   - type DoctorPolicy
   - type CampaignBot
-  - _...1 more_
+  - _...2 more_
 - `src/sim/life/body.ts`
   - function bodyRoll: (seed, week, day, i) => number
   - function symptomDayFor: (size) => number
@@ -134,10 +134,13 @@
   - function scheduledSymptoms: (seed, week, reservoirs) => Symptom[]
   - _...5 more_
 - `src/sim/life/bots.ts`
+  - function planPlacements: (plan) => readonly Placement[]
+  - function placeFitting: (life, placements) => LifeState
+  - function bestPlacements: (life) => readonly Placement[]
   - function playWeek: (bot, seed) => LifeState
+  - interface Placement
   - interface WeekPlan
-  - type LifeBot
-  - const LIFE_BOTS: Record<string, LifeBot>
+  - _...2 more_
 - `src/sim/life/calendar.ts`
   - function lifeRngSeed: (seed, week) => number
   - function cardRoll: (seed, week, card) => number

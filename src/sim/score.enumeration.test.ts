@@ -7,6 +7,12 @@ import {
 } from "./life/calendar";
 import { cardDef, handFor } from "./life/cards";
 import type { CardId, LifeState } from "./life/types";
+import {
+  bestPlacements,
+  LIFE_BOTS,
+  planPlacements,
+  placeFitting,
+} from "./life/bots";
 import { PARAMS } from "./params";
 import { plannedChoices } from "./score";
 
@@ -104,7 +110,7 @@ describe("week 1 plan landscape (Score v4)", () => {
     );
   });
 
-  it("scores the design's worked example about 283", () => {
+  it("scores the design's worked example about 296", () => {
     let l = createLife({ seed: 1 });
     for (const [day, slot, card, pack] of [
       [0, 0, "yardIndoor", false],
@@ -117,6 +123,27 @@ describe("week 1 plan landscape (Score v4)", () => {
     (
       globalThis as unknown as { console: { log(s: string): void } }
     ).console.log(`worked example: ${JSON.stringify(c)}`);
-    expect(Math.abs(c.total - 283)).toBeLessThanOrEqual(5);
+    expect(Math.abs(c.total - 296)).toBeLessThanOrEqual(5);
+  });
+
+  it("has a planner bot that plays a best enumerated plan", () => {
+    const life = createLife({ seed: 1 });
+    const plan = LIFE_BOTS.planner(() => 0, life);
+    const played = placeFitting(life, planPlacements(plan));
+    expect(plannedChoices(played).total).toBe(best);
+    expect(bestPlacements(life)).toBe(plan.placements);
+  });
+
+  it("leaves the naive smarter bot no better than the planner, and the risky bot behind", () => {
+    const life = createLife({ seed: 1 });
+    const total = (bot: string) =>
+      plannedChoices(
+        placeFitting(life, planPlacements(LIFE_BOTS[bot](() => 0, life))),
+      ).total;
+    expect(total("smarter")).toBeLessThanOrEqual(best);
+    expect(total("planner")).toBe(best);
+    expect(total("risky")).toBeLessThan(total("smarter"));
+    expect(total("careless")).toBeLessThan(total("risky"));
+    expect(total("forgetful")).toBeLessThan(total("smarter"));
   });
 });

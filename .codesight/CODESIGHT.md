@@ -3,8 +3,8 @@
 > **Stack:** raw-http | none | unknown | typescript
 
 > 0 routes | 0 models | 0 components | 53 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,500 tokens per conversation.**
-> **Last scanned:** 2026-11-04 17:20 — re-run after significant changes
+> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,400 tokens per conversation.**
+> **Last scanned:** 2026-11-04 18:48 — re-run after significant changes
 
 ---
 
@@ -134,7 +134,7 @@
   - interface CampaignPlan
   - type DoctorPolicy
   - type CampaignBot
-  - _...1 more_
+  - _...2 more_
 - `src/sim/life/body.ts`
   - function bodyRoll: (seed, week, day, i) => number
   - function symptomDayFor: (size) => number
@@ -144,10 +144,13 @@
   - function scheduledSymptoms: (seed, week, reservoirs) => Symptom[]
   - _...5 more_
 - `src/sim/life/bots.ts`
+  - function planPlacements: (plan) => readonly Placement[]
+  - function placeFitting: (life, placements) => LifeState
+  - function bestPlacements: (life) => readonly Placement[]
   - function playWeek: (bot, seed) => LifeState
+  - interface Placement
   - interface WeekPlan
-  - type LifeBot
-  - const LIFE_BOTS: Record<string, LifeBot>
+  - _...2 more_
 - `src/sim/life/calendar.ts`
   - function lifeRngSeed: (seed, week) => number
   - function cardRoll: (seed, week, card) => number
@@ -326,11 +329,11 @@
 - `src/sim/life/types.ts` — imported by **14** files
 - `src/sim/battle/resolve.ts` — imported by **14** files
 - `src/sim/campaign.ts` — imported by **12** files
-- `src/sim/life/cards.ts` — imported by **10** files
+- `src/sim/life/cards.ts` — imported by **11** files
 - `src/sim/life/calendar.ts` — imported by **8** files
+- `src/sim/score.ts` — imported by **8** files
 - `src/sim/battle/bots.ts` — imported by **8** files
 - `src/app/run.ts` — imported by **7** files
-- `src/sim/score.ts` — imported by **7** files
 
 ## Import Map (who imports what)
 

@@ -421,7 +421,7 @@ export const PARAMS = {
   score: {
     version: 4,
     perPoint: 10,
-    perDodgedPercent: 0.5,
+    perDodgedPercent: 0.7,
     goal: 40,
     perDose: 30,
     checked: { early: 20, late: 10 },

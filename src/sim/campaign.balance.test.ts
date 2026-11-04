@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { campaignSummary, type CycleRecord } from "./campaign";
 import {
   CAMPAIGN_BOTS,
+  careless,
   playCampaign,
   type CampaignBot,
   type DoctorPolicy,
 } from "./campaignBots";
 import type { CarriedReservoir } from "./life/loadout";
-import { LIFE_BOTS } from "./life/bots";
 import { PARAMS } from "./params";
 import { validateCampaign } from "./validate";
 
@@ -154,9 +154,10 @@ describe("campaign strategies", () => {
     expect(rows.home.left).toBe(0);
   });
 
-  it("makes the smarter weeks the best overall", () => {
+  it("makes the smarter weeks the best overall (the planner ties: smarter already plays the best plan)", () => {
+    expect(rows.planner.score).toBeGreaterThanOrEqual(rows.smarter.score);
     for (const [n, r] of Object.entries(rows))
-      if (n !== "smarter")
+      if (n !== "smarter" && n !== "planner")
         expect(rows.smarter.score, n).toBeGreaterThan(r.score);
   });
 
@@ -170,7 +171,7 @@ describe("campaign strategies", () => {
   it("makes the smarter weeks the best play of those that meet the goal", () => {
     expect(rows.smarter.goals).toBeGreaterThanOrEqual(0.95);
     for (const [n, r] of goalMeeters) {
-      if (n !== "smarter")
+      if (n !== "smarter" && n !== "planner")
         expect(rows.smarter.score, n).toBeGreaterThan(r.score);
     }
     expect(rows.smarter.score).toBeGreaterThan(rows.risky.score + 0.5);
@@ -185,12 +186,14 @@ describe("campaign strategies", () => {
     expect(rows.riskyNoDoctor.points).toBeGreaterThanOrEqual(rows.risky.points);
   });
 
-  // 0.05 before arrivals; with second groups and the clock, mixed measures about 8% and the
-  // others 3-5% (battle depth slice 2), so the cap is 12%.
+  // Per week, over all weeks: riskyNoDoctor measures 17%, risky 11%, mixed 5%, the rest 4% or less.
+  // The 12% cap of battle-depth slice 2 does not hold for the two risky habits; their caps are
+  // set a little above the measured rate.
   it("caps the snowball: no strategy needs backup often", () => {
     for (const [n, r] of Object.entries(rows))
-      // Slice 2 (game night's slip): riskyNoDoctor measures 16.8%; slice 4 retunes to 0.12.
-      expect(r.backup, n).toBeLessThan(0.21);
+      expect(r.backup, n).toBeLessThan(
+        n === "riskyNoDoctor" ? 0.19 : n.startsWith("risky") ? 0.13 : 0.08,
+      );
   });
 });
 
@@ -265,11 +268,6 @@ describe.each(Object.keys(RESERVOIRS))(
 // arrivals). The full table with the section 5 targets is in battleDepth.balance.test.ts.
 describe("battle length", () => {
   const LENGTH_SEEDS = 150;
-  const careless: CampaignBot = () => ({
-    ...LIFE_BOTS.riskySkipMeds(() => 0),
-    packPills: false,
-    doctor: "never",
-  });
   const BOTS: Record<string, CampaignBot> = { ...CAMPAIGN_BOTS, careless };
 
   function lengths(name: string, kind: "full" | "skirmish") {

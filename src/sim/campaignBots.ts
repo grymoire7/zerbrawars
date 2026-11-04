@@ -19,8 +19,13 @@ import {
   unplaceCard,
   weekOver,
 } from "./life/calendar";
-import { LIFE_BOTS, type WeekPlan } from "./life/bots";
-import type { HandCardId, LifeState } from "./life/types";
+import {
+  LIFE_BOTS,
+  placeFitting,
+  planPlacements,
+  type WeekPlan,
+} from "./life/bots";
+import type { LifeState } from "./life/types";
 import { PARAMS } from "./params";
 import { rngFromSeed, rngNext } from "./rng";
 import type { BattleGrade, BattleOutcome, BattleState } from "./types";
@@ -34,20 +39,14 @@ export interface CampaignPlan extends WeekPlan {
   readonly doctor: DoctorPolicy;
 }
 
-export type CampaignBot = (roll: () => number) => CampaignPlan;
-
-/** Card slots (as in life/bots.ts), placed by points so a short week drops the cheapest first (band, then game night). */
-const LAYOUT: readonly { base: HandCardId; day: number; slot: number }[] = [
-  { base: "lake", day: 1, slot: 1 },
-  { base: "yard", day: 0, slot: 0 },
-  { base: "sleepover", day: 0, slot: 1 },
-  { base: "game", day: 2, slot: 1 },
-  { base: "band", day: 2, slot: 0 },
-];
+export type CampaignBot = (
+  roll: () => number,
+  life?: LifeState,
+) => CampaignPlan;
 
 const withDoctor =
   (bot: string, doctor: DoctorPolicy): CampaignBot =>
-  (roll) => ({ ...LIFE_BOTS[bot](roll), doctor });
+  (roll, life) => ({ ...LIFE_BOTS[bot](roll, life), doctor });
 
 const POLICIES: readonly DoctorPolicy[] = ["early", "late", "never"];
 
@@ -57,15 +56,22 @@ export const CAMPAIGN_BOTS: Record<string, CampaignBot> = {
   risky: withDoctor("risky", "late"),
   smarter: withDoctor("smarter", "early"),
   /** Coin flips for the cards and pills, and any doctor policy. */
-  mixed: (roll) => ({
-    ...LIFE_BOTS.mixed(roll),
+  mixed: (roll, life) => ({
+    ...LIFE_BOTS.mixed(roll, life),
     doctor: POLICIES[Math.floor(roll() * POLICIES.length)],
   }),
-  /** Smarter cards, every dose skipped. */
+  /** Smarter cards, every dose skipped (a test bot: a player never chooses this). */
   skipMeds: withDoctor("smarterSkipMeds", "early"),
+  /** Smarter versions, but the sleepover pills stay home and game night runs late. */
+  forgetful: withDoctor("forgetful", "early"),
+  /** The reference best plan by planned Choices, early doctor. */
+  planner: withDoctor("planner", "early"),
   riskyDoctorEarly: withDoctor("risky", "early"),
   riskyNoDoctor: withDoctor("risky", "never"),
 };
+
+/** Risky versions, pills left, game night at Alex's, never the doctor. Kept out of CAMPAIGN_BOTS. */
+export const careless: CampaignBot = withDoctor("careless", "never");
 
 const RANK: Record<BattleGrade, number> = {
   cleared: 2,
@@ -87,18 +93,6 @@ export function thoughtfulPlay(
 
 function setLife(c: Campaign, life: LifeState): Campaign {
   return lifeAction(c, () => ({ state: life, events: [] })).state;
-}
-
-function planCards(life: LifeState, plan: CampaignPlan): LifeState {
-  for (const { base, day, slot } of LAYOUT) {
-    const card = plan.cards[base];
-    if (
-      card &&
-      placementProblems(life, day, slot, card, plan.packPills).length === 0
-    )
-      life = placeCard(life, day, slot, card, plan.packPills).state;
-  }
-  return life;
 }
 
 /**
@@ -138,7 +132,7 @@ function bookDoctor(life: LifeState, policy: DoctorPolicy): LifeState {
 
 /** Plays out the campaign's current week with `plan`, doctor policy included. */
 export function playLifeWeek(c: Campaign, plan: CampaignPlan): Campaign {
-  let life = planCards(c.life, plan);
+  let life = placeFitting(c.life, planPlacements(plan));
   while (!weekOver(life)) {
     life = bookDoctor(life, plan.doctor);
     if (plan.skipMeds && todayDose(life)?.cause !== "friction")
@@ -167,7 +161,7 @@ export function playCampaign(
   };
   let c = createCampaign({ ...opts, seed }).state;
   while (c.mode !== "done") {
-    c = playLifeWeek(c, bot(roll));
+    c = playLifeWeek(c, bot(roll, c.life));
     c = endWeek(c).state;
     if (c.mode === "battle") {
       onBattle?.(c.battle as BattleState);

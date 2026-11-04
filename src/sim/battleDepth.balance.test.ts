@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { BOTS, playBattle } from "./battle/bots";
-import { CAMPAIGN_BOTS, playCampaign, type CampaignBot } from "./campaignBots";
-import { LIFE_BOTS } from "./life/bots";
+import {
+  CAMPAIGN_BOTS,
+  careless,
+  playCampaign,
+  type CampaignBot,
+} from "./campaignBots";
 import { PARAMS } from "./params";
 import type { BattleKind, BattleOutcome } from "./types";
 
@@ -12,11 +16,6 @@ import type { BattleKind, BattleOutcome } from "./types";
 
 const SEEDS = 300;
 
-const careless: CampaignBot = () => ({
-  ...LIFE_BOTS.riskySkipMeds(() => 0),
-  packPills: false,
-  doctor: "never",
-});
 const PLAYERS: Record<string, CampaignBot> = { ...CAMPAIGN_BOTS, careless };
 
 interface Acc {
@@ -88,14 +87,14 @@ const pct = (x: number) => `${Math.round(100 * x)}%`.padStart(5);
 const num = (x: number) => x.toFixed(2).padStart(6);
 
 /**
- * skipMeds against smarter on the same seed and week (same cards, same battle dice; only the doses
+ * `name` against smarter on the same seed and week (same cards, same battle dice; only the doses
  * differ): mean extra tissue lost and the drop in cleared share per full battle.
  */
-function matched() {
+function matched(name = "skipMeds") {
   let n = 0;
   let lost = 0;
   let cleared = 0;
-  for (const [key, s] of rows.skipMeds.full.byKey) {
+  for (const [key, s] of rows[name].full.byKey) {
     const m = rows.smarter.full.byKey.get(key);
     if (!m) continue;
     n++;
@@ -122,10 +121,12 @@ describe("battle depth survey", () => {
         );
       }
     }
-    const m = matched();
-    lines.push(
-      `matched skipMeds vs smarter (${m.n} full battles): +${m.lost.toFixed(2)} tissue lost, -${pct(m.cleared)} cleared`,
-    );
+    for (const name of ["skipMeds", "forgetful"]) {
+      const m = matched(name);
+      lines.push(
+        `matched ${name} vs smarter (${m.n} full battles): +${m.lost.toFixed(2)} tissue lost, -${pct(m.cleared)} cleared`,
+      );
+    }
     (
       globalThis as unknown as { console: { log(s: string): void } }
     ).console.log(lines.join("\n"));
@@ -133,12 +134,20 @@ describe("battle depth survey", () => {
 
   const mean = (a: Acc, k: "turns" | "lost" | "backup" | "cleared") =>
     per(a[k], a.n);
-  const FULL_PLAYERS = ["smarter", "risky", "mixed", "skipMeds", "careless"];
+  const FULL_PLAYERS = [
+    "smarter",
+    "planner",
+    "forgetful",
+    "risky",
+    "mixed",
+    "skipMeds",
+    "careless",
+  ];
 
-  // Section 5 targets that hold. Misses, measured on this tuning: smarter loses about 0.3 per
-  // full battle (target 0.5-3); careless needs backup in about 70% of full battles (target
-  // 10-25%; 45% before slice 3 made arrivals bigger for missed doses); skipMeds needs backup in
-  // about 16% (target 3-12%).
+  // Section 5 targets that hold. Misses, measured at 300 seeds (week-phase slice 4): smarter loses
+  // about 0.1 per full battle (target 0.5-3); risky needs backup in about 13% of full battles
+  // (target 0-8%); careless in about 51% (target 10-25%, the one the week cannot fix: it needs a
+  // battle knob, e.g. the size per missed dose or the carried bonus); skipMeds in about 11%.
   it("runs full battles at least 3.5 turns and skirmishes 3-4 turns", () => {
     for (const n of FULL_PLAYERS) {
       expect(mean(rows[n].full, "turns"), n).toBeGreaterThanOrEqual(3.5);
@@ -146,7 +155,14 @@ describe("battle depth survey", () => {
         PARAMS.maxTurns,
       );
     }
-    for (const n of ["home", "smarter", "risky", "mixed", "skipMeds"]) {
+    for (const n of [
+      "home",
+      "smarter",
+      "planner",
+      "risky",
+      "mixed",
+      "skipMeds",
+    ]) {
       expect(mean(rows[n].skirmish, "turns"), n).toBeGreaterThanOrEqual(3);
       expect(mean(rows[n].skirmish, "turns"), n).toBeLessThanOrEqual(4);
     }
@@ -162,14 +178,25 @@ describe("battle depth survey", () => {
   });
 
   it("keeps the risky weeks off the cliff, careless included (loosely)", () => {
-    for (const n of ["risky", "mixed"]) {
-      // Slice 2 (game night's late-night slip): risky measures 12.9%; slice 4 retunes.
-      expect(mean(rows[n].full, "backup"), n).toBeLessThanOrEqual(0.16);
-    }
-    // Target 12%; measured about 16% (loosened from 12% in slice 3).
-    expect(mean(rows.skipMeds.full, "backup")).toBeLessThanOrEqual(0.2);
-    // Target 25%; measured about 73% (loosened from 60% in slice 3).
-    expect(mean(rows.careless.full, "backup")).toBeLessThanOrEqual(0.8);
+    expect(mean(rows.risky.full, "backup")).toBeLessThanOrEqual(0.16);
+    expect(mean(rows.mixed.full, "backup")).toBeLessThanOrEqual(0.11);
+    expect(mean(rows.forgetful.full, "backup")).toBeLessThanOrEqual(0.08);
+    expect(mean(rows.skipMeds.full, "backup")).toBeLessThanOrEqual(0.14);
+    expect(mean(rows.careless.full, "backup")).toBeLessThanOrEqual(0.6);
+  });
+
+  it("orders the weeks by what they cost in full battles", () => {
+    const lost = (n: string) => mean(rows[n].full, "lost");
+    expect(lost("careless")).toBeGreaterThan(lost("risky") + 3);
+    expect(lost("risky")).toBeGreaterThan(lost("forgetful") + 1);
+    expect(lost("mixed")).toBeGreaterThan(lost("forgetful"));
+    expect(lost("forgetful")).toBeGreaterThan(lost("smarter") + 0.8);
+    expect(lost("planner")).toBeLessThanOrEqual(lost("smarter") + 0.1);
+    // Within a battle's worth of noise: no bot ever needs more backup than careless.
+    for (const n of ["risky", "mixed", "forgetful", "smarter", "planner"])
+      expect(mean(rows.careless.full, "backup")).toBeGreaterThan(
+        mean(rows[n].full, "backup") + 0.25,
+      );
   });
 
   it("still fails when you do nothing", () => {
@@ -195,6 +222,13 @@ describe("battle depth survey", () => {
         n,
       ).toBeGreaterThanOrEqual(0.15);
     }
+  });
+
+  it("lets a broken routine reach the battle: forgetful does worse than smarter on matched seeds", () => {
+    const m = matched("forgetful");
+    expect(m.n).toBeGreaterThan(100);
+    expect(m.lost).toBeGreaterThanOrEqual(1);
+    expect(m.cleared).toBeGreaterThanOrEqual(0.05);
   });
 
   it("lets skipped doses reach the battle: skipMeds does worse than smarter on matched seeds", () => {
