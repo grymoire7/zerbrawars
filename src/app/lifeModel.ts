@@ -14,6 +14,7 @@ import { cardDef } from "../sim/life/cards";
 import type {
   BattleReason,
   CardId,
+  Dose,
   LifeEvent,
   LifeState,
 } from "../sim/life/types";
@@ -95,24 +96,67 @@ export function placementCheck(
   return { day, slot, ok: reasons.length === 0, reasons };
 }
 
+/** The chip glyph: a check, "!" for a dose the plan puts at risk, a cross for a missed one. */
+export type DoseGlyph = "check" | "alert" | "cross";
+
+/**
+ * One day's dose as a read-only forecast cell. Nothing here is a control: doses are taken by
+ * routine, and a miss arises from life (an unpacked sleepover), never from a tap.
+ */
 export interface DoseCell {
   readonly day: number;
   readonly taken: boolean;
-  /** Already decided (tapped, skipped, defaulted or lost) rather than a forecast. */
+  /** Already decided (taken, defaulted or lost) rather than a forecast. */
   readonly decided: boolean;
   readonly level: number;
-  /** The state in plain words: "taken", "skipped" or why the dose is lost. */
+  /** The state in plain words: "routine", "taken", "pills at home" or "missed". */
   readonly why: string;
-  /** True when tapping the chip flips the dose: the day is not played and not locked. */
-  readonly toggle: boolean;
+  readonly glyph: DoseGlyph;
+  /** Chance this dose slips (0..1) for the percentage on the chip, or null when none applies. */
+  readonly chance: number | null;
+  /** The whole cell in one sentence, for the accessible name. */
+  readonly label: string;
 }
 
-const WHY = {
-  tapped: "taken",
-  default: "taken",
-  skipped: "skipped",
-  friction: "pills in the other bag",
+const WORD = {
+  tapped: "routine",
+  default: "routine",
+  skipped: "missed",
+  friction: "pills at home",
 } as const;
+
+const DONE_WORD = { ...WORD, tapped: "taken", default: "taken" } as const;
+
+function doseCell(
+  day: number,
+  d: Dose,
+  decided: boolean,
+  level: number,
+  chance: number | null,
+): DoseCell {
+  const why = (decided ? DONE_WORD : WORD)[d.cause];
+  const glyph: DoseGlyph = d.taken
+    ? "check"
+    : d.cause === "friction"
+      ? "alert"
+      : "cross";
+  const detail =
+    d.cause === "friction" ? "the pills are at home after the sleepover" : why;
+  const pctText =
+    chance === null
+      ? ""
+      : `, ${Math.round(chance * 100)} percent chance the pills slip`;
+  return {
+    day,
+    taken: d.taken,
+    decided,
+    level,
+    why,
+    glyph,
+    chance,
+    label: `Day ${day + 1} meds: ${detail}${pctText}, medication ${Math.round(level * 100)} percent.`,
+  };
+}
 
 /** Every day of the week: the dose as it stands (or is forecast) and the med level after it. */
 export function doseStrip(life: LifeState): DoseCell[] {
@@ -122,29 +166,30 @@ export function doseStrip(life: LifeState): DoseCell[] {
       (d) => d.week === life.week && d.day === day,
     );
     if (i < 0) continue;
-    const d = life.doses[i];
-    cells.push({
-      day,
-      taken: d.taken,
-      decided: true,
-      level: medLevelOf(life.doses.slice(0, i + 1)),
-      why: WHY[d.cause],
-      toggle: false,
-    });
+    cells.push(
+      doseCell(
+        day,
+        life.doses[i],
+        true,
+        medLevelOf(life.doses.slice(0, i + 1)),
+        null,
+      ),
+    );
   }
   if (life.day < L.days) {
     for (const f of medForecast(life)) {
       const decided = life.doses.some(
         (d) => d.week === life.week && d.day === f.day,
       );
-      cells.push({
-        day: f.day,
-        taken: f.taken,
-        decided,
-        level: f.level,
-        why: WHY[f.cause],
-        toggle: f.cause !== "friction",
-      });
+      cells.push(
+        doseCell(
+          f.day,
+          { week: life.week, day: f.day, taken: f.taken, cause: f.cause },
+          decided,
+          f.level,
+          null,
+        ),
+      );
     }
   }
   return cells;
@@ -168,7 +213,7 @@ export function lifeBeats(events: readonly LifeEvent[]): string[] {
         out.push(
           e.cause === "friction"
             ? "That dose is missed."
-            : "You skipped today's meds.",
+            : "Today's dose is missed.",
         );
         break;
       case "CardPlayed":

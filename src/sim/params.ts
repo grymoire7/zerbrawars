@@ -380,6 +380,8 @@ export const PARAMS = {
     flare: { perDay: 0.12, perSize: 0.08 },
     doctor: { earlyDays: 1, earlyEnergy: -1, lateEnergy: 1, viralRefund: 1 },
     bodySalt: 0x27d4eb2f,
+    /** Mixed into the per-card exposure dice (seed + week + card). */
+    diceSalt: 0x7f4a7c15,
     weekSalt: 0x165667b1,
   },
   /**

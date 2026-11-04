@@ -34,6 +34,8 @@ export interface DebugPanelOptions {
   onSkipPlayback?(on: boolean): void;
   readonly loadout?: DebugLoadout;
   readonly session?: SessionDebug;
+  /** Life screen only: a demo and test control that forces a day's dose to be missed. */
+  readonly forceMiss?: { readonly days: number; onForce(day: number): void };
   /** Restart the battle with these levers (the caller also updates the URL). */
   onRestart?(loadout: DebugLoadout): void;
 }
@@ -225,10 +227,39 @@ export function createDebugPanel(
     );
   }
 
+  const missRows: HTMLElement[] = [];
+  if (opts.forceMiss) {
+    const fm = opts.forceMiss;
+    const row = document.createElement("div");
+    row.setAttribute("role", "group");
+    row.setAttribute("aria-label", "Force a missed dose");
+    row.style.cssText =
+      "display:flex;flex-direction:column;gap:2px;font-size:12px;";
+    const btns = document.createElement("div");
+    btns.style.cssText = "display:flex;gap:6px;";
+    for (let day = 0; day < fm.days; day++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = `Day ${day + 1}`;
+      b.dataset.key = `debug-miss-${day}`;
+      b.style.cssText = control + "flex:1 1 0;";
+      b.setAttribute("aria-label", `Force a missed dose on day ${day + 1}`);
+      b.addEventListener("click", () => fm.onForce(day));
+      btns.append(b);
+    }
+    row.append("Force a missed dose", btns);
+    missRows.push(row);
+  }
+
   const stats = document.createElement("div");
   stats.style.cssText = "font:11px monospace;opacity:0.8;padding:0 4px;";
 
-  body.append(label("Screen", modeSelect), label("Seed", seed), ...sessionRows);
+  body.append(
+    label("Screen", modeSelect),
+    label("Seed", seed),
+    ...missRows,
+    ...sessionRows,
+  );
   if (mode === "battle") {
     body.prepend(label("Scenario", select));
     body.append(

@@ -165,7 +165,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     const noteParts: string[] = [];
     if (lost.length > 0) {
       noteParts.push(
-        `Day ${lost.map((d) => d + 1).join(", ")}'s dose will be missed: pills in the other bag. ` +
+        `Day ${lost.map((d) => d + 1).join(", ")}'s dose will be missed: pills at home. ` +
           `Level ends at ${pct(week.medLevel)}.`,
       );
     }
@@ -468,11 +468,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       runEffect(r.effect);
       draw();
     },
-    onSetDose: (day, taken) => {
-      clearBanner();
-      apply(() => setDose(life, day, taken));
-      draw();
-    },
     onPlay: () => {
       clearBanner();
       playWeek();
@@ -532,6 +527,15 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     scenario: "",
     seed: run.seed,
     session: sessionOptions(run),
+    // Demo and test only: the player UI has no way to skip a dose.
+    forceMiss: {
+      days: L.days,
+      onForce: (day) => {
+        clearBanner();
+        apply(() => setDose(life, day, false));
+        draw();
+      },
+    },
   });
 
   const strip = createStatusStrip(panels.status);

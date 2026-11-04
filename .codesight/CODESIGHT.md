@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 53 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~22,900 tokens. **Saves ~18,500 tokens per conversation.**
-> **Last scanned:** 2026-11-04 16:07 — re-run after significant changes
+> **Last scanned:** 2026-11-04 16:45 — re-run after significant changes
 
 ---
 
@@ -150,12 +150,12 @@
   - const LIFE_BOTS: Record<string, LifeBot>
 - `src/sim/life/calendar.ts`
   - function lifeRngSeed: (seed, week) => number
+  - function cardRoll: (seed, week, card) => number
   - function createLife: (opts) => LifeState
   - function weekStartEvents: (life) => LifeEvent[]
   - function findPlaced: (life, card) => void
   - function slotCost: (life, day, p) => number
-  - function energyPlan: (life, plan) => number[][]
-  - _...17 more_
+  - _...18 more_
 - `src/sim/life/cards.ts`
   - function exposureKind: (card, i) => PathogenKindId
   - function isCardId: (id) => id is CardId

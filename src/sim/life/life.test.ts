@@ -482,12 +482,47 @@ describe("exposure", () => {
     const end = finish(placeCard(createLife({ seed: 1 }), 0, 0, "lake").state);
     const roll = end.rolls[0];
     expect(end.exposures).toHaveLength(roll.landed ? L.cards.lake.count : 0);
+    // Dice are keyed by card now, so seed 1's lake lands: both of its kinds appear.
+    expect(end.exposures.map((e) => e.kind)).toEqual(
+      roll.landed ? ["strep", "staph"] : [],
+    );
     for (const e of end.exposures)
-      expect(e).toMatchObject({
-        kind: "strep",
-        size: L.cards.lake.size,
-        card: "lake",
-      });
+      expect(e).toMatchObject({ size: L.cards.lake.size, card: "lake" });
+  });
+
+  it("rolls each card's dice from seed, week and card, wherever it sits in the calendar", () => {
+    const slots: [number, number][] = [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+      [2, 0],
+    ];
+    for (const seed of [1, 2, 3, 7, 11]) {
+      const rollsOf = (day: number, slot: number, card: CardId) => {
+        const end = finish(
+          placeCard(createLife({ seed }), day, slot, card).state,
+        );
+        return end.rolls.filter((r) => r.card === card).map((r) => r.roll);
+      };
+      for (const card of ["yard", "lake", "beach", "band"] as CardId[]) {
+        if (cardDef(card).overnight) continue;
+        const rolls = slots
+          .filter(
+            ([d, sl]) =>
+              placementProblems(createLife({ seed }), d, sl, card, false)
+                .length === 0,
+          )
+          .map(([d, sl]) => rollsOf(d, sl, card));
+        expect(rolls.length).toBeGreaterThan(1);
+        for (const r of rolls) expect(r).toEqual(rolls[0]);
+      }
+      // The same card across weeks differs, and the version does not matter.
+      const w2 = finish(
+        placeCard(createLife({ seed, week: 2 }), 0, 0, "lake").state,
+      );
+      expect(w2.rolls[0].roll).not.toBe(rollsOf(0, 0, "lake")[0]);
+    }
   });
 });
 

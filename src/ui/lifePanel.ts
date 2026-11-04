@@ -116,8 +116,6 @@ export interface LifePanelHandlers {
   onSwap(base: string): void;
   onPills(base: string, packed: boolean): void;
   onSlot(day: number, slot: number): void;
-  /** A day chip was tapped: plan that day's dose as taken or skipped. */
-  onSetDose(day: number, taken: boolean): void;
   /** Plays the rest of the week, stopping on a symptom or when the week ends. */
   onPlay(): void;
   /** The stop banner's [Play on]: carries on with the week. */
@@ -349,35 +347,26 @@ export function createLifePanel(
       el("span", "font:12px monospace;", `streak ${meds.streak}`),
     );
     const strip = el("div", "display:flex;gap:6px;");
+    // Read-only forecast cells: no handler can skip a dose, the routine either holds or life
+    // breaks it (see doseStrip).
     for (const c of meds.strip) {
       const css =
         `flex:1 1 0;min-width:0;border-radius:6px;padding:4px 6px;font-size:12px;line-height:1.25;box-sizing:border-box;` +
-        `text-align:left;color:inherit;font-family:inherit;` +
+        `text-align:left;min-height:44px;` +
         (c.taken
           ? `border:1px solid ${MINT};background:rgba(91,227,198,${c.decided ? 0.18 : 0.06});`
           : "border:1px dashed var(--zw-notice);background:rgba(217,163,92,0.14);");
-      const cell = c.toggle ? el("button", css) : el("div", css);
-      const mark = c.taken ? "✓" : "✗";
-      const lines = [
+      const cell = el("div", css);
+      const mark = c.glyph === "check" ? "✓" : c.glyph === "alert" ? "!" : "✗";
+      const word =
+        c.chance === null ? c.why : `${c.why} ${Math.round(c.chance * 100)}%`;
+      cell.append(
         el("div", "font-weight:600;", `Day ${c.day + 1} ${mark}`),
-        el("div", "opacity:0.85;", c.why),
+        el("div", "opacity:0.85;", word),
         el("div", "opacity:0.7;", `${Math.round(c.level * 100)}%`),
-      ];
-      cell.append(...lines);
-      if (c.toggle) {
-        const b = cell as HTMLButtonElement;
-        b.type = "button";
-        b.style.minHeight = "44px";
-        b.style.cursor = "pointer";
-        b.dataset.key = `dose-${c.day}`;
-        b.setAttribute("aria-pressed", String(c.taken));
-        b.setAttribute(
-          "aria-label",
-          `Day ${c.day + 1} meds: ${c.why}, medication ${Math.round(c.level * 100)} percent. ` +
-            `Press to ${c.taken ? "skip" : "take"}.`,
-        );
-        b.addEventListener("click", () => h.onSetDose(c.day, !c.taken));
-      }
+      );
+      cell.setAttribute("role", "group");
+      cell.setAttribute("aria-label", c.label);
       strip.append(cell);
     }
     medsBox.replaceChildren(head, strip);

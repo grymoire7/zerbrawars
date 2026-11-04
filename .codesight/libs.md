@@ -140,12 +140,12 @@
   - const LIFE_BOTS: Record<string, LifeBot>
 - `src/sim/life/calendar.ts`
   - function lifeRngSeed: (seed, week) => number
+  - function cardRoll: (seed, week, card) => number
   - function createLife: (opts) => LifeState
   - function weekStartEvents: (life) => LifeEvent[]
   - function findPlaced: (life, card) => void
   - function slotCost: (life, day, p) => number
-  - function energyPlan: (life, plan) => number[][]
-  - _...17 more_
+  - _...18 more_
 - `src/sim/life/cards.ts`
   - function exposureKind: (card, i) => PathogenKindId
   - function isCardId: (id) => id is CardId

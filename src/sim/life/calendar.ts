@@ -56,6 +56,27 @@ export function lifeRngSeed(seed: number, week: number): number {
 }
 
 /**
+ * The exposure roll of a card this week. The key is seed + week + the card's base id (not the
+ * calendar slot and not the version), so moving a card, or swapping its version, on the same seed
+ * never changes its luck: a replay changes only what the player changed.
+ */
+export function cardRoll(seed: number, week: number, card: CardId): number {
+  const base = cardDef(card).base;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < base.length; i++) {
+    h = Math.imul(h ^ base.charCodeAt(i), 0x01000193);
+  }
+  let rng = rngFromSeed(
+    (Math.imul(seed ^ C.diceSalt, 0x9e3779b1) +
+      Math.imul(week, 0x85ebca6b) +
+      Math.imul(h, 0xc2b2ae35)) >>>
+      0,
+  );
+  rng = rngNext(rng).rng;
+  return rngNext(rng).value;
+}
+
+/**
  * A fresh week. Carried reservoirs come in with their symptom day set; symptoms due on day 0
  * show at once (see weekStartEvents), and tiredness and a skirmish aftermath take their energy
  * now.
@@ -326,6 +347,10 @@ function doseProblem(life: LifeState, day: number): string | null {
 }
 
 /**
+ * DEBUG AND TEST ONLY: the player UI offers no way to skip a dose (doses are taken by routine; a
+ * miss arises from life, like an unpacked sleepover). The debug panel's "force a missed dose"
+ * and the test bots call this.
+ *
  * Sets the planned dose for `day`, any day of the current week not yet played: true taken, false
  * skipped. It can be called again to change the choice, as often as wanted, until the day is
  * played. Today's choice lands in the dose history at once (and moves the med level); a later
@@ -402,8 +427,9 @@ export function advanceDay(life: LifeState): LifeStep {
   for (let slot = 0; slot < L.slotsPerDay; slot++) {
     const p = s.plan[day][slot];
     const from = energy;
-    const draw = rngNext(rng);
-    rng = draw.rng;
+    // The week rng still advances once per slot (the week-end skirmish reads it), but exposure
+    // dice come from cardRoll, keyed by card, not from this draw.
+    rng = rngNext(rng).rng;
     if (!p) {
       energy = Math.min(L.maxEnergy, energy + L.restEnergy);
       events.push({ type: "Rested", day, slot });
@@ -446,8 +472,8 @@ export function advanceDay(life: LifeState): LifeStep {
         card: p.card,
         kind: x.kind,
         chance: x.chance,
-        roll: draw.value,
-        landed: draw.value < x.chance,
+        roll: cardRoll(s.seed, s.week, p.card),
+        landed: cardRoll(s.seed, s.week, p.card) < x.chance,
       };
       rolls.push(roll);
       events.push({

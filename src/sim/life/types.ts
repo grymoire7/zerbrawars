@@ -106,7 +106,8 @@ export interface LifeState {
   readonly doses: readonly Dose[];
   /**
    * Choices for days after today, set ahead of time: true taken, false skipped, null undecided
-   * (the default, taken). A day's choice moves into `doses` when that day starts.
+   * (the default, taken). A day's choice moves into `doses` when that day starts. Debug and test
+   * only: the player UI never sets it (see setDose).
    */
   readonly planned: readonly (boolean | null)[];
   /** Doses taken in a row, up to and including the latest one. */

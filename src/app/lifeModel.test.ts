@@ -1,3 +1,5 @@
+import panel from "../ui/lifePanel.ts?raw";
+import screen from "./lifeScreen.ts?raw";
 import { describe, expect, it } from "vitest";
 import {
   advanceDay,
@@ -76,36 +78,80 @@ describe("placementCheck", () => {
 });
 
 describe("doseStrip", () => {
-  it("shows the friction day lost with its reason", () => {
+  it("forecasts routine for every day of a fresh week, as read-only cells", () => {
+    const strip = doseStrip(createLife({ seed: 1 }));
+    expect(strip).toHaveLength(3);
+    for (const c of strip) {
+      expect(c).toMatchObject({
+        taken: true,
+        why: "routine",
+        glyph: "check",
+        chance: null,
+      });
+      expect(c.label).toBe(
+        `Day ${c.day + 1} meds: routine, medication 100 percent.`,
+      );
+      expect(c).not.toHaveProperty("toggle");
+    }
+  });
+
+  it("shows pills at home the day after an unpacked sleepover, with a warning glyph", () => {
     let l = createLife({ seed: 1 });
     l = put(l, 0, 1, "sleepover", false);
     const strip = doseStrip(l);
-    expect(strip).toHaveLength(3);
     expect(strip[1]).toMatchObject({
       taken: false,
-      why: "pills in the other bag",
+      why: "pills at home",
+      glyph: "alert",
     });
+    expect(strip[1].label).toContain("pills are at home");
     expect(strip[2].level).toBeLessThan(1);
-    expect(strip.map((c) => c.toggle)).toEqual([true, false, true]);
+    expect(strip.map((c) => c.glyph)).toEqual(["check", "alert", "check"]);
+    // Packing the pills restores the routine.
+    l = put(createLife({ seed: 1 }), 0, 1, "sleepover", true);
+    expect(doseStrip(l).map((c) => c.why)).toEqual([
+      "routine",
+      "routine",
+      "routine",
+    ]);
   });
 
-  it("follows the toggles with a word, a level and which chips can be tapped", () => {
+  it("shows a forced miss (the debug control) as a cross and a played day as taken", () => {
     let l = createLife({ seed: 1 });
-    expect(doseStrip(l).map((c) => c.why)).toEqual(["taken", "taken", "taken"]);
     l = setDose(l, 2, false).state;
     let strip = doseStrip(l);
     expect(strip.map((c) => c.taken)).toEqual([true, true, false]);
-    expect(strip[2]).toMatchObject({ why: "skipped", toggle: true });
+    expect(strip[2]).toMatchObject({ why: "missed", glyph: "cross" });
     expect(strip[2].level).toBeCloseTo(2 / 3);
-    l = setDose(l, 2, true).state;
+    l = advanceDay(l).state;
     strip = doseStrip(l);
-    expect(strip.map((c) => c.taken)).toEqual([true, true, true]);
-    expect(strip[2].level).toBe(1);
-    // A played day shows what happened and no longer toggles.
-    l = advanceDay(setDose(l, 1, false).state).state;
-    strip = doseStrip(l);
-    expect(strip.map((c) => c.toggle)).toEqual([false, true, true]);
-    expect(strip[1]).toMatchObject({ taken: false, why: "skipped" });
+    expect(strip[0]).toMatchObject({ why: "taken", decided: true });
+  });
+
+  it("forces a missed dose on today through the same advance path", () => {
+    let l = createLife({ seed: 1 });
+    l = setDose(l, 0, false).state;
+    expect(doseStrip(l)[0]).toMatchObject({ taken: false, glyph: "cross" });
+    const r = advanceDay(l);
+    expect(r.state.doses.at(-1)).toMatchObject({ day: 0, taken: false });
+  });
+
+  it("never preaches in its words", () => {
+    const l = put(createLife({ seed: 1 }), 0, 1, "sleepover", false);
+    for (const c of doseStrip(l)) {
+      expect(c.why + c.label).not.toMatch(/should|skip|forgot|fault/i);
+    }
+  });
+
+  it("offers the player no way to skip a dose", () => {
+    expect(panel).not.toMatch(/onSetDose|setDose|skipMeds/);
+    expect(screen).not.toMatch(/onSetDose/);
+    // The only setDose call on the life screen is the debug panel's forced miss.
+    const calls = screen.match(/setDose\(life/g) ?? [];
+    expect(calls).toHaveLength(1);
+    expect(screen.indexOf("setDose(life")).toBeGreaterThan(
+      screen.indexOf("forceMiss"),
+    );
   });
 });
 
