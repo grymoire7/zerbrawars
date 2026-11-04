@@ -21,10 +21,12 @@ status table below is the only place that tracks slices.
 | B1 mobile layout and touch | not started (needs the phone session) | | |
 | B2 to B10 | not started | | |
 
-Open after B1d: the week goal is met in 96-100% of weeks by every card-playing bot, so the week is
-easy to "win" (the score still spreads plans by about 200 points); careless full battles need backup
-51% of the time (a battle knob); both wait for the patient session. `?goal=N` (debug URL parameter)
-compares a 12 and a 13 point week. B1d slice 5 (a week-2 farm hand) is the first cut of B1d, then more cards.
+Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
+more battle, but neither felt noticeably harder or more fun; `?goal=N` still overrides). The smarter bot
+meets it in 95% of weeks and risky in 75%, and the best plan takes one risky late-night game night, so
+reaching the goal costs some safety. The week is still not hard; a seeded weekly event (week-phase
+design Option B, about 18h) is the candidate if the patient session says so. Careless full battles need
+backup 51% of the time (a battle knob); it also waits for the patient session. B1d slice 5 (a week-2 farm hand) is the first cut of B1d, then more cards.
 Backlog: a larger card pool drawn per week, so the weeks differ.
 
 ## 1. Goal

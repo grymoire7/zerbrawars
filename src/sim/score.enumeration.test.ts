@@ -87,21 +87,26 @@ describe("week 1 plan landscape (Score v4)", () => {
     expect(plans.length).toBeGreaterThan(50);
   });
 
-  it("never has an unpacked sleepover or a late-night game night in a best plan", () => {
+  // At goal 13 the best plan takes the risky game night (a late night, 50% to slip a dose) to reach
+  // the goal, so a late-night game night is no longer excluded; it is the one risky card.
+  it("packs the pills for a sleepover and takes at most one late night in a best plan", () => {
     for (const t of top) {
       const l = t.life;
+      let late = 0;
       for (let d = 0; d < PARAMS.life.days; d++) {
-        expect(slipChanceFor(l, d), t.cards.join(" ")).toBeNull();
+        if (slipChanceFor(l, d) !== null) late++;
         const p = l.plan[d - 1]?.[PARAMS.life.slotsPerDay - 1];
         if (p && cardDef(p.card).overnight) expect(p.packPills).toBe(true);
       }
+      expect(late, t.cards.join(" ")).toBeLessThanOrEqual(1);
     }
   });
 
   it("has goal-meeting plans that are a minority but not rare", () => {
     const share = plans.filter((p) => p.points >= goal).length / plans.length;
-    expect(share).toBeGreaterThan(0.1);
-    expect(share).toBeLessThan(0.5);
+    // Measured at goal 13: 4272 of 37949 plans (11%).
+    expect(share).toBeGreaterThan(0.05);
+    expect(share).toBeLessThan(0.3);
   });
 
   it("leaves more than one plan within 10% of the best", () => {
@@ -110,7 +115,7 @@ describe("week 1 plan landscape (Score v4)", () => {
     );
   });
 
-  it("scores the design's worked example about 296", () => {
+  it("scores the design's all-smarter worked example 256 at goal 13 (296 with the goal bonus at 12)", () => {
     let l = createLife({ seed: 1 });
     for (const [day, slot, card, pack] of [
       [0, 0, "yardIndoor", false],
@@ -123,7 +128,8 @@ describe("week 1 plan landscape (Score v4)", () => {
     (
       globalThis as unknown as { console: { log(s: string): void } }
     ).console.log(`worked example: ${JSON.stringify(c)}`);
-    expect(Math.abs(c.total - 296)).toBeLessThanOrEqual(5);
+    expect(c.goalMet).toBe(0);
+    expect(Math.abs(c.total - 256)).toBeLessThanOrEqual(5);
   });
 
   it("has a planner bot that plays a best enumerated plan", () => {

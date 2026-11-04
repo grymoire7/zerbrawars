@@ -190,7 +190,8 @@ describe("battle depth survey", () => {
     expect(lost("careless")).toBeGreaterThan(lost("risky") + 3);
     expect(lost("risky")).toBeGreaterThan(lost("forgetful") + 1);
     expect(lost("mixed")).toBeGreaterThan(lost("forgetful"));
-    expect(lost("forgetful")).toBeGreaterThan(lost("smarter") + 0.8);
+    // Measured at goal 13: forgetful 1.44, smarter 0.90 (the thoughtful week now takes a late game night too).
+    expect(lost("forgetful")).toBeGreaterThan(lost("smarter") + 0.4);
     expect(lost("planner")).toBeLessThanOrEqual(lost("smarter") + 0.1);
     // Within a battle's worth of noise: no bot ever needs more backup than careless.
     for (const n of ["risky", "mixed", "forgetful", "smarter", "planner"])
@@ -227,14 +228,16 @@ describe("battle depth survey", () => {
   it("lets a broken routine reach the battle: forgetful does worse than smarter on matched seeds", () => {
     const m = matched("forgetful");
     expect(m.n).toBeGreaterThan(100);
-    expect(m.lost).toBeGreaterThanOrEqual(1);
+    // Measured at goal 13: +0.56 tissue lost, 9% fewer cleared.
+    expect(m.lost).toBeGreaterThanOrEqual(0.4);
     expect(m.cleared).toBeGreaterThanOrEqual(0.05);
   });
 
   it("lets skipped doses reach the battle: skipMeds does worse than smarter on matched seeds", () => {
     const m = matched();
     expect(m.n).toBeGreaterThan(100);
-    expect(m.lost).toBeGreaterThanOrEqual(2);
+    // Measured at goal 13: +2.00 tissue lost, 23% fewer cleared.
+    expect(m.lost).toBeGreaterThanOrEqual(1.8);
     expect(m.cleared).toBeGreaterThanOrEqual(0.15);
   });
 });

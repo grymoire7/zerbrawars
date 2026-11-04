@@ -64,7 +64,7 @@ export interface CycleRecord {
   readonly week: number;
   readonly points: number;
   readonly goalMet: boolean;
-  /** The goal the week was played against (12 unless ?goal= overrode it). */
+  /** The goal the week was played against (13 unless ?goal= overrode it). */
   readonly goalTarget: number;
   readonly medLevel: number;
   readonly symptoms: readonly Symptom[];

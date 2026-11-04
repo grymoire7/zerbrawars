@@ -174,8 +174,20 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
     skipMeds: false,
     order: RISKY_ORDER,
   }),
-  /** Every card in its smarter version, pills packed: the third option. */
-  smarter: () => ({ cards: SMARTER, packPills: true, skipMeds: false }),
+  /**
+   * The thoughtful player: with the week in view it plays the best plan by the score's own forecast
+   * (at goal 13 that takes one risky card, since the all-smarter week scores 12). Without a week it
+   * falls back to every card in its smarter version, pills packed.
+   */
+  smarter: (_roll, life) =>
+    life
+      ? {
+          cards: {},
+          packPills: false,
+          skipMeds: false,
+          placements: bestPlacements(life),
+        }
+      : { cards: SMARTER, packPills: true, skipMeds: false },
   /** A coin flip per card version; the pills are packed four weeks in five. Drops in the smart order. */
   mixed: (roll) => {
     const cards = {
@@ -195,7 +207,11 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
     skipMeds: false,
     order: RISKY_ORDER,
   }),
-  /** Smarter versions, but the sleepover pills stay home and game night runs late: the routine breaks. */
+  /**
+   * The fixed shape with smarter versions, but the sleepover pills stay home and game night runs
+   * late: the routine breaks. (Unlike the thoughtful player it reaches the goal through the late
+   * game night, not through a plan.)
+   */
   forgetful: () => ({
     cards: { ...SMARTER, game: "game" },
     packPills: false,

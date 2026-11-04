@@ -118,18 +118,18 @@ describe("score ranges", () => {
 
   const t = (n: string) => rows[n].total;
 
-  // Measured at 200 seeds (Score v4, odds pushed 0.7): home 391, careless 596, skipMeds 606,
-  // risky 694, mixed 733, forgetful 744, smarter 803, planner 803. Bands are about +-30.
+  // Measured at 200 seeds (Score v4, odds pushed 0.7, goal 13): home 391, skipMeds 528, careless 596,
+  // risky 674, mixed 724, forgetful 744, smarter 785, planner 785. Bands are about +-30.
   it("keeps each bot near its measured range", () => {
     const bands: Record<string, [number, number]> = {
       home: [380, 405],
       careless: [560, 640],
-      skipMeds: [570, 640],
-      risky: [660, 730],
-      mixed: [700, 770],
+      skipMeds: [495, 565],
+      risky: [645, 705],
+      mixed: [695, 755],
       forgetful: [710, 780],
-      smarter: [770, 840],
-      planner: [770, 840],
+      smarter: [755, 825],
+      planner: [755, 825],
     };
     for (const [n, [lo, hi]] of Object.entries(bands)) {
       expect(t(n), n).toBeGreaterThanOrEqual(lo);
@@ -139,7 +139,7 @@ describe("score ranges", () => {
   });
 
   it("spreads the strategies: home, careless, risky, mixed, smarter, planner", () => {
-    // Measured gaps: 205, 98, 39, 70, 0 (smarter is already the best plan on the week-1 hand).
+    // Measured gaps at goal 13: 205, 78, 50, 61, 0 (smarter plays the planner's plan).
     expect(t("careless") - t("home")).toBeGreaterThanOrEqual(150);
     expect(t("risky") - t("careless")).toBeGreaterThanOrEqual(60);
     expect(t("mixed") - t("risky")).toBeGreaterThanOrEqual(30);
@@ -150,12 +150,18 @@ describe("score ranges", () => {
   });
 
   it("meets the goal with any plan that plays cards, never when staying home", () => {
-    // Plans are luck-free, so a bot's goal rate is its plan's, not a dice outcome: twelve points
-    // is within reach of every plan that uses four cards (design 5 predicted 85-100%).
+    // Plans are luck-free, so a bot's goal rate is its plan's, not a dice outcome. Measured at goal
+    // 13: careless 100%, forgetful 100%, smarter and planner 95%, mixed 86%, risky 75% (its energy
+    // cannot always stretch to four risky cards), skipMeds 0% (all-smarter scores 12), home 0%.
     expect(rows.home.goal).toBe(0);
-    for (const n of ["careless", "risky", "smarter", "planner", "forgetful"])
+    expect(rows.skipMeds.goal).toBeLessThanOrEqual(0.05);
+    for (const n of ["careless", "forgetful"])
       expect(rows[n].goal, n).toBeGreaterThanOrEqual(0.95);
-    expect(rows.mixed.goal).toBeGreaterThanOrEqual(0.85);
+    for (const n of ["smarter", "planner"])
+      expect(rows[n].goal, n).toBeGreaterThanOrEqual(0.9);
+    expect(rows.mixed.goal).toBeGreaterThanOrEqual(0.78);
+    expect(rows.risky.goal).toBeGreaterThanOrEqual(0.65);
+    expect(rows.risky.goal).toBeLessThanOrEqual(0.85);
   });
 
   it("makes the planner and smarter the best on Choices", () => {

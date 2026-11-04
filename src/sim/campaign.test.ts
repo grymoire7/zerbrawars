@@ -442,7 +442,7 @@ describe("campaign transitions", () => {
     expect(playCampaign(CAMPAIGN_BOTS.risky, 9)).not.toEqual(
       playCampaign(CAMPAIGN_BOTS.risky, 10),
     );
-  });
+  }, 20_000);
 
   it("rolls different dice in week 2 than in week 1", () => {
     const a = createLife({ seed: 5, week: 1 });
