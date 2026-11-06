@@ -24,7 +24,7 @@ import {
   turnProblems,
   type InflammationPreview,
 } from "../sim/battle/resolve";
-import { pathogenKind } from "../sim/pathogens";
+import { organismName, organismSub } from "../sim/organisms";
 import {
   entityAt,
   infoFor,
@@ -116,7 +116,6 @@ export function supportCardFor(
 ): SupportCard | null {
   const pv: SupportPreview | null = supportPreview(battle, orders, support);
   if (!pv) return null;
-  const kind = pathogenKind(pv.kills.kind);
   const left = `${pv.chargesLeft} ${pv.charge} left after this.`;
   let text: string;
   if (pv.reason !== null) text = `Cannot use: ${pv.reason}.`;
@@ -129,7 +128,7 @@ export function supportCardFor(
   } else {
     const after = pv.loadAfter?.length ?? 0;
     text =
-      `Clears ${kind.label} from ${support.swarmId}'s load, no dice. Load ${after}/${PARAMS.loadCap}. ` +
+      `Clears ${organismName(pv.kills.kind)} from ${support.swarmId}'s load, no dice. Load ${after}/${PARAMS.loadCap}. ` +
       `Move range ${swarmMoveRange(
         battle,
         battle.swarms.find((s) => s.id === support.swarmId)!,
@@ -138,7 +137,7 @@ export function supportCardFor(
   return {
     title:
       support.target === "pathogen"
-        ? `${CHARGE_LABEL[pv.charge]} dose on ${kind.label} ${support.pathogenId}`
+        ? `${CHARGE_LABEL[pv.charge]} dose on ${organismName(pv.kills.kind)} ${support.pathogenId}`
         : `${CHARGE_LABEL[pv.charge]} dose on ${support.swarmId}'s load`,
     text,
     pending,
@@ -345,7 +344,6 @@ export function oddsFor(
     from,
   });
   if (!pv) return null;
-  const kind = pathogenKind(p.kind);
   const range = `Move range ${swarmMoveRange(battle, swarm)} -> ${pv.moveRangeIfLoaded}.`;
   let text: string;
   if (pv.reason !== null) text = `Cannot engulf: ${pv.reason}.`;
@@ -357,8 +355,8 @@ export function oddsFor(
   }
   return {
     swarmId,
-    title: `${kind.label} ${p.id}`,
-    organism: kind.organism,
+    title: `${organismName(p.kind)} ${p.id}`,
+    organism: organismSub(p.kind),
     text,
     killChance: pv.killChance,
     pending,
@@ -740,13 +738,13 @@ export function describeEvent(e: SimEvent): string {
         ? `${e.charge} charge used on ${e.pathogenId}`
         : `${e.charge} charge used on ${e.swarmId}'s load`;
     case "Revealed":
-      return `${e.swarmId} revealed a hidden ${pathogenKind(e.kind).label} ${e.pathogenId} (size ${e.size}) at ${xy(e.at)}`;
+      return `${e.swarmId} revealed a hidden ${organismName(e.kind)} ${e.pathogenId} (size ${e.size}) at ${xy(e.at)}`;
     case "ResidualKill":
       return `${e.swarmId} residual kill: ${e.success ? "succeeded" : "failed"} (${pct(e.chance)})`;
     case "Arrived":
-      return `${pathogenKind(e.kind).label} ${e.pathogenId} (size ${e.size}) arrived at ${xy(e.at)}${e.bonus ? ` (+${e.bonus} from missed doses)` : ""}`;
+      return `${organismName(e.kind)} ${e.pathogenId} (size ${e.size}) arrived at ${xy(e.at)}${e.bonus ? ` (+${e.bonus} from missed doses)` : ""}`;
     case "ArrivalBlocked":
-      return `${pathogenKind(e.kind).label} arrival at ${xy(e.at)} ${e.fate === "died" ? "died on" : "delayed by"} ${e.swarmId ?? "something in the way"}`;
+      return `${organismName(e.kind)} arrival at ${xy(e.at)} ${e.fate === "died" ? "died on" : "delayed by"} ${e.swarmId ?? "something in the way"}`;
     case "Walled":
       return `${e.swarmId} walled off a granuloma at ${xy(e.at)}`;
     case "Loaded":

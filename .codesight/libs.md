@@ -175,6 +175,14 @@
   - function exposurePreview: (life) => WeekPreview
   - interface CardPreview
   - interface WeekPreview
+- `src/sim/organisms.ts`
+  - function organismList: (kinds) => string
+  - function formNoun: (form, plural) => string
+  - function organismName
+  - function organismScientific
+  - function organismShort
+  - function organismDescription
+  - _...6 more_
 - `src/sim/pathogens.ts`
   - function isPathogenKindId: (kind) => kind is PathogenKindId
   - function pathogenKind: (kind) => PathogenKindDef
@@ -254,7 +262,7 @@
   - interface HudCharge
   - interface HudSupport
   - interface HudSupportCard
-  - _...10 more_
+  - _...11 more_
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
 - `src/ui/infoTip.ts`
   - function createInfoTips: () => InfoTipFactory

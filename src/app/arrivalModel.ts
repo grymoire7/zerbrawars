@@ -1,20 +1,16 @@
 import type { TelegraphMark } from "../sim/battle/intents";
 import {
-  PATHOGEN_KINDS,
-  pathogenKind,
-  type PathogenKindId,
-} from "../sim/pathogens";
+  organismCount,
+  organismCountShort,
+  organismName,
+  organismScientific,
+  organismShort,
+} from "../sim/organisms";
+import { pathogenKind, type PathogenKindId } from "../sim/pathogens";
 import type { Arrival, BattleState, Coord } from "../sim/types";
 
 // Pure view-model text for the incoming-germ UI (battle-depth slice 4): the HUD's "Next:" line,
 // the mark on the board and the info card. No blame: infections happen either way.
-
-/** Short names for tight spots (the stats row, the board badge). */
-export const SHORT_NAME: Record<PathogenKindId, string> = {
-  strep: "Strep",
-  staph: "Staph",
-  aspergillus: "Mold",
-};
 
 const xy = (c: Coord) => `${c.x},${c.y}`;
 
@@ -51,10 +47,10 @@ export function nextArrival(battle: BattleState): NextArrival {
   );
   const count = new Map<PathogenKindId, number>();
   for (const a of group) count.set(a.kind, (count.get(a.kind) ?? 0) + 1);
-  const short = [...count].map(([k, n]) => `${n} ${SHORT_NAME[k]}`).join(" + ");
-  const full = [...count]
-    .map(([k, n]) => `${n} ${PATHOGEN_KINDS[k].organism}`)
-    .join(" and ");
+  const short = [...count]
+    .map(([k, n]) => organismCountShort(k, n))
+    .join(" + ");
+  const full = [...count].map(([k, n]) => organismCount(k, n)).join(" and ");
   const where = when <= battle.turn ? "this turn" : `turn ${when}`;
   return {
     text: `Next: ${short}, ${where}`,
@@ -102,7 +98,7 @@ export function arrivalMarkModel(
     size: mark.sizeAfter,
     bonus,
     blocked,
-    badge: `${SHORT_NAME[mark.kind]} ${mark.sizeAfter}${bonus > 0 ? ` +${bonus}` : ""}`,
+    badge: `${organismShort(mark.kind)} ${mark.sizeAfter}${bonus > 0 ? ` +${bonus}` : ""}`,
     caption: blocked ? "blocked" : "arrives",
   };
 }
@@ -139,8 +135,8 @@ export function arrivalCard(
     lines.push(`Stand a swarm on ${xy(mark.from)} to meet it at the door.`);
   }
   return {
-    title: `Incoming ${def.label}`,
-    sub: `${def.organism} at door ${xy(mark.from)}`,
+    title: `Incoming ${organismName(m.kind)}`,
+    sub: `${organismScientific(m.kind)} at door ${xy(mark.from)}`,
     lines,
   };
 }

@@ -1,6 +1,7 @@
 import type { Campaign, CampaignEvent, CycleRecord } from "../sim/campaign";
 import { cardDef } from "../sim/life/cards";
 import type { CarriedReservoir } from "../sim/life/loadout";
+import { organismName } from "../sim/organisms";
 import type {
   Aftermath,
   CardId,
@@ -161,11 +162,6 @@ const CARD_ICON: Record<CardId, string> = {
   doctor: "🩺",
 };
 
-const kindWord = (k: PathogenKindId) => {
-  const def = pathogenKind(k);
-  return def.form === "mold" ? "mold" : "bacteria";
-};
-
 /** How the week shaped this fight: one item per fact, in the order the player lived them. */
 export function broughtItems(c: Campaign): BroughtItem[] {
   const life = c.life;
@@ -193,7 +189,8 @@ export function broughtItems(c: Campaign): BroughtItem[] {
       icon: CARD_ICON[g.card],
       title: cardDef(g.card).label,
       detail:
-        g.kinds.map(kindWord).join(" + ") + (sealed > 0 ? " (shelled)" : ""),
+        g.kinds.map(organismName).join(" + ") +
+        (sealed > 0 ? " (shelled)" : ""),
     });
   }
   if (c.battleKind === "skirmish") {
@@ -217,7 +214,7 @@ export function broughtItems(c: Campaign): BroughtItem[] {
   for (const r of shown) {
     items.push({
       icon: "📍",
-      title: `Carried-over ${kindWord(r.kind)}`,
+      title: `Carried-over ${organismName(r.kind)}`,
       detail: r.flared ? "flared up this week" : "found by the doctor",
     });
   }
@@ -334,7 +331,7 @@ export function weekLine(h: CycleRecord): WeekLine {
       ? "nothing carried over"
       : "carried: " +
         h.carried
-          .map((r) => `${pathogenKind(r.kind).organism} (size ${r.size})`)
+          .map((r) => `${organismName(r.kind)} (size ${r.size})`)
           .join(", ");
   return {
     week: h.week,

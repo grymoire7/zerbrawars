@@ -44,8 +44,12 @@ const put = (
 
 describe("oddsText", () => {
   it("states the chance in words", () => {
-    expect(oddsText(0.45, "aspergillus")).toBe("45% chance of a mold exposure");
-    expect(oddsText(0.15, "strep")).toBe("15% chance of a bacterial exposure");
+    expect(oddsText(0.45, ["aspergillus"])).toBe(
+      "45% chance of exposure to Aspergillus",
+    );
+    expect(oddsText(0.15, ["strep", "strep", "staph"])).toBe(
+      "15% chance of exposure to Streptococcus and Staphylococcus",
+    );
   });
 });
 

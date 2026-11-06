@@ -2,6 +2,9 @@ import type { DoseCell } from "../app/lifeModel";
 import type { HudMounts } from "./hud";
 import { cardAccent, cardBadge, cardTint } from "./cardStyle";
 import { createInfoTips } from "./infoTip";
+import { organismKeyText } from "../sim/organisms";
+import { PATHOGEN_KINDS } from "../sim/pathogens";
+import { GERM_COLOR_WORD as KEY_COLOR } from "./hud";
 
 // The calendar screen's side panel. Views are read-only: the app builds a LifePanelModel from the
 // life state and passes handlers back; the panel never touches sim state.
@@ -253,22 +256,23 @@ export function createLifePanel(
       dot(`border-radius:50%;background:${MINT};box-shadow:0 0 6px ${MINT};`),
       "Green glow: your medication",
     ),
-    keyRow(
-      dot("border-radius:50%;background:var(--zw-strep);"),
-      "Orange round dots: Streptococcus, a bacterium",
-    ),
-    keyRow(
-      dot(
-        "border-radius:50%;background:var(--zw-staph);outline:2px solid var(--zw-sealed-rim);outline-offset:1px;",
-      ),
-      "Teal dots with a ring: Staphylococcus aureus, a bacterium in a shell",
-    ),
-    keyRow(
-      dot(
-        "background:var(--zw-aspergillus);clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);",
-      ),
-      "Violet spiky dots with a ring: Aspergillus, a mold in a shell",
-    ),
+    ...(["strep", "staph", "aspergillus"] as const).map((id) => {
+      const def = PATHOGEN_KINDS[id];
+      const body =
+        def.form === "mold"
+          ? `background:var(--zw-${id});clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);`
+          : `border-radius:50%;background:var(--zw-${id});`;
+      const sealed = def.wall === "sealed";
+      return keyRow(
+        dot(
+          body +
+            (sealed
+              ? "outline:2px solid var(--zw-sealed-rim);outline-offset:1px;"
+              : ""),
+        ),
+        `${KEY_COLOR[id]} ${def.form === "mold" ? "spiky" : "round"} dots${sealed ? " with a ring" : ""}: ${organismKeyText(id)}${sealed ? " in a shell" : ""}`,
+      );
+    }),
     keyRow(
       dot("border-radius:50%;border:2px dashed var(--zw-aspergillus-ink);"),
       "Dashed ring: found by the doctor, still there",

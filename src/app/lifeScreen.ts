@@ -149,7 +149,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         count: particleCount(p.expectedPathogens),
         entry,
       });
-      label += ` Previewing ${p.label}: ${oddsText(p.chance, p.kind)}.`;
+      label += ` Previewing ${p.label}: ${oddsText(p.chance, p.kinds)}.`;
     } else {
       inset.setPreview(null);
     }
@@ -229,7 +229,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         people: pv.people,
         blurb: pv.blurb,
         facts: scoreLine(pv.points, pv.energy, cardChoices(version).total),
-        odds: oddsText(pv.chance, pv.kind),
+        odds: oddsText(pv.chance, pv.kinds),
         chance: pv.chance,
         doseRisk: pv.doseRisk ? pv.doseRisk.text : null,
         alt: other
@@ -238,7 +238,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
               text: pv.smarter
                 ? `Back to: ${other.label}`
                 : `Try instead: ${other.label}`,
-              odds: `${oddsText(other.chance, other.kind)}. ${scoreLine(other.points, other.energy, cardChoices(other.card).total)}${pv.doseRisk && !other.doseRisk ? ". No late night, the pills stay on routine" : ""}`,
+              odds: `${oddsText(other.chance, other.kinds)}. ${scoreLine(other.points, other.energy, cardChoices(other.card).total)}${pv.doseRisk && !other.doseRisk ? ". No late night, the pills stay on routine" : ""}`,
             }
           : null,
         pills: pv.friction

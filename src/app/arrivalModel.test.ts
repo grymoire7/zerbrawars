@@ -95,7 +95,7 @@ describe("the incoming mark", () => {
     const b = make([arr(1, "staph", 3)], 1, 1);
     expect(entityAt(b, DOOR)).toEqual({ kind: "arrival", id: "arrive:0" });
     const card = infoFor(b, telegraph(b), { kind: "arrival", id: "arrive:0" })!;
-    expect(card.title).toBe("Incoming bacteria");
+    expect(card.title).toBe("Incoming Staphylococcus");
     expect(card.lines).toContain("Size 3");
     expect(card.lines.join(" ")).toContain("+1 size from missed doses");
     expect(card.lines.join(" ")).not.toMatch(/fault|should have|mistake/i);

@@ -21,7 +21,8 @@ import type {
 import type { BattleKind } from "../sim/types";
 import { bodyBeats } from "./campaignModel";
 import { PARAMS } from "../sim/params";
-import { pathogenKind, type PathogenKindId } from "../sim/pathogens";
+import { organismList, organismName } from "../sim/organisms";
+import type { PathogenKindId } from "../sim/pathogens";
 
 // Pure helpers that turn life-phase state into plain words and numbers for the calendar UI and
 // the body inset. Nothing here touches the DOM or three.js.
@@ -34,13 +35,14 @@ export const slotName = (slot: number) =>
 
 export const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-/** "mold" or "bacterial": the silhouette family a pathogen is drawn as, as an adjective. */
-export const kindNoun = (kind: PathogenKindId) =>
-  pathogenKind(kind).form === "mold" ? "mold" : "bacterial";
+const unique = (kinds: readonly PathogenKindId[]) => [...new Set(kinds)];
 
-/** Honest odds in words, e.g. "45% chance of a mold exposure". */
-export function oddsText(chance: number, kind: PathogenKindId): string {
-  return `${Math.round(chance * 100)}% chance of a ${kindNoun(kind)} exposure`;
+/** Honest odds in words, e.g. "45% chance of exposure to Aspergillus". */
+export function oddsText(
+  chance: number,
+  kinds: readonly PathogenKindId[],
+): string {
+  return `${Math.round(chance * 100)}% chance of exposure to ${organismList(unique(kinds))}`;
 }
 
 const MAX_PARTICLES = 40;
@@ -317,8 +319,8 @@ export function lifeBeats(events: readonly LifeEvent[]): string[] {
       case "ExposureRolled":
         out.push(
           e.landed
-            ? `A ${kindNoun(e.kind)} exposure landed (it was a ${pct(e.chance)} chance).`
-            : `No ${kindNoun(e.kind)} exposure this time (${pct(e.chance)} chance).`,
+            ? `Exposure to ${organismName(e.kind)} landed (it was a ${pct(e.chance)} chance).`
+            : `No exposure to ${organismName(e.kind)} this time (${pct(e.chance)} chance).`,
         );
         break;
       case "FrictionEvent":
@@ -432,16 +434,20 @@ export interface WeekSummary {
 
 /** What the week came to, for the end-of-week card. */
 export function weekSummary(life: LifeState): WeekSummary {
-  const groups = new Map<string, { card: CardId; kind: string; n: number }>();
+  const groups = new Map<
+    string,
+    { card: CardId; kinds: PathogenKindId[]; n: number }
+  >();
   for (const x of life.exposures) {
     const key = `${x.day}:${x.slot}`;
-    const g = groups.get(key) ?? { card: x.card, kind: kindNoun(x.kind), n: 0 };
+    const g = groups.get(key) ?? { card: x.card, kinds: [], n: 0 };
     g.n += 1;
+    g.kinds.push(x.kind);
     groups.set(key, g);
   }
   return {
     landed: [...groups.values()].map((g) => ({
-      text: `${labelOf(g.card)}: ${g.n} ${g.kind} exposure${g.n > 1 ? "s" : ""}`,
+      text: `${labelOf(g.card)}: ${g.n} exposure${g.n > 1 ? "s" : ""} to ${organismList(unique(g.kinds))}`,
     })),
     dodged: life.rolls.filter((r) => !r.landed).length,
     medLevel: life.medLevel,

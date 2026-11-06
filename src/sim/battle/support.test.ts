@@ -77,7 +77,7 @@ describe("supportProblem", () => {
       "no strong charge left",
     );
     expect(supportProblem(b, [], kill("antifungal", "p1"))).toBe(
-      "antifungal does not work on bacteria p1",
+      "antifungal does not work on Streptococcus p1",
     );
     expect(supportProblem(b, [], kill("antibacterial", "p9"))).toBe(
       "no pathogen p9",
@@ -129,7 +129,7 @@ describe("supportProblem", () => {
       turnProblems(b, [{ type: "hold", swarmId: "s9" }], kill("strong", "p1")),
     ).toEqual(["no swarm s9", "no strong charge left"]);
     expect(() => resolveTurn(b, [], kill("antifungal", "p1"))).toThrow(
-      /antifungal does not work on bacteria p1/,
+      /antifungal does not work on Streptococcus p1/,
     );
   });
 });

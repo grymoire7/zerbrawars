@@ -1,4 +1,5 @@
 import { PARAMS } from "../params";
+import { organismName } from "../organisms";
 import { pathogenKind, type PathogenKindId } from "../pathogens";
 import type {
   BattleState,
@@ -75,7 +76,7 @@ export function supportProblem(
     const p = battle.pathogens.find((q) => q.id === support.pathogenId);
     if (!p || p.hidden) return `no pathogen ${support.pathogenId}`;
     if (!chargeCovers(charge, p.kind)) {
-      return `${charge} does not work on ${pathogenKind(p.kind).label} ${p.id}`;
+      return `${charge} does not work on ${organismName(p.kind)} ${p.id}`;
     }
     const max = chargeMaxSize(charge);
     if (p.size > max)

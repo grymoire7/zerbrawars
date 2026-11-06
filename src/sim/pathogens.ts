@@ -14,10 +14,6 @@ export interface PathogenKindDef {
   readonly wall: Wall;
   readonly form: PathogenForm;
   readonly canSpore: boolean;
-  /** Generic in-game name. */
-  readonly label: string;
-  /** Organism name, required for the beta. */
-  readonly organism: string;
 }
 
 export const PATHOGEN_KINDS = {
@@ -25,23 +21,17 @@ export const PATHOGEN_KINDS = {
     wall: "leaky",
     form: "bacterium",
     canSpore: false,
-    label: "bacteria",
-    organism: "Streptococcus",
   },
   aspergillus: {
     wall: "sealed",
     form: "mold",
     canSpore: true,
-    label: "fungus",
-    organism: "Aspergillus",
   },
   // A sealed bacterium: round like strep, but with the shell rim, so engulfing only contains it.
   staph: {
     wall: "sealed",
     form: "bacterium",
     canSpore: false,
-    label: "bacteria",
-    organism: "Staphylococcus aureus",
   },
 } as const satisfies Record<string, PathogenKindDef>;
 

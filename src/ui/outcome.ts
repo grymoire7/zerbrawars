@@ -1,4 +1,4 @@
-import { pathogenKind } from "../sim/pathogens";
+import { organismName, organismSub } from "../sim/organisms";
 import type {
   BattleGrade,
   BattleKind,
@@ -209,12 +209,11 @@ export function createOutcomeOverlay(
     const list = document.createElement("ul");
     list.style.cssText = "margin:0;padding-left:20px;line-height:1.4;";
     for (const r of outcome.reservoirs) {
-      const kind = pathogenKind(r.kind);
       const li = document.createElement("li");
-      li.textContent = `${kind.label}, size ${r.size}: ${WHERE[r.source]}`;
+      li.textContent = `${organismName(r.kind)}, size ${r.size}: ${WHERE[r.source]}`;
       const sub = document.createElement("div");
       sub.style.cssText = "font-size:12px;opacity:0.65;";
-      sub.textContent = kind.organism;
+      sub.textContent = organismSub(r.kind);
       li.append(sub);
       list.append(li);
     }

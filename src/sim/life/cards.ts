@@ -1,4 +1,5 @@
 import { PARAMS } from "../params";
+import { formNoun, organismList, organismName } from "../organisms";
 import type { PathogenKindId } from "../pathogens";
 import type { Coord } from "../types";
 import type { CardId, HandCardId } from "./types";
@@ -29,7 +30,7 @@ const TEXT: Record<CardId, CardText> = {
   yard: {
     label: "Yard work with Maya",
     people: "Your sister Maya wants help clearing the yard before the party.",
-    blurb: "Mulch, dead leaves and compost: mold spores in the air.",
+    blurb: `Mulch, dead leaves and compost: ${organismName("aspergillus")} spores in the air.`,
     base: "yard",
     smarter: "yardIndoor",
     kinds: ["aspergillus"],
@@ -44,8 +45,7 @@ const TEXT: Record<CardId, CardText> = {
   lake: {
     label: "The lake with Jordan",
     people: "Jordan wants you at the lake, lagoon swim and all.",
-    blurb:
-      "The warm, still lagoon carries bacteria, some of them the kind your cells can only hold.",
+    blurb: `The warm, still lagoon carries ${organismList(["strep", "staph"])}, some of them the kind your cells can only hold.`,
     base: "lake",
     smarter: "beach",
     kinds: ["strep", "staph"],
@@ -53,7 +53,7 @@ const TEXT: Record<CardId, CardText> = {
   beach: {
     label: "The beach, not the lagoon",
     people: "Same day with Jordan, but you swim off the open beach.",
-    blurb: "Open, moving water brings far fewer bacteria.",
+    blurb: `Open, moving water brings far fewer ${formNoun("bacterium", true)}.`,
     base: "lake",
     kinds: ["strep"],
   },

@@ -1,6 +1,7 @@
 import type { BattleKind } from "../sim/types";
 import { turnText } from "../app/arrivalModel";
 import { createInfoTips } from "./infoTip";
+import { organismKeyText } from "../sim/organisms";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 export interface HudOrder {
   readonly swarmId: string;
@@ -159,7 +160,7 @@ const PANEL =
   "background:var(--zw-raised);border:1px solid var(--zw-line);border-radius:6px;";
 const DARK = "var(--zw-heat-ink)";
 /** Colour name for each organism in the on-screen key; matches the palette tokens. */
-const GERM_COLOR_WORD: Record<PathogenKindId, string> = {
+export const GERM_COLOR_WORD: Record<PathogenKindId, string> = {
   strep: "Orange",
   staph: "Teal",
   aspergillus: "Violet",
@@ -412,7 +413,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
         mark,
         `${GERM_COLOR_WORD[id]} ${def.form === "mold" ? "spiky dots" : "round dots"}` +
           (sealed ? " with a ring" : "") +
-          `: ${def.organism}`,
+          `: ${organismKeyText(id)}`,
       );
     });
     keyBody.replaceChildren(

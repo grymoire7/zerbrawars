@@ -139,7 +139,7 @@ describe("broughtItems", () => {
     expect(titles).toMatch(/1 carried-over spot/);
     expect(titles).toMatch(/Energy/);
     expect(items.find((i) => /lake/i.test(i.title))?.detail).toBe(
-      "bacteria + bacteria (shelled)",
+      "Streptococcus + Staphylococcus (shelled)",
     );
   });
 });

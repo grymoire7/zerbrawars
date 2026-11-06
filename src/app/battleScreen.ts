@@ -2,6 +2,7 @@ import { createBoardView } from "../render/boardView";
 import { createFxView } from "../render/fxView";
 import { createGranulomaView } from "../render/granulomaView";
 import { createOrderView } from "../render/orderView";
+import { organismName } from "../sim/organisms";
 import { createPathogenView } from "../render/pathogenView";
 import type { Playback } from "../render/playback";
 import { createPlaybackView } from "../render/playbackView";
@@ -13,11 +14,7 @@ import { DEFAULT_SCENARIO, isScenarioName } from "../sim/scenarios";
 import { stallChance } from "../sim/battle/intents";
 import { battleStatus } from "../sim/battle/outcome";
 import { PARAMS } from "../sim/params";
-import {
-  pathogenKind,
-  PATHOGEN_KINDS,
-  type PathogenKindId,
-} from "../sim/pathogens";
+import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 
 const PATHOGEN_ORDER = Object.keys(PATHOGEN_KINDS) as PathogenKindId[];
 import type { BattleState, ChargeKind, Coord } from "../sim/types";
@@ -270,7 +267,7 @@ export function mountBattle(
     w: NonNullable<ReturnType<typeof controller.wallCard>>,
   ) => {
     const n = w.contents.length;
-    const what = w.contents.map((c) => pathogenKind(c.kind).label).join(", ");
+    const what = w.contents.map((c) => organismName(c.kind)).join(", ");
     return [
       n > 0
         ? `Seals what ${w.swarmId} carries (${what}) into a granuloma on this tile.`

@@ -1,6 +1,7 @@
 import type { TelegraphMark } from "../sim/battle/intents";
 import { carriedKillChance, swarmMoveRange } from "../sim/battle/orders";
 import { PARAMS } from "../sim/params";
+import { organismName, organismSub } from "../sim/organisms";
 import { pathogenKind } from "../sim/pathogens";
 import { sameCoord } from "../sim/board";
 import { arrivalCard, arrivalId, isDue } from "./arrivalModel";
@@ -129,8 +130,8 @@ export function infoFor(
     const kind = pathogenKind(p.kind);
     const mark = marks.find((m) => m.pathogenId === p.id);
     return {
-      title: `${kind.label} ${p.id}`,
-      sub: kind.organism,
+      title: `${organismName(p.kind)} ${p.id}`,
+      sub: organismSub(p.kind),
       lines: [
         `Size ${p.size}`,
         mark?.type === "stall" && !mark.cancelledBy && !mark.cancelledByCharge
@@ -145,7 +146,7 @@ export function infoFor(
   const s = battle.swarms.find((w) => w.id === ref.id);
   if (!s) return null;
   const order = orders.find((o) => o.swarmId === s.id);
-  const carried = s.load.map((c) => pathogenKind(c.kind).label);
+  const carried = s.load.map((c) => organismName(c.kind));
   const lines = [
     s.load.length > 0
       ? `Load ${s.load.length}/${PARAMS.loadCap}: ${carried.join(", ")}`
