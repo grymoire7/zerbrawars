@@ -19,7 +19,8 @@ status table below is the only place that tracks slices.
 | Week-stop banner | done | 655f987, 2405a2f (friction stop removed) | |
 | B1d week phase | slices 1-4 done, 5 optional | c168283 no toggle and card-keyed dice, 4e42066 game night, 0171d52 score v4, cc8efaf bots and balance | `week-phase-design.md` |
 | B1 mobile layout and touch | not started (needs the phone session) | | |
-| B2 to B10 | not started | | |
+| B2 organism names | done | f242926 (`src/sim/organisms.ts`, enforced by a test) | |
+| B3 to B10 | not started | | |
 
 Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
 more battle, but neither felt noticeably harder or more fun; `?goal=N` still overrides). The smarter bot
