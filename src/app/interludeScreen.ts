@@ -10,7 +10,7 @@ import { createInterlude, type InterludeModel } from "../ui/interlude";
 import { bestId, recordRun, type RecordResult } from "./bestScores";
 import { scoreCard } from "./summaryModel";
 import { weekLine } from "./campaignModel";
-import { escapeAction, leaveQuestion, whereLines } from "./gameMenuModel";
+import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
 import type { Run } from "./run";
 import type { Screen, ScreenEnv } from "./screen";
 import { sessionOptions } from "./sessionOptions";
@@ -56,9 +56,12 @@ export function mountInterlude(
       variant: run.variant,
       week: { cycle: c.cycle, cycles: c.cycles },
     }),
-    leaveQuestion: leaveQuestion(run.arc),
+    leaveNote: leaveNote(run.arc),
     onHelp: () => help.open(),
-    onLeave: () => env.go({ mode: "title" }),
+    onLeave: () => {
+      run.ui("leave", "back to the title");
+      env.go({ mode: "title" });
+    },
   });
   const ac = new AbortController();
   // Nothing here to cancel, so Escape opens the menu.
@@ -151,18 +154,20 @@ export function mountInterlude(
           primary: true,
           onClick: () =>
             env.go({
-              mode: "campaign",
-              seed: run.seed,
+              mode: "arcPlay",
+              arc: run.arc,
               variant: run.variant,
+              seed: run.seed,
             }),
         },
         {
           label: "New game",
           onClick: () =>
             env.go({
-              mode: "campaign",
-              seed: Math.floor(Math.random() * 1_000_000),
+              mode: "arcPlay",
+              arc: run.arc,
               variant: run.variant,
+              seed: Math.floor(Math.random() * 1_000_000),
             }),
         },
         {

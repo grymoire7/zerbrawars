@@ -16,6 +16,8 @@ export interface MenuModel {
   /** Paragraphs under the tagline. */
   readonly paragraphs?: readonly string[];
   readonly items?: readonly MenuItem[];
+  /** A question card: focus lands on the first button (the safe one) instead of the card. */
+  readonly focusFirstButton?: boolean;
   readonly buttons?: readonly {
     readonly label: string;
     readonly primary?: boolean;
@@ -151,7 +153,8 @@ export function createMenu(root: HTMLElement): Menu {
       }
       card.replaceChildren(...kids);
       backdrop.style.display = "flex";
-      card.focus();
+      const first = m.focusFirstButton ? card.querySelector("button") : null;
+      (first ?? card).focus();
     },
     dispose: () => backdrop.remove(),
   };

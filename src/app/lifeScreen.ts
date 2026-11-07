@@ -34,7 +34,7 @@ import {
   symptomText,
   weekOpening,
 } from "./campaignModel";
-import { escapeAction, leaveQuestion, whereLines } from "./gameMenuModel";
+import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
 import type { Run } from "./run";
 import {
   createLifePanel,
@@ -72,6 +72,20 @@ import type { Screen, ScreenEnv } from "./screen";
 
 const L = PARAMS.life;
 
+/**
+ * What the week screen shows that the Run does not hold, kept when the screen is left so Continue
+ * finds the week as it was. A picked activity or slot is not kept (a pick is easy to redo).
+ */
+interface KeptView {
+  readonly cycle: number;
+  readonly beats: { day: string; lines: string[] }[];
+  readonly banner: StopBanner | null;
+  readonly bookNote: string;
+  readonly chosen: readonly [HandCardId, CardId][];
+  readonly packed: boolean;
+}
+const kept = new WeakMap<Run, KeptView>();
+
 /** The calendar screen: the body inset on the board canvas, the week planner in the side panel. */
 export function mountLife(env: ScreenEnv, run: Run): Screen {
   const { canvas, root, panels, ui } = env;
@@ -82,11 +96,14 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   let pending: Pending = NO_PENDING;
   let hover: CardId | null = null;
   let message = "";
-  let banner: StopBanner | null = null;
-  let bookNote = "";
+  const back = kept.get(run);
+  const restore = back && back.cycle === run.campaign().cycle ? back : null;
+  let banner: StopBanner | null = restore?.banner ?? null;
+  let bookNote = restore?.bookNote ?? "";
   const opening = weekOpening(run.lastEvents());
-  let beats: { day: string; lines: string[] }[] =
-    run.campaign().cycle > 1 || opening.length > 0
+  let beats: { day: string; lines: string[] }[] = restore
+    ? restore.beats
+    : run.campaign().cycle > 1 || opening.length > 0
       ? [
           {
             day: `Week ${life.week} begins`,
@@ -94,8 +111,8 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
           },
         ]
       : [];
-  const chosen = new Map<HandCardId, CardId>();
-  let packed = false;
+  const chosen = new Map<HandCardId, CardId>(restore?.chosen ?? []);
+  let packed = restore?.packed ?? false;
 
   // The board only supplies the slab; the life phase puts nothing on it but the preview.
   const slab = battleFromLoadout(loadoutFromLife(life));
@@ -128,9 +145,12 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
             cycles: run.campaign().cycles,
           },
         }),
-        leaveQuestion: leaveQuestion(run.arc),
+        leaveNote: leaveNote(run.arc),
         onHelp: () => help.open(),
-        onLeave: () => env.go({ mode: "title" }),
+        onLeave: () => {
+          run.ui("leave", "back to the title");
+          env.go({ mode: "title" });
+        },
       });
   const apply = (fn: (l: LifeState) => LifeStep): LifeEvent[] => {
     try {
@@ -596,6 +616,14 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     tick: (dt) => inset.tick(dt),
     dispose() {
       ac.abort();
+      kept.set(run, {
+        cycle: run.campaign().cycle,
+        beats,
+        banner,
+        bookNote,
+        chosen: [...chosen],
+        packed,
+      });
       document.getElementById("app")?.classList.remove("life");
       help.dispose();
       menu?.dispose();

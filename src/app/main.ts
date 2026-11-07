@@ -11,7 +11,8 @@ import { parseGoal, parseReservoirs } from "./campaignModel";
 import { createRun, type Run } from "./run";
 import { arcById, type ArcId, type VariantId } from "./arcs";
 import { mountMenu } from "./menuScreens";
-import { parseStart } from "./arcModel";
+import { parseStart, resumeTarget } from "./arcModel";
+import { clearHeld, heldRun, holdRun } from "./heldRun";
 import {
   DEFAULT_OPTIONS,
   loadoutFor,
@@ -63,6 +64,14 @@ function newRun(
 
 /** Tears down the current screen and mounts the requested one. The campaign loop drives this. */
 function go(req: ScreenRequest) {
+  if (req.mode === "continue") {
+    // A held summer picks up where the campaign was left: a week as it was, a fight from turn 1.
+    const run = heldRun();
+    if (!run) return go({ mode: "title" });
+    run.ui("continue", resumeTarget(run.campaign()));
+    const to = resumeTarget(run.campaign());
+    return go(to === "battle" ? { mode: "battle", run } : { mode: to, run });
+  }
   screen?.dispose();
   if (root) ctx.scene.remove(root);
   root = new THREE.Scene();
@@ -90,7 +99,10 @@ function go(req: ScreenRequest) {
     window.history.replaceState(null, "", url);
     const arc = arcById(req.arc);
     if (arc.play.kind === "campaign") {
-      screen = mountLife(env, newRun(false, undefined, req.variant, arc.id));
+      // Arc play held for Continue; a new summer replaces the one held.
+      const run = newRun(false, req.seed, req.variant, arc.id);
+      holdRun(run);
+      screen = mountLife(env, run);
       return;
     }
     // A single battle from the scenario, with the variant's residual kill chance.
@@ -109,6 +121,13 @@ function go(req: ScreenRequest) {
     });
     return;
   }
+  // Only arc play is held; the debug entries below start runs that Continue never offers.
+  if (req.mode === "summary") clearHeld(req.run);
+  if (
+    req.mode === "campaign" ||
+    ((req.mode === "life" || req.mode === "battle") && !req.run)
+  )
+    clearHeld();
   if (req.mode === "campaign") {
     if (req.seed !== undefined) url.searchParams.set("seed", String(req.seed));
     if (req.variant !== undefined) url.searchParams.set("variant", req.variant);

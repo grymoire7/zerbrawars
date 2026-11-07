@@ -36,7 +36,7 @@ import { createGameMenu } from "../ui/gameMenu";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { incomingKey, nextArrival } from "./arrivalModel";
-import { escapeAction, leaveQuestion, whereLines } from "./gameMenuModel";
+import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
 import type { ArcId, VariantId } from "./arcs";
 import { createStatusStrip } from "../ui/statusStrip";
 import { weekChoices, weekScore } from "../sim/score";
@@ -144,9 +144,13 @@ export function mountBattle(
   const menu = inPlay
     ? createGameMenu(ui, {
         where: whereLines(inPlay),
-        leaveQuestion: leaveQuestion(inPlay.arc),
+        leaveNote: leaveNote(inPlay.arc),
         onHelp: () => help.open(),
-        onLeave: () => env.go({ mode: "title" }),
+        onLeave: () => {
+          // The held run restarts this fight at turn 1 on Continue; the log says so.
+          run?.ui("leave", "back to the title");
+          env.go({ mode: "title" });
+        },
       })
     : null;
   const status = createStatusStrip(panels.status);

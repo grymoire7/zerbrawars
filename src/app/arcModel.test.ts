@@ -5,6 +5,10 @@ import {
   arcChoices,
   bestsText,
   completeButtons,
+  continueChoice,
+  heldLine,
+  needsReplaceConfirm,
+  resumeTarget,
   parseStart,
   variantChoices,
 } from "./arcModel";
@@ -138,5 +142,60 @@ describe("parseStart", () => {
       variant: "ar",
     });
     expect(parseStart(q("variant=ar&seed=3"))).toEqual({ kind: "debug" });
+  });
+});
+
+describe("held summer", () => {
+  const camp = () => createRun({ seed: 3, now: () => 0 }).campaign();
+
+  it("says the week and day in plain words", () => {
+    const c = camp();
+    expect(heldLine(c, "xl")).toBe("Week 1 of 2, day 1 · CGD, X-linked");
+    const later = { ...c, life: { ...c.life, day: 2 } };
+    expect(heldLine(later, "ar")).toBe(
+      "Week 1 of 2, day 3 · CGD, autosomal recessive",
+    );
+  });
+  it("says the end of the week once every day is played", () => {
+    const c = camp();
+    const over = { ...c, life: { ...c.life, day: PARAMS.life.days } };
+    expect(heldLine(over, "xl")).toMatch(/^Week 1 of 2, the end of the week/);
+  });
+  it("names a waiting fight and a finished one", () => {
+    const c = camp();
+    expect(heldLine({ ...c, mode: "battle" }, "xl")).toMatch(
+      /a fight is waiting/,
+    );
+    expect(heldLine({ ...c, mode: "outcome" }, "xl")).toMatch(
+      /after the week's fight/,
+    );
+  });
+  it("offers Continue only with a held run", () => {
+    expect(continueChoice(null)).toBeNull();
+    const item = continueChoice({ campaign: camp(), variant: "xl" });
+    expect(item?.label).toBe("Continue your summer");
+    expect(item?.to).toEqual({ mode: "continue" });
+    expect(item?.sub).toMatch(/Week 1 of 2/);
+  });
+  it("resumes on the screen the campaign mode names", () => {
+    const c = camp();
+    expect(resumeTarget(c)).toBe("life");
+    expect(resumeTarget({ ...c, mode: "battle" })).toBe("battle");
+    expect(
+      resumeTarget({ ...c, mode: "outcome", result: { kind: "quiet" } }),
+    ).toBe("quiet");
+    expect(resumeTarget({ ...c, mode: "outcome", result: null })).toBe(
+      "battle",
+    );
+    expect(resumeTarget({ ...c, mode: "done" })).toBe("summary");
+  });
+  it("asks before replacing a summer, only for a summer", () => {
+    const summer = { mode: "arcPlay", arc: "summer", variant: "xl" } as const;
+    const fight = { mode: "arcPlay", arc: "tutorial", variant: "xl" } as const;
+    expect(needsReplaceConfirm(summer, true)).toBe(true);
+    expect(needsReplaceConfirm(summer, false)).toBe(false);
+    expect(needsReplaceConfirm(fight, true)).toBe(false);
+    expect(needsReplaceConfirm({ mode: "title" }, true)).toBe(false);
+    expect(needsReplaceConfirm(undefined, true)).toBe(false);
   });
 });

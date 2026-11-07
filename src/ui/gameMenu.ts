@@ -3,8 +3,8 @@ import { trapIndex } from "../app/gameMenuModel";
 export interface GameMenuOptions {
   /** Under the title; `line` also describes the dialog. */
   readonly where: { readonly line: string; readonly sub: string };
-  /** Asked in place before leaving. */
-  readonly leaveQuestion: string;
+  /** A small line under "Back to the title": what leaving keeps or loses. */
+  readonly leaveNote: string;
   readonly onHelp: () => void;
   readonly onLeave: () => void;
 }
@@ -20,7 +20,6 @@ export interface GameMenu {
 const KEEP = "Keep playing";
 const HELP = "How to play";
 const LEAVE = "Back to the title";
-const LEAVE_YES = "Go back to the title";
 
 const WIDE = "(min-width: 900px)";
 
@@ -42,7 +41,7 @@ function button(label: string, css: string, onClick: () => void) {
 
 /**
  * The in-game menu: a corner button and the dialog it opens (Keep playing, How to play, Back to
- * the title). The button is the first child of `root` so it leads the tab order, and it sits above
+ * the title, which asks nothing: the run waits there). The button is the first child of `root` so it leads the tab order, and it sits above
  * the screen overlays (outcome, interlude, brought strip) but under the dialogs (help, probe, this
  * menu). While the menu is open it owns the keyboard: Escape closes it and Tab cycles inside.
  */
@@ -102,37 +101,23 @@ export function createGameMenu(
     api.close();
     opts.onHelp();
   });
-  const leave = button(LEAVE, "", () => ask(true));
-  const list = document.createElement("div");
-  list.style.cssText = "display:flex;flex-direction:column;gap:8px;";
-  list.append(keep, help, leave);
-
-  const question = text(
-    "p",
-    "margin:0;line-height:1.4;display:none;",
-    opts.leaveQuestion,
-  );
-  const stay = button(KEEP, "flex:1;font-weight:700;", () => api.close());
-  const go = button(LEAVE_YES, "flex:1;", () => {
+  const leave = button(LEAVE, "", () => {
     api.close();
     opts.onLeave();
   });
-  const sure = document.createElement("div");
-  sure.style.cssText = "display:none;gap:8px;flex-wrap:wrap;";
-  sure.append(stay, go);
+  const note = text(
+    "p",
+    "margin:0;line-height:1.4;opacity:0.85;font-size:14px;",
+    opts.leaveNote,
+  );
+  const list = document.createElement("div");
+  list.style.cssText = "display:flex;flex-direction:column;gap:8px;";
+  list.append(keep, help, leave, note);
 
-  card.append(title, where, sub, list, question, sure);
+  card.append(title, where, sub, list);
   backdrop.append(card);
   root.append(backdrop);
   root.prepend(trigger);
-
-  /** The question swaps in for the list, inside the card; the safe button comes first and has focus. */
-  function ask(on: boolean) {
-    list.style.display = on ? "none" : "flex";
-    question.style.display = on ? "" : "none";
-    sure.style.display = on ? "flex" : "none";
-    (on ? stay : keep).focus({ preventScroll: true });
-  }
 
   let isOpen = false;
   let returnTo: HTMLElement | null = null;
@@ -145,7 +130,7 @@ export function createGameMenu(
       backdrop.style.display = "flex";
       trigger.setAttribute("aria-expanded", "true");
       card.scrollTop = 0;
-      ask(false);
+      keep.focus({ preventScroll: true });
     },
     close() {
       if (!isOpen) return;
@@ -179,7 +164,7 @@ export function createGameMenu(
     } else if (e.key === "Tab") {
       e.preventDefault();
       e.stopImmediatePropagation();
-      const stops = [keep, help, leave, stay, go].filter(
+      const stops = [keep, help, leave].filter(
         (b) => b.getClientRects().length > 0,
       );
       const at = trapIndex(

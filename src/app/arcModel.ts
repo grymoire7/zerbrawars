@@ -1,7 +1,11 @@
+import type { Campaign } from "../sim/campaign";
+import { PARAMS } from "../sim/params";
 import { listBest, type BestEntry } from "./bestScores";
 import {
   ARCS,
   VARIANTS,
+  arcById,
+  variantById,
   type ArcDef,
   type ArcId,
   type VariantId,
@@ -72,6 +76,66 @@ export function arcChoices(
     };
   });
 }
+
+/** Where a held summer is, in plain words: the week and day, or what is waiting. */
+export function heldLine(c: Campaign, variant: VariantId): string {
+  const week = `Week ${c.cycle} of ${c.cycles}`;
+  let where: string;
+  if (c.mode === "life") {
+    const day = Math.min(c.life.day + 1, PARAMS.life.days);
+    where =
+      c.life.day >= PARAMS.life.days
+        ? `${week}, the end of the week`
+        : `${week}, day ${day}`;
+  } else if (c.mode === "battle") {
+    where = `${week}, a fight is waiting`;
+  } else {
+    where = `${week}, after the week's fight`;
+  }
+  return `${where} · ${variantById(variant).label}`;
+}
+
+export const CONTINUE_LABEL = "Continue your summer";
+
+/** The title's Continue item for a held summer; absent without one. */
+export function continueChoice(
+  held: { campaign: Campaign; variant: VariantId } | null,
+): MenuChoice | null {
+  if (!held) return null;
+  return {
+    label: CONTINUE_LABEL,
+    sub: heldLine(held.campaign, held.variant),
+    to: { mode: "continue" },
+    lines: [],
+  };
+}
+
+/** Which screen picks a held summer up: the campaign's own mode decides. */
+export function resumeTarget(
+  c: Campaign,
+): "life" | "battle" | "quiet" | "summary" {
+  if (c.mode === "life") return "life";
+  if (c.mode === "battle") return "battle";
+  if (c.mode === "done") return "summary";
+  return c.result?.kind === "quiet" ? "quiet" : "battle";
+}
+
+/** Starting a summer while one is held replaces it, so the picker asks first. */
+export function needsReplaceConfirm(
+  to: ScreenRequest | undefined,
+  held: boolean,
+): boolean {
+  return (
+    held && to?.mode === "arcPlay" && arcById(to.arc).play.kind === "campaign"
+  );
+}
+
+export const REPLACE_CONFIRM = {
+  title: "Start a new summer?",
+  text: "Your current summer will be replaced.",
+  keep: "Keep my summer",
+  replace: "Start a new summer",
+};
 
 export interface CompleteButton {
   readonly label: string;

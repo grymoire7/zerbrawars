@@ -18,10 +18,11 @@ export function whereLines(w: WhereInput): { line: string; sub: string } {
   };
 }
 
-/** The question before leaving (N2 drops it once Continue holds the run). */
-export function leaveQuestion(arc: ArcId): string {
-  const what = arcById(arc).play.kind === "campaign" ? "summer" : "fight";
-  return `Head back to the title? This ${what} will end here.`;
+/** The line under "Back to the title": leaving a summer keeps it; a single fight is not kept. */
+export function leaveNote(arc: ArcId): string {
+  return arcById(arc).play.kind === "campaign"
+    ? "Your summer waits on the title screen."
+    : "This fight is not kept. You would start it again from the beginning.";
 }
 
 /** What Escape does on a play screen. `pick`: a selection or pending choice that Escape cancels first. */

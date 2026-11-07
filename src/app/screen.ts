@@ -40,7 +40,14 @@ export type ScreenRequest =
   | { readonly mode: "summary"; run: Run }
   | { readonly mode: "title" }
   | { readonly mode: "arcs"; variant: VariantId }
-  | { readonly mode: "arcPlay"; arc: ArcId; variant: VariantId }
+  | {
+      readonly mode: "arcPlay";
+      arc: ArcId;
+      variant: VariantId;
+      /** A given seed (Replay); absent, the run's own. */
+      seed?: number;
+    }
+  | { readonly mode: "continue" }
   | { readonly mode: "arcComplete"; arc: ArcId; variant: VariantId };
 
 export type Mode = "campaign" | "life" | "battle";

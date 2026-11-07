@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   escapeAction,
-  leaveQuestion,
+  leaveNote,
   trapIndex,
   whereLines,
 } from "./gameMenuModel";
@@ -27,12 +27,12 @@ describe("whereLines", () => {
   });
 });
 
-describe("leaveQuestion", () => {
-  it("is warm and says what ends", () => {
-    expect(leaveQuestion("summer")).toBe(
-      "Head back to the title? This summer will end here.",
-    );
-    expect(leaveQuestion("tutorial")).toMatch(/fight will end here/);
+describe("leaveNote", () => {
+  it("says a summer is kept", () => {
+    expect(leaveNote("summer")).toBe("Your summer waits on the title screen.");
+  });
+  it("says a single fight is not kept", () => {
+    expect(leaveNote("tutorial")).toMatch(/not kept/);
   });
 });
 

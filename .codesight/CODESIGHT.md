@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 56 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~23,700 tokens. **Saves ~19,100 tokens per conversation.**
-> **Last scanned:** 2026-11-07 06:31 — re-run after significant changes
+> **Last scanned:** 2026-11-07 06:36 — re-run after significant changes
 
 ---
 
@@ -331,7 +331,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/sim/params.ts` — imported by **52** files
+- `src/sim/params.ts` — imported by **53** files
 - `src/sim/types.ts` — imported by **48** files
 - `src/sim/pathogens.ts` — imported by **26** files
 - `src/sim/scenarios.ts` — imported by **20** files
@@ -345,16 +345,16 @@
 - `src/sim/validate.ts` — imported by **15** files
 - `src/sim/life/types.ts` — imported by **14** files
 - `src/sim/battle/resolve.ts` — imported by **14** files
-- `src/sim/campaign.ts` — imported by **12** files
+- `src/sim/campaign.ts` — imported by **13** files
 - `src/sim/organisms.ts` — imported by **11** files
 - `src/sim/life/cards.ts` — imported by **11** files
-- `src/app/run.ts` — imported by **8** files
+- `src/app/run.ts` — imported by **10** files
 - `src/sim/life/calendar.ts` — imported by **8** files
 - `src/sim/score.ts` — imported by **8** files
 
 ## Import Map (who imports what)
 
-- `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.test.ts` +47 more
+- `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/arcModel.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts` +48 more
 - `src/sim/types.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts` +43 more
 - `src/sim/pathogens.ts` ← `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/render/insetView.ts` +21 more
 - `src/sim/scenarios.ts` ← `src/app/arcs.ts`, `src/app/arrivalModel.test.ts`, `src/app/battleScreen.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +15 more
@@ -370,7 +370,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 42 test files found
+> 43 test files found
 
 ---
 
