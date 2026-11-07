@@ -18,7 +18,7 @@ status table below is the only place that tracks slices.
 | B1c battle depth | done (slices 1-5) | 60295b4 doors and clock, 5cb1d0c arrivals, 924d7a5 missed doses, 5a760e5 UI marks, debfcf2 medicine roll | `battle-depth-design.md` |
 | Week-stop banner | done | 655f987, 2405a2f (friction stop removed) | |
 | B1d week phase | slices 1-4 done, 5 optional | c168283 no toggle and card-keyed dice, 4e42066 game night, 0171d52 score v4, cc8efaf bots and balance | `week-phase-design.md` |
-| B1 mobile layout and touch | not started (needs the phone session) | | |
+| B1 mobile layout and touch | done | 6a07dae (real-device pass on Brave/Android; landscape and tablet not tuned) | |
 | B2 organism names | done | f242926 (`src/sim/organisms.ts`, enforced by a test) | |
 | B3 to B10 | not started | | |
 
