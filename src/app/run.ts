@@ -20,13 +20,18 @@ import {
   type SessionLog,
 } from "../sim/sessionLog";
 import type { BattleState, Order, SupportOrder } from "../sim/types";
+import { PARAMS } from "../sim/params";
 import { dosesForMed } from "./campaignModel";
+import type { ArcId, VariantId } from "./arcs";
 
 /** Facilitator switches, shared by every screen of a page session. */
 export const settings = { brought: true, probe: false };
 
 export interface RunOptions {
   readonly seed: number;
+  /** Which arc and CGD variant this run belongs to (best scores key on them); default summer, xl. */
+  readonly arc?: ArcId;
+  readonly variant?: VariantId;
   readonly reservoirs?: readonly CarriedReservoir[];
   /** Debug start: the first week's med level, 0..1. */
   readonly med?: number;
@@ -56,6 +61,8 @@ export interface TurnInfo {
 export interface Run {
   readonly standalone: boolean;
   readonly seed: number;
+  readonly arc: ArcId;
+  readonly variant: VariantId;
   campaign(): Campaign;
   /** Events of the latest step (a fresh week's opening symptoms, for one). */
   lastEvents(): readonly CampaignEvent[];
@@ -77,8 +84,10 @@ export function createRun(opts: RunOptions): Run {
   const now = opts.now ?? (() => performance.now());
   const t0 = now();
   const elapsed = () => Math.max(0, Math.round(now() - t0));
+  const variant = opts.variant ?? "xl";
   const first = createCampaign({
     seed: opts.seed,
+    residualKillChance: PARAMS.residualByVariant[variant],
     reservoirs: opts.reservoirs,
     energy: opts.energy,
     goalTarget: opts.goalTarget,
@@ -114,6 +123,8 @@ export function createRun(opts: RunOptions): Run {
   return {
     standalone: opts.standalone ?? false,
     seed: opts.seed,
+    arc: opts.arc ?? "summer",
+    variant,
     campaign: () => campaign,
     lastEvents: () => events,
     log: () => log,

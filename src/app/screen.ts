@@ -1,5 +1,6 @@
 import type * as THREE from "three";
 import type { BattleState } from "../sim/types";
+import type { ArcId, VariantId } from "./arcs";
 import type { Run } from "./run";
 
 /** What a screen (battle or life phase) is given to build on. */
@@ -28,13 +29,19 @@ export interface Screen {
 /**
  * Where to go next. A battle may arrive with a ready state (from the life phase), and the
  * campaign screens carry their Run. `campaign` starts a fresh run from the URL's debug start.
+ * The title, arc picker and arc-complete screens carry the chosen variant (and arc);
+ * `arcPlay` starts an arc.
  */
 export type ScreenRequest =
   | { readonly mode: "battle"; battle?: BattleState; run?: Run }
   | { readonly mode: "life"; run?: Run }
-  | { readonly mode: "campaign"; seed?: number }
+  | { readonly mode: "campaign"; seed?: number; variant?: VariantId }
   | { readonly mode: "quiet"; run: Run }
-  | { readonly mode: "summary"; run: Run };
+  | { readonly mode: "summary"; run: Run }
+  | { readonly mode: "title" }
+  | { readonly mode: "arcs"; variant: VariantId }
+  | { readonly mode: "arcPlay"; arc: ArcId; variant: VariantId }
+  | { readonly mode: "arcComplete"; arc: ArcId; variant: VariantId };
 
 export type Mode = "campaign" | "life" | "battle";
 

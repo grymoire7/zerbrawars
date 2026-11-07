@@ -31,6 +31,8 @@ export interface OutcomeOverlay {
     status: BattleStatus,
     extra?: OutcomeExtra,
     kind?: BattleKind,
+    /** An arc's single battle: the Next button ends the arc under this label. */
+    arcEnd?: string,
   ): void;
   hide(): void;
 }
@@ -226,7 +228,7 @@ export function createOutcomeOverlay(
   };
 
   return {
-    show(outcome, status, extra, kind = "full") {
+    show(outcome, status, extra, kind = "full", arcEnd) {
       const skirmish = kind === "skirmish";
       const g = skirmish
         ? SKIRMISH_COPY[outcome.grade === "cleared" ? "cleared" : "loose"]
@@ -253,10 +255,11 @@ export function createOutcomeOverlay(
         ...(skirmish ? [] : rows(outcome)),
         ...(extra && !skirmish ? [meaning(extra)] : []),
       );
-      next.style.display = extra ? "" : "none";
-      again.style.display = extra ? "none" : "";
-      fresh.style.display = extra ? "none" : "";
+      next.style.display = extra || arcEnd ? "" : "none";
+      again.style.display = extra || arcEnd ? "none" : "";
+      fresh.style.display = extra || arcEnd ? "none" : "";
       if (extra) next.textContent = extra.nextLabel;
+      else if (arcEnd) next.textContent = arcEnd;
       const { tissue } = outcome;
       stats.textContent = skirmish
         ? `Energy carried forward: ${outcome.energy}.` +

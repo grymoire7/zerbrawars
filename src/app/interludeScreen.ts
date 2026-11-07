@@ -21,8 +21,8 @@ function recordOnce(run: Run, total: number, choices: number, outcome: number) {
   const c = run.campaign();
   const id = bestId({
     scoreVersion: c.history[0]?.score.version ?? PARAMS.score.version,
-    arc: "summer",
-    variant: "xl",
+    arc: run.arc,
+    variant: run.variant,
     seed: run.seed,
   });
   const rec = recordRun(id, { total, choices, outcome });
@@ -117,7 +117,12 @@ export function mountInterlude(
         {
           label: "Replay",
           primary: true,
-          onClick: () => env.go({ mode: "campaign", seed: run.seed }),
+          onClick: () =>
+            env.go({
+              mode: "campaign",
+              seed: run.seed,
+              variant: run.variant,
+            }),
         },
         {
           label: "New game",
@@ -125,7 +130,12 @@ export function mountInterlude(
             env.go({
               mode: "campaign",
               seed: Math.floor(Math.random() * 1_000_000),
+              variant: run.variant,
             }),
+        },
+        {
+          label: "Back to arcs",
+          onClick: () => env.go({ mode: "arcs", variant: run.variant }),
         },
       ],
     };

@@ -24,6 +24,13 @@ export const PARAMS = {
    * XL-like default; the debug panel overrides it per battle via BattleState.residualKillChance.
    */
   residualKillChance: 0.1,
+  /**
+   * Residual kill chance per CGD variant (the title's X-linked / autosomal recessive choice).
+   * XL is the default above. The AR number is a working assumption, not clinical data: the clinician
+   * file says "low for XL, higher for AR, tunable per character" (docs/specs/clinician-questions.md,
+   * item 1), pending clinician review.
+   */
+  residualByVariant: { xl: 0.1, ar: 0.25 },
   maxPathogenSize: 4,
   /**
    * Per-kind intent behaviour. A pathogen of at least `actMinSize` acts (spreads, or spores if

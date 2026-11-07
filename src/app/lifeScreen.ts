@@ -113,6 +113,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   const help = createHelp(ui, {
     lines: LIFE_LINES,
     seenKey: "zebrawars.help.life.seen",
+    onLeave: run.standalone ? undefined : () => env.go({ mode: "title" }),
   });
   const apply = (fn: (l: LifeState) => LifeStep): LifeEvent[] => {
     try {

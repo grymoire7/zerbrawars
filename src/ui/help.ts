@@ -13,6 +13,8 @@ export interface Help {
 export interface HelpOptions {
   readonly lines?: readonly (readonly [string, string])[];
   readonly seenKey?: string;
+  /** When given, the dialog offers "Leave this game" (after a confirm) and calls this. */
+  readonly onLeave?: () => void;
 }
 
 const SEEN_KEY = "zebrawars.help.seen";
@@ -159,6 +161,44 @@ export function createHelp(root: HTMLElement, opts: HelpOptions = {}): Help {
   close.style.cssText =
     "min-height:44px;min-width:44px;padding:0 16px;font-weight:700;align-self:stretch;";
   card.append(close);
+  let resetLeave = () => {};
+  if (opts.onLeave) {
+    const leave = document.createElement("button");
+    leave.type = "button";
+    leave.textContent = "Leave this game";
+    leave.style.cssText =
+      "min-height:44px;min-width:44px;padding:0 16px;align-self:stretch;";
+    const ask = document.createElement("p");
+    ask.style.cssText = "margin:0;line-height:1.4;display:none;";
+    ask.textContent =
+      "Leave this game and go back to the title? Your progress in this game will be lost.";
+    const yes = document.createElement("button");
+    yes.type = "button";
+    yes.textContent = "Leave";
+    yes.style.cssText = "min-height:44px;min-width:44px;padding:0 16px;flex:1;";
+    const no = document.createElement("button");
+    no.type = "button";
+    no.textContent = "Keep playing";
+    no.style.cssText =
+      "min-height:44px;min-width:44px;padding:0 16px;flex:1;font-weight:700;";
+    const sure = document.createElement("div");
+    sure.style.cssText = "display:none;gap:8px;";
+    sure.append(no, yes);
+    const askLeave = (on: boolean) => {
+      leave.style.display = on ? "none" : "";
+      ask.style.display = on ? "" : "none";
+      sure.style.display = on ? "flex" : "none";
+      (on ? no : leave).focus({ preventScroll: true });
+    };
+    leave.addEventListener("click", () => askLeave(true));
+    no.addEventListener("click", () => askLeave(false));
+    yes.addEventListener("click", () => {
+      api.close();
+      opts.onLeave?.();
+    });
+    resetLeave = () => askLeave(false);
+    card.append(leave, ask, sure);
+  }
   backdrop.append(card);
   root.append(backdrop);
 
@@ -170,6 +210,7 @@ export function createHelp(root: HTMLElement, opts: HelpOptions = {}): Help {
       isOpen = true;
       returnTo = document.activeElement as HTMLElement | null;
       backdrop.style.display = "flex";
+      resetLeave();
       close.focus({ preventScroll: true });
       card.scrollTop = 0;
     },

@@ -281,6 +281,11 @@
   - interface LifePanelModel
   - interface LifePanelHandlers
   - _...1 more_
+- `src/ui/menu.ts`
+  - function createMenu: (root) => Menu
+  - interface MenuItem
+  - interface MenuModel
+  - interface Menu
 - `src/ui/outcome.ts`
   - function outcomeHeading: (grade, reason) => void
   - function createOutcomeOverlay: (root, handlers) => OutcomeOverlay

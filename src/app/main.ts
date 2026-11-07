@@ -9,7 +9,14 @@ import { mountInterlude } from "./interludeScreen";
 import { mountLife } from "./lifeScreen";
 import { parseGoal, parseReservoirs } from "./campaignModel";
 import { createRun, type Run } from "./run";
-import { loadoutFor, parseLoadoutParams } from "./loadoutOptions";
+import { arcById, type ArcId, type VariantId } from "./arcs";
+import { mountMenu } from "./menuScreens";
+import { parseStart } from "./arcModel";
+import {
+  DEFAULT_OPTIONS,
+  loadoutFor,
+  parseLoadoutParams,
+} from "./loadoutOptions";
 import { parseMode, type Screen, type ScreenRequest } from "./screen";
 import { applyCssTokens } from "../theme/palette";
 
@@ -29,7 +36,15 @@ const ctx = createScene(canvas, { width: extent.width, depth: extent.height });
 let screen: Screen | null = null;
 let root: THREE.Scene | null = null;
 
-function newRun(standalone: boolean, seed?: number): Run {
+const urlVariant = (q: URLSearchParams): VariantId =>
+  q.get("variant") === "ar" ? "ar" : "xl";
+
+function newRun(
+  standalone: boolean,
+  seed?: number,
+  variant?: VariantId,
+  arc?: ArcId,
+): Run {
   const q = new URLSearchParams(window.location.search);
   const raw = q.get("seed");
   const fromUrl =
@@ -40,6 +55,8 @@ function newRun(standalone: boolean, seed?: number): Run {
     reservoirs: parseReservoirs(q.get("reservoirs")),
     med: Number.isFinite(med) ? Math.min(1, Math.max(0, med)) : undefined,
     goalTarget: parseGoal(q.get("goal")),
+    variant: variant ?? urlVariant(q),
+    arc,
     standalone,
   });
 }
@@ -56,10 +73,45 @@ function go(req: ScreenRequest) {
     if (m) url.searchParams.set("mode", m);
     else url.searchParams.delete("mode");
   };
+  if (
+    req.mode === "title" ||
+    req.mode === "arcs" ||
+    req.mode === "arcComplete"
+  ) {
+    // Menus are not a debug start: reloading one lands on the title.
+    for (const k of ["mode", "seed", "variant", "arc"])
+      url.searchParams.delete(k);
+    window.history.replaceState(null, "", url);
+    screen = mountMenu(env, req);
+    return;
+  }
+  if (req.mode === "arcPlay") {
+    setMode(null);
+    window.history.replaceState(null, "", url);
+    const arc = arcById(req.arc);
+    if (arc.play.kind === "campaign") {
+      screen = mountLife(env, newRun(false, undefined, req.variant, arc.id));
+      return;
+    }
+    // A single battle from the scenario, with the variant's residual kill chance.
+    const battle = battleFromLoadout(
+      loadoutFor(arc.play.scenario, PARAMS.defaultSeed, {
+        ...DEFAULT_OPTIONS,
+        residual: PARAMS.residualByVariant[req.variant],
+      }),
+    );
+    screen = mountBattle(env, battle, undefined, {
+      label: "Finish",
+      onDone: () =>
+        go({ mode: "arcComplete", arc: arc.id, variant: req.variant }),
+    });
+    return;
+  }
   if (req.mode === "campaign") {
     if (req.seed !== undefined) url.searchParams.set("seed", String(req.seed));
+    if (req.variant !== undefined) url.searchParams.set("variant", req.variant);
     window.history.replaceState(null, "", url);
-    const run = newRun(false, req.seed);
+    const run = newRun(false, req.seed, req.variant);
     setMode(null);
     window.history.replaceState(null, "", url);
     screen = mountLife(env, run);
@@ -78,8 +130,15 @@ function go(req: ScreenRequest) {
   }
   window.history.replaceState(null, "", url);
 }
-const first = parseMode(params);
-go(first === "campaign" ? { mode: "campaign" } : { mode: first });
+const start = parseStart(params);
+if (start.kind === "title") go({ mode: "title" });
+else if (start.kind === "arcs") go({ mode: "arcs", variant: start.variant });
+else if (start.kind === "arc")
+  go({ mode: "arcPlay", arc: start.arc, variant: start.variant });
+else {
+  const first = parseMode(params);
+  go(first === "campaign" ? { mode: "campaign" } : { mode: first });
+}
 
 let last = performance.now();
 let statFrames = 0;

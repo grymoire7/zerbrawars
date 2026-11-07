@@ -59,6 +59,8 @@ export function mountBattle(
   env: ScreenEnv,
   given?: BattleState,
   run?: Run,
+  /** An arc's single battle: where "Next" goes once the fight is over. */
+  arcEnd?: { readonly label: string; readonly onDone: () => void },
 ): Screen {
   // In a campaign the Campaign owns the battle; the controller plays it and hands it back.
   const start = run ? (run.campaign().battle ?? undefined) : given;
@@ -119,7 +121,9 @@ export function mountBattle(
     fx: fxView,
     tilePosition: view.tilePosition,
   });
-  const help = createHelp(ui);
+  const help = createHelp(ui, {
+    onLeave: run || arcEnd ? () => env.go({ mode: "title" }) : undefined,
+  });
   const status = createStatusStrip(panels.status);
   let statusIn: BattleStatusInput | null = null;
   let shownTissue = -1;
@@ -229,7 +233,10 @@ export function mountBattle(
   }
   const outcomeOverlay = createOutcomeOverlay(ui, {
     onNext: () => {
-      if (!run) return;
+      if (!run) {
+        arcEnd?.onDone();
+        return;
+      }
       run.next();
       env.go(
         run.campaign().mode === "done"
@@ -382,6 +389,7 @@ export function mountBattle(
           battleStatus(controller.state()),
           extra,
           controller.state().kind,
+          arcEnd?.label,
         );
       }
     } else if (outcomeShown) {

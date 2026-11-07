@@ -1,0 +1,127 @@
+import { listBest, type BestEntry } from "./bestScores";
+import {
+  ARCS,
+  VARIANTS,
+  type ArcDef,
+  type ArcId,
+  type VariantId,
+} from "./arcs";
+import type { ScreenRequest } from "./screen";
+
+// The pure side of the title, the pickers and the arc-complete screen: what is offered, what each
+// choice leads to, and the text. The screens in menuScreens.ts only draw it.
+
+export const TITLE = "Zebra Wars";
+export const TAGLINE = "Fight infections from the inside, one turn at a time.";
+export const VARIANT_HEADING = "Choose your character";
+export const WILSON = {
+  label: "Wilson's disease",
+  note: "A separate game, coming later",
+};
+
+export interface MenuChoice {
+  readonly label: string;
+  readonly sub: string;
+  /** Absent when the choice is shown but cannot be picked. */
+  readonly to?: ScreenRequest;
+  /** Extra lines under the choice (best scores). */
+  readonly lines: readonly string[];
+}
+
+export const variantChoices = (): MenuChoice[] =>
+  VARIANTS.map((v) => ({
+    label: v.label,
+    sub: v.blurb,
+    to: { mode: "arcs", variant: v.id },
+    lines: [],
+  }));
+
+/** The saved bests for one arc and variant, best first, as short lines. */
+export function bestsText(
+  arc: ArcId,
+  variant: VariantId,
+  entries: readonly { id: string; entry: BestEntry }[] = listBest(variant),
+  max = 3,
+): string[] {
+  const mine = entries.filter(({ id }) => id.split("|")[1] === arc);
+  if (mine.length === 0) return [];
+  return mine.slice(0, max).map(({ entry }) => {
+    return `${entry.total} points (Choices ${entry.choices}, Outcome ${entry.outcome})`;
+  });
+}
+
+const NO_BESTS = "No score yet. Finish the two weeks to set one.";
+
+export function arcChoices(
+  variant: VariantId,
+  entries?: readonly { id: string; entry: BestEntry }[],
+): MenuChoice[] {
+  return ARCS.map((a) => {
+    const bests =
+      a.play.kind === "campaign" ? bestsText(a.id, variant, entries) : null;
+    return {
+      label: `Arc ${a.number}: ${a.title}`,
+      sub: a.blurb,
+      to: { mode: "arcPlay", arc: a.id, variant },
+      lines:
+        bests === null
+          ? []
+          : bests.length > 0
+            ? ["Best scores", ...bests]
+            : [NO_BESTS],
+    };
+  });
+}
+
+export interface CompleteButton {
+  readonly label: string;
+  readonly primary?: boolean;
+  readonly to: ScreenRequest;
+}
+
+export const completeButtons = (
+  arc: ArcId,
+  variant: VariantId,
+): CompleteButton[] => [
+  { label: "Replay", primary: true, to: { mode: "arcPlay", arc, variant } },
+  { label: "Back to arcs", to: { mode: "arcs", variant } },
+  { label: "Back to title", to: { mode: "title" } },
+];
+
+export const arcCompleteTitle = (a: ArcDef) =>
+  `Arc ${a.number} complete: ${a.title}`;
+
+export type StartChoice =
+  | { readonly kind: "title" }
+  | { readonly kind: "arcs"; readonly variant: VariantId }
+  | { readonly kind: "arc"; readonly arc: ArcId; readonly variant: VariantId }
+  | { readonly kind: "debug" };
+
+const DEBUG_KEYS = [
+  "mode",
+  "seed",
+  "reservoirs",
+  "med",
+  "goal",
+  "scenario",
+  "doctor",
+  "residual",
+];
+
+const parseVariant = (raw: string | null): VariantId | null =>
+  raw === "xl" || raw === "ar" ? raw : null;
+
+/**
+ * Where the page starts. The old debug URLs (?mode, ?seed, reservoirs, med, goal and the loadout
+ * levers) go straight in as before; ?arc=1|2 starts that arc; ?variant alone opens the picker;
+ * a bare URL is the title.
+ */
+export function parseStart(params: URLSearchParams): StartChoice {
+  const variant = parseVariant(params.get("variant"));
+  const n = Number(params.get("arc"));
+  const arc = ARCS.find((a) => a.number === n);
+  if (arc) return { kind: "arc", arc: arc.id, variant: variant ?? "xl" };
+  if (DEBUG_KEYS.some((k) => params.has(k))) return { kind: "debug" };
+  if (variant) return { kind: "arcs", variant };
+  return { kind: "title" };
+}
