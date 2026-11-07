@@ -20,7 +20,9 @@ status table below is the only place that tracks slices.
 | B1d week phase | slices 1-4 done, 5 optional | c168283 no toggle and card-keyed dice, 4e42066 game night, 0171d52 score v4, cc8efaf bots and balance | `week-phase-design.md` |
 | B1 mobile layout and touch | done | 6a07dae (real-device pass on Brave/Android; landscape and tablet not tuned) | |
 | B2 organism names | done | f242926 (`src/sim/organisms.ts`, enforced by a test) | |
-| B3 to B10 | not started | | |
+| B3 arc framework and title/hub | done | a61f042 (arcs data, title, picker, arc-complete; Arc 1 is a placeholder battle until B4) | |
+| BN navigation (N1 menu, N2 continue, N3 back/reload guards, N4 start-over, N5 facilitator, N6 one ending) | N1 in progress | | `navigation-design.md` (all ten defaults accepted 2026-11-07) |
+| B4 to B10 | not started | | |
 
 Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
 more battle, but neither felt noticeably harder or more fun; `?goal=N` still overrides). The smarter bot
