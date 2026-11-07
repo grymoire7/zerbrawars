@@ -137,8 +137,6 @@ export interface LifePanelHandlers {
 
 export interface LifePanel {
   update(model: LifePanelModel): void;
-  /** Scrolls the calendar to the top of the panel (an activity was just picked on a phone). */
-  showCalendar(): void;
 }
 
 const PANEL =
@@ -156,6 +154,9 @@ export function createLifePanel(
     return e;
   };
   const tip = createInfoTips();
+  const PHONE = window.matchMedia(
+    "(max-width: 899px) and (max-aspect-ratio: 5/4) and (min-height: 501px)",
+  );
   const ROW =
     "display:flex;align-items:center;justify-content:space-between;gap:6px;";
   const button = (
@@ -384,6 +385,20 @@ export function createLifePanel(
   }
 
   function renderCalendar(m: LifePanelModel) {
+    // Phone portrait with something picked: the calendar pins itself to the top of the scroll
+    // area, compact, so the activity list (and its easier version) stays reachable below it
+    // without any scrolling back and forth.
+    const picked =
+      m.restSelected ||
+      m.hand.some((c) => c.selected) ||
+      m.grid.some((d) => d.some((s) => s.pending));
+    const pinned = picked && !m.over && PHONE.matches;
+    calBox.style.cssText =
+      PANEL +
+      "padding:8px 10px;display:flex;flex-direction:column;gap:6px;" +
+      (pinned
+        ? "position:sticky;top:0;z-index:1;box-shadow:0 4px 8px rgba(0,0,0,0.35);"
+        : "");
     const head = el("div", ROW);
     head.append(el("span", "font-weight:600;font-size:14px;", "Your week"));
     const planTip = tip("life-plan", m.help, "planning your week");
@@ -434,8 +449,8 @@ export function createLifePanel(
         const b = button(
           "",
           () => h.onSlot(s.day, s.slot),
-          "display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:flex-start;" +
-            "text-align:left;padding:5px 5px 5px 6px;min-height:76px;min-width:0;width:100%;box-sizing:border-box;font-size:12px;line-height:1.25;overflow:hidden;overflow-wrap:break-word;hyphens:manual;word-break:normal;" +
+          `display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:flex-start;` +
+            `text-align:left;padding:5px 5px 5px 6px;min-height:${pinned ? 56 : 76}px;min-width:0;width:100%;box-sizing:border-box;font-size:12px;line-height:1.25;overflow:hidden;overflow-wrap:break-word;hyphens:manual;word-break:normal;` +
             (live ? `border-color:${MINT};box-shadow:0 0 0 1px ${MINT};` : "") +
             (s.pending
               ? `border:2px solid ${MINT};box-shadow:0 0 0 2px ${MINT};background:rgba(91,227,198,0.16);`
@@ -494,7 +509,7 @@ export function createLifePanel(
     }
     grid.append(thead, tbody);
     calBox.append(grid);
-    if (m.odds) {
+    if (m.odds && !pinned) {
       const oddsRow = el("div", ROW);
       oddsRow.append(el("span", "font-size:13px;font-weight:600;", m.odds));
       const oddsTip = tip("life-odds", m.oddsHelp, "full battle odds");
@@ -672,9 +687,6 @@ export function createLifePanel(
   }
 
   return {
-    showCalendar() {
-      calBox.scrollIntoView({ block: "start" });
-    },
     update(m) {
       const focus = activeKey();
       title.textContent = m.title;

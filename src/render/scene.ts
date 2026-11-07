@@ -54,6 +54,9 @@ export function createScene(
     });
   };
 
+  const maxProjectedY = () =>
+    Math.max(...corners.map((c) => Math.abs(c.clone().project(camera).y)));
+
   const frame = () => {
     let lo = 1;
     let hi = 80;
@@ -73,8 +76,17 @@ export function createScene(
     setLabelBoost(w, h);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    camera.clearViewOffset();
     camera.updateProjectionMatrix();
     frame();
+    // Portrait phone: the board is width-limited and leaves dead bands above and below it.
+    // Slide it down into the lower part of the canvas so its top row is away from the browser
+    // chrome and easier to reach one-handed.
+    if (h > w) {
+      const slack = 1 - maxProjectedY();
+      const shift = Math.round(h * slack * 0.45);
+      if (shift > 0) camera.setViewOffset(w, h, 0, -shift, w, h);
+    }
   };
   new ResizeObserver(resize).observe(host);
   resize();

@@ -115,12 +115,12 @@ export function mountInterlude(
       }),
       buttons: [
         {
-          label: "Play again (same seed)",
+          label: "Replay",
           primary: true,
           onClick: () => env.go({ mode: "campaign", seed: run.seed }),
         },
         {
-          label: "New seed",
+          label: "New game",
           onClick: () =>
             env.go({
               mode: "campaign",

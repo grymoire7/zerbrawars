@@ -84,19 +84,23 @@ export const LIFE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Medication",
-    "Tap Take meds each morning to keep your streak. Your medication level is your doses over the last three days, and it shows as the green glow. Skip a dose and the glow dims for a few days. A day with no tap counts as taken.",
+    "Doses follow your routine. Your medication level is your doses over the last three days, and it shows as the green glow. A missed dose dims the glow for a few days. The Medication strip shows each day's dose and its chance. A late-night game night has a 50% chance the evening pills slip.",
   ],
   [
     "Sleepovers",
-    "Your pills end up in the other bag. Pack them (costs a little energy) or tomorrow's dose is missed. The week view shows which day.",
+    "Your pills end up in the other bag. Pack them (costs a little energy) or the next dose is missed. The Medication strip shows which day.",
   ],
   [
     "Energy",
     "Energy is just a game resource for planning, not a measure of your health. Activities spend it, rests give a little back, and a plan can never go below zero.",
   ],
   [
+    "The doctor",
+    "When a symptom shows up, play stops and a banner offers Book the doctor or Play on. Booking puts a doctor visit on the next free slot.",
+  ],
+  [
     "After the week",
-    "If something landed or flared, you head into a full battle with what you brought in and the medication you kept up. If nothing big landed, your body is still on patrol: a small skirmish, a few turns long. The one week with no fight is when the doctor finds only a virus.",
+    "If something landed or flared, you head into a full battle with what you brought in and the medication you kept up. If nothing big landed, your body is still on patrol: a small skirmish, a few turns long.",
   ],
 ];
 
@@ -166,7 +170,8 @@ export function createHelp(root: HTMLElement, opts: HelpOptions = {}): Help {
       isOpen = true;
       returnTo = document.activeElement as HTMLElement | null;
       backdrop.style.display = "flex";
-      close.focus();
+      close.focus({ preventScroll: true });
+      card.scrollTop = 0;
     },
     close() {
       if (!isOpen) return;

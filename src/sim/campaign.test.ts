@@ -13,7 +13,6 @@ import {
   nextCycle,
   syncBattle,
   type Campaign,
-  type CampaignEvent,
   type CampaignOptions,
   type CampaignStep,
 } from "./campaign";
@@ -246,7 +245,7 @@ describe("the doctor", () => {
     expect(doctorCost(placed, 2)).toBeGreaterThan(doctorCost(placed, 0));
   });
 
-  it("viral: says so, gives energy back and calls no battle, not even a skirmish", () => {
+  it("viral: says so, gives energy back and still calls a skirmish", () => {
     let s = 1;
     while (viralFeverDay(s, 1) !== 0) s++;
     const life = createLife({ seed: s, energy: 3 });
@@ -257,7 +256,7 @@ describe("the doctor", () => {
     // Never costlier than resting: the early visit plus the viral refund.
     const restOnly = advanceDay(life).state.energy;
     expect(r.state.energy).toBeGreaterThanOrEqual(restOnly);
-    expect(battleDue(finish(r.state)).due).toBe(false);
+    expect(battleDue(finish(r.state)).battleKind).toBe("skirmish");
   });
 });
 
@@ -288,8 +287,6 @@ function check(step: CampaignStep): Campaign {
   return step.state;
 }
 
-const types = (events: readonly CampaignEvent[]) => events.map((e) => e.type);
-
 describe("campaign transitions", () => {
   it("starts in the life phase of week 1", () => {
     const step = createCampaign({ seed: 3 });
@@ -301,36 +298,19 @@ describe("campaign transitions", () => {
     expect(() => battleTurn(c, [])).toThrow(/battle mode/);
   });
 
-  it("goes quiet only after a viral doctor visit, and carries the energy", () => {
+  it("a viral doctor visit still leads to a skirmish, and the energy carries", () => {
     let seed = 1;
     while (viralFeverDay(seed, 1) !== 0) seed++;
     let c = check(createCampaign({ seed }));
     c = check(lifeAction(c, (l) => placeCard(l, 0, 0, "doctor")));
     while (!weekOver(c.life)) c = check(lifeAction(c, advanceDay));
-    const left = c.life.energy;
-    const quiet = endWeek(c);
-    c = check(quiet);
-    expect(quiet.events).toEqual([
-      { type: "QuietWeek", cycle: 1, reason: "viral" },
-    ]);
-    expect(c).toMatchObject({
-      mode: "outcome",
-      result: { kind: "quiet" },
-      battle: null,
-      battleKind: null,
+    const step = endWeek(c);
+    c = check(step);
+    expect(step.events[0]).toMatchObject({
+      type: "BattleStarted",
+      battleKind: "skirmish",
     });
-    expect(carryPreview(c).energy.next).toBe(
-      Math.min(
-        PARAMS.life.maxEnergy,
-        left + C.weekRecovery + C.quietWeekEnergy,
-      ),
-    );
-    const next = nextCycle(c);
-    c = check(next);
-    expect(types(next.events).slice(0, 2)).toEqual(["Carried", "WeekStarted"]);
-    expect(c).toMatchObject({ mode: "life", cycle: 2, battleKind: null });
-    expect(c.life.week).toBe(2);
-    expect(c.history[0].result).toEqual({ kind: "quiet" });
+    expect(c.mode).toBe("battle");
   });
 
   it("plays a due battle turn by turn into its outcome, then ends after the last week", () => {
@@ -467,7 +447,7 @@ function finishSkirmish(c: Campaign, seed: number, clear: boolean): Campaign {
 }
 
 describe("skirmishes", () => {
-  it("is always due unless a viral visit took the week", () => {
+  it("is always due, a skirmish when nothing landed", () => {
     for (let seed = 1; seed <= 300; seed++) {
       for (const bot of ["home", "smarter", "riskyNoDoctor", "mixed"]) {
         const c = playLifeWeek(
@@ -475,11 +455,9 @@ describe("skirmishes", () => {
           CAMPAIGN_BOTS[bot](() => 0.5),
         );
         const due = battleDue(c.life);
-        const viral =
-          c.life.doctor?.finding === "viral" && due.reasons.length === 0;
-        expect(due.due).toBe(!viral);
+        expect(due.due).toBe(true);
         expect(due.battleKind).toBe(
-          viral ? null : due.reasons.length > 0 ? "full" : "skirmish",
+          due.reasons.length > 0 ? "full" : "skirmish",
         );
       }
     }

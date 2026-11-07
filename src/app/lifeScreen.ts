@@ -423,8 +423,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       message = "";
       runEffect(r.effect);
       draw();
-      if (selOf() && window.matchMedia("(max-width: 899px)").matches)
-        panel.showCalendar();
     },
     onPickRest: () => {
       clearBanner();
@@ -446,7 +444,8 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
           placeCard(life, at.day, at.slot, next, at.placement.packPills),
         );
       }
-      pending = selectActivity(pending, b);
+      // A placed card stays placed; only an unplaced one becomes the pick.
+      pending = at ? NO_PENDING : selectActivity(pending, b);
       draw();
     },
     onPills: (base, on) => {
@@ -456,7 +455,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       const at = placed(b);
       if (at && at.day >= life.day)
         apply(() => setPackPills(life, at.day, at.slot, on));
-      pending = selectActivity(pending, b);
+      pending = at ? NO_PENDING : selectActivity(pending, b);
       draw();
     },
     onSlot: (day, slot) => {

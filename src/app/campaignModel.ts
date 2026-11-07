@@ -242,12 +242,12 @@ export function reasonText(
 ): string {
   const parts = reasons.map((r) =>
     r === "exposure"
-      ? "something came home with you"
+      ? "Something came home with you"
       : r === "reservoir"
-        ? "something left over flared up"
-        : "the doctor found something",
+        ? "Something left over flared up"
+        : "The doctor found something",
   );
-  return parts.length > 0 ? parts.join("; ") : "";
+  return parts.length > 0 ? parts.join(". ") : "";
 }
 
 /** True on turns 2, 4 and 6 when the facilitator has the probe on. */

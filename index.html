@@ -37,6 +37,7 @@
         display: flex;
         flex-direction: column;
         height: 100%;
+        height: 100dvh;
       }
       #board {
         position: relative;
@@ -221,7 +222,7 @@
       }
       #bar {
         flex: none;
-        padding: 8px;
+        padding: 8px 8px max(8px, env(safe-area-inset-bottom));
         background: var(--zw-bg, #15171c);
         border-top: 1px solid var(--zw-line, #3a4150);
       }
@@ -229,6 +230,30 @@
         position: fixed;
         inset: 0;
         pointer-events: none;
+        z-index: 10; /* modals, popups and overlays sit above the sticky status strip */
+      }
+      /* Short landscape phone: the strip and bar must not eat the screen. */
+      @media (max-height: 500px) {
+        #status {
+          padding: 3px 6px;
+          gap: 2px;
+        }
+        #bar {
+          padding: 4px 6px;
+        }
+        #app.life #side {
+          overflow-y: auto;
+        }
+        #app.life #status {
+          position: static;
+        }
+        #app.life #sideScroll {
+          flex: none;
+          overflow: visible;
+        }
+        #app.life #bar {
+          position: static;
+        }
       }
       /* Wide or landscape: board left, fixed side panel right. */
       @media (min-width: 900px), (min-aspect-ratio: 5/4) {

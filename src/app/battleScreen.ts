@@ -367,9 +367,7 @@ export function mountBattle(
           const carry = carryPreview(c);
           extra = {
             nextLabel:
-              c.cycle >= c.cycles
-                ? "See your summary"
-                : `Start week ${c.life.week + 1}`,
+              c.cycle >= c.cycles ? "Finish" : `Start week ${c.life.week + 1}`,
             kept: carry.kept.length,
             dropped: carry.dropped.length,
             energyNext: carry.energy.next,
@@ -492,7 +490,7 @@ export function mountBattle(
       skirmish
         ? SKIRMISH_HEADING.toLowerCase()
         : why
-          ? `You brought this fight: ${why}`
+          ? why
           : "What you brought into this fight",
       broughtItems(c),
       skirmish,

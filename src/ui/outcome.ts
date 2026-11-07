@@ -167,6 +167,11 @@ export function createOutcomeOverlay(
     else if (open) tab.focus();
   }
 
+  // A tap outside the card looks at the board, like Escape.
+  backdrop.addEventListener("pointerdown", (e) => {
+    if (e.target === backdrop && open) setCollapsed(true);
+  });
+
   const keys = (e: KeyboardEvent) => {
     if (e.key === "Escape" && open) setCollapsed(true);
   };

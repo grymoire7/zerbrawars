@@ -559,7 +559,7 @@ export function weekEndText(
   if (kind === null) {
     return {
       due: false,
-      line: "It was just a virus. Nothing else came home with you, so there is no fight this week.",
+      line: "It was just a virus. Nothing else came home with you.",
       button: "Continue",
     };
   }

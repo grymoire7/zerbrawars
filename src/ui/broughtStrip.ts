@@ -11,7 +11,7 @@ export interface BroughtStrip {
   dispose(): void;
 }
 
-/** The "you brought" strip: how the week shaped this fight. Dismissible, never blocks the board. */
+/** The "you brought" strip: how the week shaped this fight. Dismissible by any tap, never blocks the board. */
 export function createBroughtStrip(
   root: HTMLElement,
   onDismiss: () => void,
@@ -45,6 +45,13 @@ export function createBroughtStrip(
   close.textContent = "Got it";
   close.style.cssText = "min-height:44px;min-width:44px;padding:0 12px;";
   close.addEventListener("click", onDismiss);
+  // Any tap dismisses, on the strip or off it (the tap still reaches whatever is under it), so
+  // a thumb anywhere on the screen will do. The listener is only live while the strip shows.
+  const anyTap = () => onDismiss();
+  const listen = (on: boolean) => {
+    if (on) document.addEventListener("pointerdown", anyTap, { capture: true });
+    else document.removeEventListener("pointerdown", anyTap, { capture: true });
+  };
   head.append(title, close);
   const chips = document.createElement("div");
   chips.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;";
@@ -86,11 +93,18 @@ export function createBroughtStrip(
         }),
       );
       box.style.display = "flex";
+      listen(false);
+      // Skip the tap that is already in flight, so showing it never dismisses it at once.
+      setTimeout(() => {
+        if (box.style.display !== "none") listen(true);
+      }, 0);
     },
     hide() {
       box.style.display = "none";
+      listen(false);
     },
     dispose() {
+      listen(false);
       box.remove();
     },
   };

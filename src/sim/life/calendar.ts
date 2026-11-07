@@ -632,11 +632,11 @@ export function battleDueReasons(life: LifeState): BattleReason[] {
 
 /**
  * The week's battle as it stands: full with any reason, otherwise a skirmish (the body is always
- * on patrol), except after a viral doctor visit, which was the week's beat: null, no battle.
+ * on patrol, even after a doctor visit that found only a virus). Never null today; the type keeps
+ * room for a week with no fight.
  */
 export function battleKindOf(life: LifeState): BattleKind | null {
-  if (battleDueReasons(life).length > 0) return "full";
-  return life.doctor?.finding === "viral" ? null : "skirmish";
+  return battleDueReasons(life).length > 0 ? "full" : "skirmish";
 }
 
 /** Which of last week's lost-skirmish aftermaths `week` opens with, fixed by seed and week. */
