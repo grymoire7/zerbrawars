@@ -22,13 +22,13 @@ export function createBroughtStrip(
   box.setAttribute("aria-label", "What you brought into this fight");
   const place = () => {
     box.style.cssText =
-      "position:absolute;left:8px;top:8px;display:none;flex-direction:column;gap:6px;" +
+      "position:absolute;left:8px;top:60px;display:none;flex-direction:column;gap:6px;" +
       "pointer-events:auto;box-sizing:border-box;padding:8px 10px;border-radius:8px;" +
       "background:rgba(35,38,46,0.94);border:1px solid var(--zw-line-strong);font:13px sans-serif;color:var(--zw-text);" +
       (wide.matches
         ? "right:calc(clamp(300px,28vw,360px) + 8px);"
         : "right:8px;") +
-      "max-height:46%;overflow:auto;";
+      "max-height:calc(46% - 52px);overflow:auto;";
   };
   place();
   wide.addEventListener("change", () => {

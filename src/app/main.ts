@@ -102,6 +102,8 @@ function go(req: ScreenRequest) {
     );
     screen = mountBattle(env, battle, undefined, {
       label: "Finish",
+      arc: arc.id,
+      variant: req.variant,
       onDone: () =>
         go({ mode: "arcComplete", arc: arc.id, variant: req.variant }),
     });

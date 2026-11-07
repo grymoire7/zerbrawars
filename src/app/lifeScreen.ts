@@ -24,6 +24,7 @@ import { PARAMS } from "../sim/params";
 import { cardChoices } from "../sim/score";
 import { createDebugPanel } from "../ui/debugPanel";
 import { sessionOptions } from "./sessionOptions";
+import { createGameMenu } from "../ui/gameMenu";
 import { createHelp, LIFE_LINES } from "../ui/help";
 import {
   aftermathDetail,
@@ -33,6 +34,7 @@ import {
   symptomText,
   weekOpening,
 } from "./campaignModel";
+import { escapeAction, leaveQuestion, whereLines } from "./gameMenuModel";
 import type { Run } from "./run";
 import {
   createLifePanel,
@@ -113,8 +115,23 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   const help = createHelp(ui, {
     lines: LIFE_LINES,
     seenKey: "zebrawars.help.life.seen",
-    onLeave: run.standalone ? undefined : () => env.go({ mode: "title" }),
   });
+  // The debug standalone entry has no title to go back to, so no menu.
+  const menu = run.standalone
+    ? null
+    : createGameMenu(ui, {
+        where: whereLines({
+          arc: run.arc,
+          variant: run.variant,
+          week: {
+            cycle: run.campaign().cycle,
+            cycles: run.campaign().cycles,
+          },
+        }),
+        leaveQuestion: leaveQuestion(run.arc),
+        onHelp: () => help.open(),
+        onLeave: () => env.go({ mode: "title" }),
+      });
   const apply = (fn: (l: LifeState) => LifeStep): LifeEvent[] => {
     try {
       const step = run.life(fn);
@@ -559,14 +576,17 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   window.addEventListener(
     "keydown",
     (e) => {
-      if (
-        e.key === "Escape" &&
-        !help.isOpen() &&
-        (pending.activity || pending.slot)
-      ) {
+      if (e.key !== "Escape") return;
+      const act = escapeAction({
+        menuOpen: false,
+        // Help closes itself on this same Escape (it calls preventDefault), so skip then too.
+        otherOpen: help.isOpen() || e.defaultPrevented || menu === null,
+        pick: !!(pending.activity || pending.slot),
+      });
+      if (act === "cancelPick") {
         pending = clearPending();
         draw();
-      }
+      } else if (act === "openMenu") menu?.open();
     },
     { signal },
   );
@@ -578,6 +598,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       ac.abort();
       document.getElementById("app")?.classList.remove("life");
       help.dispose();
+      menu?.dispose();
       inset.dispose();
       canvas.removeAttribute("role");
       canvas.removeAttribute("aria-label");

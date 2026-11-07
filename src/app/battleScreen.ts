@@ -32,9 +32,12 @@ import {
 import { settings, type Run } from "./run";
 import { sessionOptions } from "./sessionOptions";
 import { createDebugPanel } from "../ui/debugPanel";
+import { createGameMenu } from "../ui/gameMenu";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { incomingKey, nextArrival } from "./arrivalModel";
+import { escapeAction, leaveQuestion, whereLines } from "./gameMenuModel";
+import type { ArcId, VariantId } from "./arcs";
 import { createStatusStrip } from "../ui/statusStrip";
 import { weekChoices, weekScore } from "../sim/score";
 import { weekScoreLine } from "./summaryModel";
@@ -60,7 +63,12 @@ export function mountBattle(
   given?: BattleState,
   run?: Run,
   /** An arc's single battle: where "Next" goes once the fight is over. */
-  arcEnd?: { readonly label: string; readonly onDone: () => void },
+  arcEnd?: {
+    readonly label: string;
+    readonly onDone: () => void;
+    readonly arc: ArcId;
+    readonly variant: VariantId;
+  },
 ): Screen {
   // In a campaign the Campaign owns the battle; the controller plays it and hands it back.
   const start = run ? (run.campaign().battle ?? undefined) : given;
@@ -121,9 +129,26 @@ export function mountBattle(
     fx: fxView,
     tilePosition: view.tilePosition,
   });
-  const help = createHelp(ui, {
-    onLeave: run || arcEnd ? () => env.go({ mode: "title" }) : undefined,
-  });
+  const help = createHelp(ui);
+  // The debug standalone battle has no title to go back to, so no menu.
+  const inPlay = run
+    ? {
+        arc: run.arc,
+        variant: run.variant,
+        week: {
+          cycle: run.campaign().cycle,
+          cycles: run.campaign().cycles,
+        },
+      }
+    : arcEnd;
+  const menu = inPlay
+    ? createGameMenu(ui, {
+        where: whereLines(inPlay),
+        leaveQuestion: leaveQuestion(inPlay.arc),
+        onHelp: () => help.open(),
+        onLeave: () => env.go({ mode: "title" }),
+      })
+    : null;
   const status = createStatusStrip(panels.status);
   let statusIn: BattleStatusInput | null = null;
   let shownTissue = -1;
@@ -556,7 +581,17 @@ export function mountBattle(
       } else if (e.key === "w" || e.key === "W") {
         controller.wallOff();
       } else if (e.key === "Escape") {
-        controller.select(null);
+        // Clear a selected swarm or charge first; with nothing to clear, open the menu. A finished
+        // fight's card handles its own Escape, so the menu waits for its button then.
+        const act = escapeAction({
+          menuOpen: false,
+          otherOpen: outcomeShown || e.defaultPrevented || menu === null,
+          pick:
+            controller.selected() !== null ||
+            controller.charges().some((c) => c.selected),
+        });
+        if (act === "openMenu") menu?.open();
+        else controller.select(null);
       }
     },
     { signal },
@@ -602,6 +637,7 @@ export function mountBattle(
       strip.dispose();
       probe.dispose();
       help.dispose();
+      menu?.dispose();
       status.clear();
       panels.scroll.replaceChildren();
       panels.bar.replaceChildren();

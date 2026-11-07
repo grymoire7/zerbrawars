@@ -274,6 +274,8 @@
     </style>
   </head>
   <body>
+    <!-- Before #app so the Menu button (the first thing in #ui) leads the tab order; #ui is fixed. -->
+    <div id="ui"></div>
     <div id="app">
       <div id="board"><canvas id="scene"></canvas></div>
       <aside id="side" aria-label="Orders and information">
@@ -282,7 +284,6 @@
         <div id="bar"></div>
       </aside>
     </div>
-    <div id="ui"></div>
     <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>

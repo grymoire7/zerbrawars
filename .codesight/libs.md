@@ -249,6 +249,10 @@
   - interface DebugPanel
   - type DebugMode
 - `src/ui/download.ts` — function downloadText: (name, text) => void, function copyText: (text) => Promise<boolean>
+- `src/ui/gameMenu.ts`
+  - function createGameMenu: (root, opts) => GameMenu
+  - interface GameMenuOptions
+  - interface GameMenu
 - `src/ui/help.ts`
   - function createHelp: (root, opts) => Help
   - interface Help

@@ -4,10 +4,13 @@ import { campaignSummary, carryPreview } from "../sim/campaign";
 import { PARAMS } from "../sim/params";
 import { loadoutFromLife } from "../sim/life/loadout";
 import { createDebugPanel } from "../ui/debugPanel";
+import { createGameMenu } from "../ui/gameMenu";
+import { createHelp, LIFE_LINES } from "../ui/help";
 import { createInterlude, type InterludeModel } from "../ui/interlude";
 import { bestId, recordRun, type RecordResult } from "./bestScores";
 import { scoreCard } from "./summaryModel";
 import { weekLine } from "./campaignModel";
+import { escapeAction, leaveQuestion, whereLines } from "./gameMenuModel";
 import type { Run } from "./run";
 import type { Screen, ScreenEnv } from "./screen";
 import { sessionOptions } from "./sessionOptions";
@@ -43,6 +46,35 @@ export function mountInterlude(
   const inset = createInsetView(root, slab);
   inset.setAura(c.life.medLevel);
   const card = createInterlude(ui);
+  const help = createHelp(ui, {
+    lines: LIFE_LINES,
+    seenKey: "zebrawars.help.life.seen",
+  });
+  const menu = createGameMenu(ui, {
+    where: whereLines({
+      arc: run.arc,
+      variant: run.variant,
+      week: { cycle: c.cycle, cycles: c.cycles },
+    }),
+    leaveQuestion: leaveQuestion(run.arc),
+    onHelp: () => help.open(),
+    onLeave: () => env.go({ mode: "title" }),
+  });
+  const ac = new AbortController();
+  // Nothing here to cancel, so Escape opens the menu.
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key !== "Escape") return;
+      const act = escapeAction({
+        menuOpen: false,
+        otherOpen: help.isOpen() || e.defaultPrevented,
+        pick: false,
+      });
+      if (act === "openMenu") menu.open();
+    },
+    { signal: ac.signal },
+  );
 
   const debug = createDebugPanel(panels.scroll, {
     mode: "campaign",
@@ -147,6 +179,9 @@ export function mountInterlude(
     tick: (dt) => inset.tick(dt),
     dispose() {
       document.getElementById("app")?.classList.remove("life");
+      ac.abort();
+      menu.dispose();
+      help.dispose();
       card.dispose();
       inset.dispose();
       panels.scroll.replaceChildren();

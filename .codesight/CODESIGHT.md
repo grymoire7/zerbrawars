@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 55 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,500 tokens. Without it, AI exploration would cost ~23,400 tokens. **Saves ~18,900 tokens per conversation.**
-> **Last scanned:** 2026-11-07 06:24 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 56 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~23,700 tokens. **Saves ~19,100 tokens per conversation.**
+> **Last scanned:** 2026-11-07 06:31 — re-run after significant changes
 
 ---
 
@@ -259,6 +259,10 @@
   - interface DebugPanel
   - type DebugMode
 - `src/ui/download.ts` — function downloadText: (name, text) => void, function copyText: (text) => Promise<boolean>
+- `src/ui/gameMenu.ts`
+  - function createGameMenu: (root, opts) => GameMenu
+  - interface GameMenuOptions
+  - interface GameMenu
 - `src/ui/help.ts`
   - function createHelp: (root, opts) => Help
   - interface Help
@@ -366,7 +370,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 41 test files found
+> 42 test files found
 
 ---
 
