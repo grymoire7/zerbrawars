@@ -10,6 +10,7 @@ import { mountLife } from "./lifeScreen";
 import { parseGoal, parseReservoirs } from "./campaignModel";
 import { createRun, type Run } from "./run";
 import { arcById, type ArcId, type VariantId } from "./arcs";
+import { initFacilitator } from "./facilitator";
 import { mountMenu } from "./menuScreens";
 import { parseStart, resumeTarget } from "./arcModel";
 import { clearHeld, heldRun, holdRun } from "./heldRun";
@@ -33,6 +34,8 @@ const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
 const panels = getPanels();
 const params = new URLSearchParams(window.location.search);
+// Facilitator mode and the developer-start check are read once here and kept for the page session.
+initFacilitator(params);
 
 // Both screens share the battle board's footprint, so one camera framing serves them.
 const extent = battleFromLoadout(

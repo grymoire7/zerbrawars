@@ -1,9 +1,26 @@
 import type { ArcId } from "../app/arcs";
+import { copyText, downloadText } from "./download";
+import type { SessionDebug } from "./debugPanel";
+import {
+  BROUGHT_LABEL,
+  COPIED_LINE,
+  COPY_BLOCKED_LINE,
+  COPY_LABEL,
+  EXPORT_LABEL,
+  FACILITATOR_HEADING,
+  PROBE_LABEL,
+  RESET_CONFIRM,
+  RESET_LABEL,
+  SAVED_LINE,
+  clearedLine,
+  exportFirst,
+} from "../app/facilitatorModel";
 import {
   MENU_LABELS,
   startOverConfirm,
   trapIndex,
   type MenuItem,
+  type StartOverConfirm,
 } from "../app/gameMenuModel";
 
 export interface GameMenuOptions {
@@ -16,6 +33,17 @@ export interface GameMenuOptions {
   readonly items: () => readonly MenuItem[];
   /** What each item does; the two start-over items run only after their confirm. */
   readonly on: Record<MenuItem, () => void>;
+  readonly facilitator?: FacilitatorMenu;
+}
+
+/** The "For the facilitator" block; present only with ?facilitator=1. */
+export interface FacilitatorMenu {
+  /** The run's switches and log; absent on a screen with no run (the single Arc 1 fight). */
+  readonly session?: SessionDebug;
+  /** Clears best scores, first-time help and the held summer; true if a summer was held. */
+  reset(): boolean;
+  /** Leaves for the title after a reset. */
+  toTitle(): void;
 }
 
 export interface GameMenu {
@@ -35,6 +63,19 @@ function text(tag: "div" | "p" | "h2", css: string, content: string) {
   e.style.cssText = css;
   e.textContent = content;
   return e;
+}
+
+function checkRow(label: string, on: boolean, change: (v: boolean) => void) {
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = on;
+  cb.style.cssText = "width:22px;height:22px;margin:0;flex:none;";
+  cb.addEventListener("change", () => change(cb.checked));
+  const row = document.createElement("label");
+  row.style.cssText =
+    "display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;";
+  row.append(cb, label);
+  return row;
 }
 
 function button(label: string, css: string, onClick: () => void) {
@@ -115,7 +156,7 @@ export function createGameMenu(
 
   let keep = button(KEEP, "font-weight:700;", () => api.close());
   const buttons = (): HTMLButtonElement[] => [
-    ...list.querySelectorAll<HTMLButtonElement>("button"),
+    ...list.querySelectorAll<HTMLButtonElement>("button, input"),
   ];
 
   /** Keep playing, then the screen's items; the leave note follows the leave items. */
@@ -133,13 +174,62 @@ export function createGameMenu(
       );
       if (item === "changeCharacter") rows.push(note);
     }
+    rows.push(...facilitatorRows());
     list.replaceChildren(...rows);
     card.setAttribute("aria-describedby", "game-menu-where");
   };
 
-  /** The confirm swaps in place: the safe button first, bold and focused. */
-  const showConfirm = (item: "restartFight" | "restartSummer") => {
-    const c = startOverConfirm(item, opts.arc);
+  /** A line the facilitator block reports into (saved, copied); cleared when the list is rebuilt. */
+  const status = text("p", "margin:0;min-height:1.2em;font-size:14px;", "");
+  status.setAttribute("role", "status");
+
+  /** The facilitator block: the two switches, the log, and Reset for a new player. */
+  const facilitatorRows = (): HTMLElement[] => {
+    const f = opts.facilitator;
+    if (!f) return [];
+    status.textContent = "";
+    const rows: HTMLElement[] = [
+      text(
+        "div",
+        "margin-top:10px;padding-top:10px;border-top:1px solid var(--zw-line);font-weight:700;",
+        FACILITATOR_HEADING,
+      ),
+    ];
+    const s = f.session;
+    if (s) {
+      const logRow = document.createElement("div");
+      logRow.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;";
+      const exp = button(EXPORT_LABEL, "flex:1 1 auto;", () => {
+        downloadText(s.fileName, s.exportJson());
+        status.textContent = SAVED_LINE;
+      });
+      const copy = button(COPY_LABEL, "flex:1 1 auto;", () => {
+        void copyText(s.exportJson()).then((ok) => {
+          status.textContent = ok ? COPIED_LINE : COPY_BLOCKED_LINE;
+        });
+      });
+      logRow.append(exp, copy);
+      rows.push(
+        checkRow(PROBE_LABEL, s.probe, s.onProbe),
+        checkRow(BROUGHT_LABEL, s.brought, s.onBrought),
+        logRow,
+        status,
+      );
+    }
+    rows.push(button(RESET_LABEL, "", () => showResetConfirm()));
+    return rows;
+  };
+
+  /**
+   * A confirm swaps in place: the safe button first, bold and focused. A facilitator whose answer
+   * would lose a run also gets the export-first line and button, between the two answers.
+   */
+  const ask = (
+    c: StartOverConfirm,
+    canExport: boolean,
+    onGo: () => void,
+    onKeep: () => void,
+  ) => {
     const q = text(
       "p",
       "margin:0;line-height:1.4;font-weight:600;",
@@ -147,15 +237,65 @@ export function createGameMenu(
     );
     q.id = "game-menu-confirm";
     const detail = text("p", "margin:0;line-height:1.4;", c.detail);
-    keep = button(c.keep, "font-weight:700;", () => api.close());
-    const go = button(c.go, "", () => {
-      api.close();
-      opts.on[item]();
-    });
-    list.replaceChildren(q, detail, keep, go);
+    keep = button(c.keep, "font-weight:700;", onKeep);
+    const rows: HTMLElement[] = [q, detail, keep];
+    const first = exportFirst(true, canExport);
+    const s = opts.facilitator?.session;
+    if (first && s) {
+      status.textContent = "";
+      rows.push(
+        text("p", "margin:0;line-height:1.4;", first.line),
+        button(first.button, "", () => {
+          downloadText(s.fileName, s.exportJson());
+          status.textContent = SAVED_LINE;
+        }),
+        status,
+      );
+    }
+    rows.push(button(c.go, "", onGo));
+    list.replaceChildren(...rows);
     card.setAttribute("aria-describedby", "game-menu-confirm");
     keep.focus({ preventScroll: true });
   };
+
+  const showConfirm = (item: "restartFight" | "restartSummer") =>
+    ask(
+      startOverConfirm(item, opts.arc),
+      item === "restartSummer" && !!opts.facilitator,
+      () => {
+        api.close();
+        opts.on[item]();
+      },
+      () => api.close(),
+    );
+
+  /** Reset for a new player: Cancel returns to the menu; Clear reports what it cleared. */
+  const showResetConfirm = () =>
+    ask(
+      RESET_CONFIRM,
+      true,
+      () => {
+        const f = opts.facilitator;
+        if (!f) return;
+        const line = text(
+          "p",
+          "margin:0;line-height:1.4;font-weight:600;",
+          clearedLine(f.reset()),
+        );
+        line.id = "game-menu-cleared";
+        const toTitle = button("Go to the title", "font-weight:700;", () => {
+          api.close();
+          f.toTitle();
+        });
+        list.replaceChildren(line, toTitle);
+        card.setAttribute("aria-describedby", "game-menu-cleared");
+        toTitle.focus({ preventScroll: true });
+      },
+      () => {
+        showItems();
+        keep.focus({ preventScroll: true });
+      },
+    );
 
   card.append(title, where, sub, list);
   backdrop.append(card);

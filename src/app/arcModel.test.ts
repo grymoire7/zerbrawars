@@ -9,6 +9,7 @@ import {
   heldLine,
   needsReplaceConfirm,
   resumeTarget,
+  isDebugStart,
   parseStart,
   pickerChoices,
   variantChoices,
@@ -212,5 +213,28 @@ describe("held summer", () => {
     expect(needsReplaceConfirm(fight, true)).toBe(false);
     expect(needsReplaceConfirm({ mode: "title" }, true)).toBe(false);
     expect(needsReplaceConfirm(undefined, true)).toBe(false);
+  });
+});
+
+describe("isDebugStart", () => {
+  it("is true for the developer levers, even beside an arc", () => {
+    for (const s of [
+      "mode=life",
+      "seed=3",
+      "arc=2&seed=3",
+      "med=0.5",
+      "goal=4",
+    ])
+      expect(isDebugStart(q(s))).toBe(true);
+  });
+  it("is false for a patient's start, with or without the facilitator flag", () => {
+    for (const s of [
+      "",
+      "arc=2",
+      "variant=ar",
+      "facilitator=1",
+      "facilitator=1&arc=2",
+    ])
+      expect(isDebugStart(q(s))).toBe(false);
   });
 });

@@ -1,3 +1,12 @@
+import { downloadText } from "../ui/download";
+import { facilitator } from "./facilitator";
+import {
+  EXPORT_FIRST,
+  SAVED_LINE,
+  exportFirst,
+  logFileName,
+  titleExport,
+} from "./facilitatorModel";
 import { createMenu, type Menu, type MenuModel } from "../ui/menu";
 import { heldRun } from "./heldRun";
 import { arcById, variantById } from "./arcs";
@@ -14,6 +23,7 @@ import {
   pickerChoices,
   variantChoices,
 } from "./arcModel";
+import type { Run } from "./run";
 import type { Screen, ScreenEnv, ScreenRequest } from "./screen";
 
 type MenuRequest = Extract<
@@ -33,6 +43,14 @@ function modelFor(
       const cont = continueChoice(
         held && { campaign: held.campaign(), variant: held.variant },
       );
+      const fx = titleExport(facilitator.on, held !== null);
+      const exportItem = fx &&
+        held && {
+          label: fx.label,
+          sub: fx.sub,
+          small: true,
+          onClick: () => saveLog(held),
+        };
       return {
         title: TITLE,
         tagline: TAGLINE,
@@ -47,6 +65,7 @@ function modelFor(
                 },
               ]
             : []),
+          ...(exportItem ? [exportItem] : []),
           ...variantChoices().map((c) => ({
             label: c.label,
             sub: c.sub,
@@ -88,6 +107,12 @@ function modelFor(
   }
 }
 
+/** Saves the held run's session log as a file; the line is what the card says afterwards. */
+function saveLog(run: Run): string {
+  downloadText(logFileName(run.seed), run.exportJson());
+  return SAVED_LINE;
+}
+
 /** The title, arc picker and arc-complete screens: a menu card over an empty board. */
 export function mountMenu(env: ScreenEnv, req: MenuRequest): Screen {
   const menu = createMenu(env.ui);
@@ -118,12 +143,18 @@ function confirmReplace(
   go: (to: ScreenRequest) => void,
   back: () => void,
 ) {
+  const held = heldRun();
+  // A facilitator can save the log of the summer about to be replaced.
+  const first = exportFirst(facilitator.on, held !== null);
   menu.show({
     title: REPLACE_CONFIRM.title,
-    paragraphs: [REPLACE_CONFIRM.text],
+    paragraphs: [REPLACE_CONFIRM.text, ...(first ? [first.line] : [])],
     focusFirstButton: true,
     buttons: [
       { label: REPLACE_CONFIRM.keep, primary: true, onClick: back },
+      ...(first && held
+        ? [{ label: EXPORT_FIRST.button, onClick: () => saveLog(held) }]
+        : []),
       { label: REPLACE_CONFIRM.replace, onClick: () => go(to) },
     ],
   });

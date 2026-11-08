@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 56 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~23,700 tokens. **Saves ~19,100 tokens per conversation.**
-> **Last scanned:** 2026-11-08 04:43 — re-run after significant changes
+> **Last scanned:** 2026-11-08 04:57 — re-run after significant changes
 
 ---
 
@@ -262,13 +262,16 @@
 - `src/ui/gameMenu.ts`
   - function createGameMenu: (root, opts) => GameMenu
   - interface GameMenuOptions
+  - interface FacilitatorMenu
   - interface GameMenu
 - `src/ui/help.ts`
   - function createHelp: (root, opts) => Help
   - interface Help
   - interface HelpOptions
+  - const LIFE_SEEN_KEY
+  - const HELP_SEEN_KEYS: readonly string[]
   - const BATTLE_LINES: readonly (readonly [string, string])[]
-  - const LIFE_LINES: readonly (readonly [string, string])[]
+  - _...1 more_
 - `src/ui/hud.ts`
   - function createHud: (mounts, handlers) => Hud
   - interface HudOrder
@@ -346,9 +349,9 @@
 - `src/sim/life/types.ts` — imported by **14** files
 - `src/sim/battle/resolve.ts` — imported by **14** files
 - `src/sim/campaign.ts` — imported by **13** files
+- `src/app/run.ts` — imported by **11** files
 - `src/sim/organisms.ts` — imported by **11** files
 - `src/sim/life/cards.ts` — imported by **11** files
-- `src/app/run.ts` — imported by **10** files
 - `src/app/arcs.ts` — imported by **8** files
 - `src/sim/life/calendar.ts` — imported by **8** files
 
@@ -370,7 +373,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 44 test files found
+> 45 test files found
 
 ---
 

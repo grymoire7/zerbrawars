@@ -33,6 +33,7 @@ import { settings, type Run } from "./run";
 import { sessionOptions } from "./sessionOptions";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createGameMenu } from "../ui/gameMenu";
+import { facilitator, resetForNewPlayer } from "./facilitator";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { incomingKey, nextArrival } from "./arrivalModel";
@@ -181,6 +182,13 @@ export function mountBattle(
             env.go({ mode: "title" });
           },
         },
+        facilitator: facilitator.on
+          ? {
+              session: run ? sessionOptions(run) : undefined,
+              reset: resetForNewPlayer,
+              toTitle: () => env.go({ mode: "title" }),
+            }
+          : undefined,
       })
     : null;
   const status = createStatusStrip(panels.status);
@@ -323,7 +331,7 @@ export function mountBattle(
       const url = new URL(window.location.href);
       url.searchParams.set("seed", String(validSeed));
       window.history.replaceState(null, "", url);
-      debug.setSeed(validSeed);
+      debug?.setSeed(validSeed);
       controller.reset();
     },
     onReplay: () => controller.replay(),
@@ -543,24 +551,26 @@ export function mountBattle(
     });
   }
   refresh();
-  const debug = createDebugPanel(panels.scroll, {
-    scenario: state.scenario,
-    seed: validSeed ?? PARAMS.defaultSeed,
-    loadout: loadoutOptions,
-    onRestart: (o) => {
-      loadoutOptions = o;
-      const url = new URL(window.location.href);
-      writeLoadoutParams(url, o);
-      window.history.replaceState(null, "", url);
-      controller.reset();
-    },
-    skipPlayback: controller.reducedMotion(),
-    onSkipPlayback: (on) => controller.setReducedMotion(on),
-    mode: run ? "campaign" : "battle",
-    onMode: (m) =>
-      env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
-    session: run ? sessionOptions(run) : undefined,
-  });
+  const debug = !facilitator.debugPanel
+    ? null
+    : createDebugPanel(panels.scroll, {
+        scenario: state.scenario,
+        seed: validSeed ?? PARAMS.defaultSeed,
+        loadout: loadoutOptions,
+        onRestart: (o) => {
+          loadoutOptions = o;
+          const url = new URL(window.location.href);
+          writeLoadoutParams(url, o);
+          window.history.replaceState(null, "", url);
+          controller.reset();
+        },
+        skipPlayback: controller.reducedMotion(),
+        onSkipPlayback: (on) => controller.setReducedMotion(on),
+        mode: run ? "campaign" : "battle",
+        onMode: (m) =>
+          env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
+        session: run ? sessionOptions(run) : undefined,
+      });
   panels.scroll.append(readout);
   help.showFirstTime();
   if (run && settings.brought) {
@@ -656,7 +666,7 @@ export function mountBattle(
   );
 
   return {
-    setStats: (text) => debug.setStats(text),
+    setStats: (text) => debug?.setStats(text),
     tick(dt) {
       controller.tick(dt);
       if (playing) {

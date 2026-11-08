@@ -16,6 +16,10 @@ export interface HelpOptions {
 }
 
 const SEEN_KEY = "zebrawars.help.seen";
+/** The life screen and the interludes share this guide, so they share its seen flag. */
+export const LIFE_SEEN_KEY = "zebrawars.help.life.seen";
+/** Every first-time-help flag in localStorage (Reset for a new player clears them). */
+export const HELP_SEEN_KEYS: readonly string[] = [SEEN_KEY, LIFE_SEEN_KEY];
 
 export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ["Your goal", "Clear the germs from the board before the tissue wears out."],

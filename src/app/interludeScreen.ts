@@ -5,7 +5,8 @@ import { PARAMS } from "../sim/params";
 import { loadoutFromLife } from "../sim/life/loadout";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createGameMenu } from "../ui/gameMenu";
-import { createHelp, LIFE_LINES } from "../ui/help";
+import { facilitator, resetForNewPlayer } from "./facilitator";
+import { createHelp, LIFE_LINES, LIFE_SEEN_KEY } from "../ui/help";
 import { createInterlude, type InterludeModel } from "../ui/interlude";
 import { bestId, recordRun, type RecordResult } from "./bestScores";
 import { scoreCard } from "./summaryModel";
@@ -54,7 +55,7 @@ export function mountInterlude(
   const card = createInterlude(ui);
   const help = createHelp(ui, {
     lines: LIFE_LINES,
-    seenKey: "zebrawars.help.life.seen",
+    seenKey: LIFE_SEEN_KEY,
   });
   const menu = createGameMenu(ui, {
     where: whereLines({
@@ -79,6 +80,13 @@ export function mountInterlude(
         env.go({ mode: "title" });
       },
     },
+    facilitator: facilitator.on
+      ? {
+          session: sessionOptions(run),
+          reset: resetForNewPlayer,
+          toTitle: () => env.go({ mode: "title" }),
+        }
+      : undefined,
   });
   const ac = new AbortController();
   // Nothing here to cancel, so Escape opens the menu.
@@ -96,14 +104,16 @@ export function mountInterlude(
     { signal: ac.signal },
   );
 
-  const debug = createDebugPanel(panels.scroll, {
-    mode: "campaign",
-    onMode: (m) =>
-      env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
-    scenario: "",
-    seed: run.seed,
-    session: sessionOptions(run),
-  });
+  const debug = !facilitator.debugPanel
+    ? null
+    : createDebugPanel(panels.scroll, {
+        mode: "campaign",
+        onMode: (m) =>
+          env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
+        scenario: "",
+        seed: run.seed,
+        session: sessionOptions(run),
+      });
 
   let model: InterludeModel;
   if (kind === "quiet") {
@@ -197,7 +207,7 @@ export function mountInterlude(
   card.show(model);
 
   return {
-    setStats: (text) => debug.setStats(text),
+    setStats: (text) => debug?.setStats(text),
     tick: (dt) => inset.tick(dt),
     back() {
       const act = backAction({

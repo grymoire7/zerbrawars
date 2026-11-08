@@ -53,16 +53,16 @@
 ## Ui (15 files)
 
 - `src/ui/hud.ts` — createHud, HudOrder, HudMedication, HudCharge, HudSupport, HudSupportCard, …
+- `src/ui/help.ts` — createHelp, Help, HelpOptions, LIFE_SEEN_KEY, HELP_SEEN_KEYS, BATTLE_LINES, …
 - `src/ui/lifePanel.ts` — createLifePanel, LifeCardModel, LifeSlotModel, LifeSummaryModel, LifePanelModel, LifePanelHandlers, …
 - `src/ui/cardStyle.ts` — cardAccent, cardTint, cardBadge, CardFamily, CARD_FAMILY, CARD_ICON
 - `src/ui/debugPanel.ts` — createDebugPanel, DebugLoadout, SessionDebug, DebugPanelOptions, DebugPanel, DebugMode
 - `src/ui/outcome.ts` — outcomeHeading, createOutcomeOverlay, OutcomeHandlers, OutcomeExtra, OutcomeOverlay, SKIRMISH_COPY
 - `src/ui/statusStrip.ts` — createStatusStrip, cellLabel, StatusCell, StatusModel, StatusStrip, StatusBar
-- `src/ui/help.ts` — createHelp, Help, HelpOptions, BATTLE_LINES, LIFE_LINES
+- `src/ui/gameMenu.ts` — createGameMenu, GameMenuOptions, FacilitatorMenu, GameMenu
 - `src/ui/interlude.ts` — createInterlude, ScoreCardModel, InterludeModel, Interlude
 - `src/ui/menu.ts` — createMenu, MenuItem, MenuModel, Menu
 - `src/ui/broughtStrip.ts` — createBroughtStrip, BroughtView, BroughtStrip
-- `src/ui/gameMenu.ts` — createGameMenu, GameMenuOptions, GameMenu
 - `src/ui/infoTip.ts` — createInfoTips, InfoTip, InfoTipFactory
 - `src/ui/download.ts` — downloadText, copyText
 - `src/ui/index.ts` — getUiRoot, getPanels

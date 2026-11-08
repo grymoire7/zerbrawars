@@ -252,13 +252,16 @@
 - `src/ui/gameMenu.ts`
   - function createGameMenu: (root, opts) => GameMenu
   - interface GameMenuOptions
+  - interface FacilitatorMenu
   - interface GameMenu
 - `src/ui/help.ts`
   - function createHelp: (root, opts) => Help
   - interface Help
   - interface HelpOptions
+  - const LIFE_SEEN_KEY
+  - const HELP_SEEN_KEYS: readonly string[]
   - const BATTLE_LINES: readonly (readonly [string, string])[]
-  - const LIFE_LINES: readonly (readonly [string, string])[]
+  - _...1 more_
 - `src/ui/hud.ts`
   - function createHud: (mounts, handlers) => Hud
   - interface HudOrder

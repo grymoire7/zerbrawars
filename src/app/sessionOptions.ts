@@ -1,11 +1,16 @@
 import type { SessionDebug } from "../ui/debugPanel";
+import { logFileName } from "./facilitatorModel";
 import { settings, type Run } from "./run";
 
-/** The facilitator switches and the log export, as the debug panel shows them. */
+/** The facilitator switches and the log export, as the debug panel and the menu show them. */
 export function sessionOptions(run: Run): SessionDebug {
   return {
-    brought: settings.brought,
-    probe: settings.probe,
+    get brought() {
+      return settings.brought;
+    },
+    get probe() {
+      return settings.probe;
+    },
     onBrought(on) {
       settings.brought = on;
       run.ui("setting", `brought=${on}`);
@@ -15,6 +20,6 @@ export function sessionOptions(run: Run): SessionDebug {
       run.ui("setting", `probe=${on}`);
     },
     exportJson: () => run.exportJson(),
-    fileName: `zebrawars-session-seed${run.seed}.json`,
+    fileName: logFileName(run.seed),
   };
 }

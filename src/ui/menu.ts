@@ -4,8 +4,10 @@ export interface MenuItem {
   readonly sub?: string;
   /** Lines under the button (best scores). */
   readonly lines?: readonly string[];
-  /** Absent: shown greyed and not tappable. */
-  readonly onClick?: () => void;
+  /** Absent: shown greyed and not tappable. A returned string is shown under the button (saved). */
+  readonly onClick?: () => string | void;
+  /** A small item: plain weight and smaller type, for a facilitator's side action. */
+  readonly small?: boolean;
 }
 
 export interface MenuModel {
@@ -21,7 +23,8 @@ export interface MenuModel {
   readonly buttons?: readonly {
     readonly label: string;
     readonly primary?: boolean;
-    readonly onClick: () => void;
+    /** A returned string is shown under the buttons and the card stays (an export, not an answer). */
+    readonly onClick: () => string | void;
   }[];
 }
 
@@ -63,7 +66,12 @@ export function createMenu(root: HTMLElement): Menu {
   backdrop.append(card);
   root.append(backdrop);
 
-  const button = (label: string, primary: boolean, onClick: () => void) => {
+  const button = (
+    label: string,
+    primary: boolean,
+    onClick: () => string | void,
+    report: (line: string) => void = () => {},
+  ) => {
     const b = el(
       "button",
       "min-height:44px;min-width:44px;padding:0 16px;font:inherit;" +
@@ -71,15 +79,24 @@ export function createMenu(root: HTMLElement): Menu {
       label,
     );
     b.type = "button";
-    b.addEventListener("click", onClick);
+    b.addEventListener("click", () => {
+      const line = onClick();
+      if (typeof line === "string") report(line);
+    });
     return b;
   };
 
   const itemView = (it: MenuItem): HTMLElement => {
     const box = el("div", "display:flex;flex-direction:column;gap:4px;");
+    const note = el("div", "font-size:14px;padding:0 4px;");
+    note.setAttribute("role", "status");
     const text = (parent: HTMLElement) => {
       parent.append(
-        el("span", "font-weight:700;overflow-wrap:anywhere;", it.label),
+        el(
+          "span",
+          (it.small ? "" : "font-weight:700;") + "overflow-wrap:anywhere;",
+          it.label,
+        ),
       );
       if (it.sub)
         parent.append(
@@ -97,8 +114,13 @@ export function createMenu(root: HTMLElement): Menu {
       );
       b.type = "button";
       text(b);
-      b.addEventListener("click", it.onClick);
-      box.append(b);
+      const run = it.onClick;
+      b.addEventListener("click", () => {
+        const line = run();
+        if (typeof line === "string") note.textContent = line;
+      });
+      if (it.small) b.style.fontSize = "14px";
+      box.append(b, note);
     } else {
       const g = el(
         "div",
@@ -144,11 +166,16 @@ export function createMenu(root: HTMLElement): Menu {
           "div",
           "display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;",
         );
+        const report = el("p", "margin:0;font-size:14px;width:100%;");
+        report.setAttribute("role", "status");
         for (const b of m.buttons) {
-          const btn = button(b.label, !!b.primary, b.onClick);
+          const btn = button(b.label, !!b.primary, b.onClick, (line) => {
+            report.textContent = line;
+          });
           btn.style.flex = "1 1 auto";
           row.append(btn);
         }
+        row.append(report);
         kids.push(row);
       }
       card.replaceChildren(...kids);

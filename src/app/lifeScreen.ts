@@ -25,7 +25,8 @@ import { cardChoices } from "../sim/score";
 import { createDebugPanel } from "../ui/debugPanel";
 import { sessionOptions } from "./sessionOptions";
 import { createGameMenu } from "../ui/gameMenu";
-import { createHelp, LIFE_LINES } from "../ui/help";
+import { facilitator, resetForNewPlayer } from "./facilitator";
+import { createHelp, LIFE_LINES, LIFE_SEEN_KEY } from "../ui/help";
 import {
   aftermathDetail,
   aftermathTitle,
@@ -137,7 +138,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
 
   const help = createHelp(ui, {
     lines: LIFE_LINES,
-    seenKey: "zebrawars.help.life.seen",
+    seenKey: LIFE_SEEN_KEY,
   });
   // The debug standalone entry has no title to go back to, so no menu.
   const menu = run.standalone
@@ -175,6 +176,13 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
             env.go({ mode: "title" });
           },
         },
+        facilitator: facilitator.on
+          ? {
+              session: sessionOptions(run),
+              reset: resetForNewPlayer,
+              toTitle: () => env.go({ mode: "title" }),
+            }
+          : undefined,
       });
   const apply = (fn: (l: LifeState) => LifeStep): LifeEvent[] => {
     try {
@@ -587,23 +595,25 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     },
   });
 
-  const debug = createDebugPanel(panels.scroll, {
-    mode: run.standalone ? "life" : "campaign",
-    onMode: (m) =>
-      env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
-    scenario: "",
-    seed: run.seed,
-    session: sessionOptions(run),
-    // Demo and test only: the player UI has no way to skip a dose.
-    forceMiss: {
-      days: L.days,
-      onForce: (day) => {
-        clearBanner();
-        apply(() => setDose(life, day, false));
-        draw();
-      },
-    },
-  });
+  const debug = !facilitator.debugPanel
+    ? null
+    : createDebugPanel(panels.scroll, {
+        mode: run.standalone ? "life" : "campaign",
+        onMode: (m) =>
+          env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
+        scenario: "",
+        seed: run.seed,
+        session: sessionOptions(run),
+        // Demo and test only: the player UI has no way to skip a dose.
+        forceMiss: {
+          days: L.days,
+          onForce: (day) => {
+            clearBanner();
+            apply(() => setDose(life, day, false));
+            draw();
+          },
+        },
+      });
 
   const strip = createStatusStrip(panels.status);
   const earlierScore = () =>
@@ -636,7 +646,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   );
 
   return {
-    setStats: (text) => debug.setStats(text),
+    setStats: (text) => debug?.setStats(text),
     tick: (dt) => inset.tick(dt),
     back: menu
       ? () => {

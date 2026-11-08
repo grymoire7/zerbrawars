@@ -185,6 +185,10 @@ const DEBUG_KEYS = [
   "residual",
 ];
 
+/** A developer start: the URL carries a debug lever (?mode, ?seed, ?med and the rest). */
+export const isDebugStart = (params: URLSearchParams): boolean =>
+  DEBUG_KEYS.some((k) => params.has(k));
+
 const parseVariant = (raw: string | null): VariantId | null =>
   raw === "xl" || raw === "ar" ? raw : null;
 
@@ -198,7 +202,7 @@ export function parseStart(params: URLSearchParams): StartChoice {
   const n = Number(params.get("arc"));
   const arc = ARCS.find((a) => a.number === n);
   if (arc) return { kind: "arc", arc: arc.id, variant: variant ?? "xl" };
-  if (DEBUG_KEYS.some((k) => params.has(k))) return { kind: "debug" };
+  if (isDebugStart(params)) return { kind: "debug" };
   if (variant) return { kind: "arcs", variant };
   return { kind: "title" };
 }
