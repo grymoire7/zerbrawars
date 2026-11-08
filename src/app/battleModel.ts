@@ -15,6 +15,8 @@ export interface BattleStatusInput {
   readonly charges: MedCharges;
   /** The week's Choices so far, or null in a standalone battle (no Score cell). */
   readonly choices: number | null;
+  /** Arc 1, part A: no one knew about CGD yet, so the Medication cell reads "none". */
+  readonly noMedication?: boolean;
 }
 
 export function tissueState(tissue: number): string {
@@ -37,6 +39,28 @@ export function battleStatusModel(i: BattleStatusInput): StatusModel {
   const window = PARAMS.life.meds.window;
   const doses = medDoses(i.medLevel);
   const n = chargeCount(i.charges);
+
+  const medication: StatusCell = i.noMedication
+    ? {
+        id: "medication",
+        label: "Medication",
+        value: "none",
+        state: "none",
+        showState: false,
+        bar: null,
+        color: "med",
+        explain: "No one knew about CGD yet, so there was no daily medicine.",
+      }
+    : {
+        id: "medication",
+        label: "Medication",
+        value: `${doses}/${window}`,
+        state: medStateWord(doses, window),
+        showState: doses < window,
+        bar: { kind: "segments", count: window, solid: doses, ghost: doses },
+        color: "med",
+        explain: `Your aura slows germs. Charges come from doses taken: ${n} ${n === 1 ? "charge" : "charges"} (${chargesText(i.charges)}).`,
+      };
 
   const cells: StatusCell[] = [
     {
@@ -71,16 +95,7 @@ export function battleStatusModel(i: BattleStatusInput): StatusModel {
         "Heat from crowding, loads and germs. Hot tiles cost tissue every turn." +
         (i.damage > 0 ? ` Next turn it costs ${i.damage} tissue.` : ""),
     },
-    {
-      id: "medication",
-      label: "Medication",
-      value: `${doses}/${window}`,
-      state: medStateWord(doses, window),
-      showState: doses < window,
-      bar: { kind: "segments", count: window, solid: doses, ghost: doses },
-      color: "med",
-      explain: `Your aura slows germs. Charges come from doses taken: ${n} ${n === 1 ? "charge" : "charges"} (${chargesText(i.charges)}).`,
-    },
+    medication,
   ];
   if (i.choices !== null) {
     cells.push({

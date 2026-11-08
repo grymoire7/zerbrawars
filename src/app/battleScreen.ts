@@ -41,8 +41,14 @@ import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { createMenu } from "../ui/menu";
 import {
+  compareRows,
+  partAReadings,
   partAResult,
   partAStoryCard,
+  partBSummary,
+  readingsBlock,
+  SKIPPED_LINE,
+  type PartAReadings,
   type TutorialPart,
 } from "./tutorialModel";
 import { incomingKey, nextArrival } from "./arrivalModel";
@@ -53,7 +59,7 @@ import {
   whereLines,
 } from "./gameMenuModel";
 import { backAction } from "./navGuardModel";
-import type { ArcId, VariantId } from "./arcs";
+import { arcById, type ArcId, type VariantId } from "./arcs";
 import { createStatusStrip } from "../ui/statusStrip";
 import { weekChoices, weekScore } from "../sim/score";
 import { weekScoreLine } from "./summaryModel";
@@ -86,6 +92,10 @@ export function mountBattle(
     readonly variant: VariantId;
     /** Arc 1: which part this is. Part A ends on a story card, not the outcome card. */
     readonly part?: TutorialPart;
+    /** Arc 1, part B: what part A ended on (kept in memory by the runner), absent if skipped. */
+    readonly before?: PartAReadings;
+    /** Arc 1, part A: told its readings when the fight ends, for part B's table. */
+    readonly onReadings?: (readings: PartAReadings) => void;
   },
 ): Screen {
   // In a campaign the Campaign owns the battle; the controller plays it and hands it back.
@@ -94,6 +104,8 @@ export function mountBattle(
   const ac = new AbortController();
   const { signal } = ac;
 
+  // Arc 1 teaches less: no first-time How to play, no wall off, a quieter side panel and outcome.
+  const tutorial = arcEnd?.part !== undefined;
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("scenario") ?? DEFAULT_SCENARIO;
   if (!isScenarioName(requested)) {
@@ -123,6 +135,7 @@ export function mountBattle(
   const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   const controller = createController(load, () => refresh(), {
     reducedMotion: motionQuery.matches,
+    walls: !tutorial,
   });
   motionQuery.addEventListener(
     "change",
@@ -216,32 +229,36 @@ export function mountBattle(
     shownTissue = input.tissue;
     status.update(battleStatusModel(input));
   };
-  const hud = createHud(panels, {
-    onHelp: () => help.open(),
-    onEndTurn: () => endTurn(),
-    onSkip: () => {
-      if (controller.mode() === "playback") {
-        if (turnLog) turnLog.skipped = true;
-        run?.ui("skip", `turn ${turnLog?.turn ?? "?"}`);
-      }
-      controller.skip();
+  const hud = createHud(
+    panels,
+    {
+      onHelp: () => help.open(),
+      onEndTurn: () => endTurn(),
+      onSkip: () => {
+        if (controller.mode() === "playback") {
+          if (turnLog) turnLog.skipped = true;
+          run?.ui("skip", `turn ${turnLog?.turn ?? "?"}`);
+        }
+        controller.skip();
+      },
+      onReplay: () => {
+        if (controller.canReplay()) {
+          if (turnLog) turnLog.replays++;
+          run?.ui("replay", `turn ${turnLog?.turn ?? "?"}`);
+        }
+        controller.replay();
+      },
+      onSpeed: (speed) => controller.setSpeed(speed),
+      // The debug battle keeps Reset in its bar; arc play has Start this fight over in the menu.
+      onReset: menu ? undefined : () => controller.reset(),
+      onSelect: (id) => controller.select(id),
+      onClearOrder: (id) => controller.clearOrder(id),
+      onWallOff: () => controller.wallOff(),
+      onPickCharge: (charge) => controller.pickCharge(charge as ChargeKind),
+      onClearSupport: () => controller.clearSupport(),
     },
-    onReplay: () => {
-      if (controller.canReplay()) {
-        if (turnLog) turnLog.replays++;
-        run?.ui("replay", `turn ${turnLog?.turn ?? "?"}`);
-      }
-      controller.replay();
-    },
-    onSpeed: (speed) => controller.setSpeed(speed),
-    // The debug battle keeps Reset in its bar; arc play has Start this fight over in the menu.
-    onReset: menu ? undefined : () => controller.reset(),
-    onSelect: (id) => controller.select(id),
-    onClearOrder: (id) => controller.clearOrder(id),
-    onWallOff: () => controller.wallOff(),
-    onPickCharge: (charge) => controller.pickCharge(charge as ChargeKind),
-    onClearSupport: () => controller.clearSupport(),
-  });
+    { tutorial },
+  );
   const strip = createBroughtStrip(ui, () => {
     strip.hide();
     run?.ui("dismiss", "brought strip");
@@ -356,6 +373,8 @@ export function mountBattle(
   // Part A's story card, over the final board; it takes the place of the outcome card.
   const storyMenu = arcEnd?.part === "a" ? createMenu(ui) : null;
   let outcomeShown = false;
+  // Part B's table compares against part A's readings; part A's are read off its own fight.
+  const readingsA = () => partAReadings(load(), controller.state());
   const readout = document.createElement("div");
   readout.style.cssText =
     "font:11px monospace;color:var(--zw-text-muted);opacity:0.7;";
@@ -485,7 +504,11 @@ export function mountBattle(
           };
         }
         if (storyMenu && arcEnd) {
-          const card = partAStoryCard(partAResult(load(), controller.state()));
+          const readings = readingsA();
+          arcEnd.onReadings?.(readings);
+          const card = partAStoryCard(partAResult(load(), controller.state()), {
+            outcome: readingsBlock(readings),
+          });
           storyMenu.show({
             title: card.title,
             paragraphs: card.paragraphs,
@@ -495,12 +518,26 @@ export function mountBattle(
             ],
           });
         } else {
+          const final = controller.state();
+          const status = battleStatus(final);
+          const rows = compareRows(arcEnd?.before, final, outcome.grade);
           outcomeOverlay.show(
             outcome,
-            battleStatus(controller.state()),
+            status,
             extra,
-            controller.state().kind,
+            final.kind,
             arcEnd?.label,
+            tutorial
+              ? {
+                  summary: partBSummary(
+                    arcById(arcEnd.arc),
+                    outcome.grade,
+                    status.reason === "backup",
+                  ),
+                  rows,
+                  note: SKIPPED_LINE,
+                }
+              : undefined,
           );
         }
       }
@@ -515,6 +552,7 @@ export function mountBattle(
       medLevel: s.meds.level,
       charges: s.meds.charges,
       choices: run ? weekChoices(run.campaign().life).total : null,
+      noMedication: arcEnd?.part === "a",
     });
     hud.update({
       over: controller.over(),
@@ -563,12 +601,14 @@ export function mountBattle(
       },
       odds: controller.odds(),
       problems: controller.problems(),
-      wall: wall && {
-        swarmId: wall.swarmId,
-        queued: wall.queued,
-        reason: wall.reason,
-        lines: wallLines(wall),
-      },
+      wall: tutorial
+        ? null
+        : wall && {
+            swarmId: wall.swarmId,
+            queued: wall.queued,
+            reason: wall.reason,
+            lines: wallLines(wall),
+          },
       forecast: forecast && {
         tissueDamage: forecast.tissueDamage,
         rising: forecast.rising.length,
@@ -604,7 +644,7 @@ export function mountBattle(
         session: run ? sessionOptions(run) : undefined,
       });
   panels.scroll.append(readout);
-  help.showFirstTime();
+  if (!tutorial) help.showFirstTime();
   if (run && settings.brought) {
     const c = run.campaign();
     const skirmish = c.battleKind === "skirmish";

@@ -13,7 +13,7 @@ import { mountInterlude } from "./interludeScreen";
 import { mountLife } from "./lifeScreen";
 import { parseGoal, parseReservoirs } from "./campaignModel";
 import { createRun, type Run } from "./run";
-import { afterPart } from "./tutorialModel";
+import { afterPart, type PartAReadings } from "./tutorialModel";
 import { arcById, type ArcId, type VariantId } from "./arcs";
 import { initFacilitator } from "./facilitator";
 import { mountMenu } from "./menuScreens";
@@ -84,6 +84,8 @@ let cleanUrl: URL = new URL(window.location.href);
 let armed = false;
 let swallow = 0;
 let arcFightInPlay = false;
+/** Arc 1: what part A ended on, kept in memory for part B's table. Nothing is stored. */
+let partA: PartAReadings | undefined;
 
 /** Rewrites the address without touching the history entry's state (the guard marker). */
 function setUrl(url: URL) {
@@ -194,6 +196,8 @@ function mount(req: ScreenRequest) {
       go({ mode: "arcComplete", arc: arc.id, variant: req.variant });
     if (arc.play.kind === "tutorial") {
       const part = req.part;
+      // Only a part A played in this run feeds part B: the intro, or starting at B, forgets it.
+      if (part !== "b") partA = undefined;
       if (!part)
         return mount({ mode: "arcIntro", arc: arc.id, variant: req.variant });
       arcFightInPlay = true;
@@ -206,6 +210,10 @@ function mount(req: ScreenRequest) {
           arc: arc.id,
           variant: req.variant,
           part,
+          before: part === "b" ? partA : undefined,
+          onReadings: (readings) => {
+            partA = readings;
+          },
           onDone: () => {
             const next = afterPart(part);
             if (next === "complete") complete();

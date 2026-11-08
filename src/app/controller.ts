@@ -183,16 +183,20 @@ const swarmAt = (battle: BattleState, at: Coord) =>
 const wallable = (battle: BattleState, id: SwarmId) =>
   wallOffPreview(battle, id)?.reason === null;
 
-/** Queues wall off for `id`, or clears it if already queued. Does nothing if it cannot wall off. */
+/**
+ * Queues wall off for `id`, or clears it if already queued. Does nothing if it cannot wall off, or
+ * if `walls` is false (Arc 1 does not teach it).
+ */
 export function toggleWallOff(
   battle: BattleState,
   ui: OrderUi,
   id: SwarmId,
+  walls = true,
 ): OrderUi {
   if (ui.orders.find((o) => o.swarmId === id)?.type === "wallOff") {
     return { ...ui, orders: clearOrder(ui.orders, id) };
   }
-  if (!wallable(battle, id)) return ui;
+  if (!walls || !wallable(battle, id)) return ui;
   return {
     ...ui,
     orders: withOrder(ui.orders, { type: "wallOff", swarmId: id }),
@@ -213,6 +217,7 @@ export function tapTile(
   battle: BattleState,
   ui: OrderUi,
   at: Coord | null,
+  walls = true,
 ): OrderUi {
   if (!at) return { ...ui, selected: null, charge: null };
   if (ui.charge) {
@@ -221,14 +226,15 @@ export function tapTile(
       const same = JSON.stringify(ui.support) === JSON.stringify(t.order);
       return { ...ui, charge: null, support: same ? null : t.order };
     }
-    return tapTile(battle, { ...ui, charge: null }, at);
+    return tapTile(battle, { ...ui, charge: null }, at, walls);
   }
   const here = swarmAt(battle, at);
   const sel = battle.swarms.find((s) => s.id === ui.selected);
   if (here && here.id === sel?.id) {
     const cur = ui.orders.find((o) => o.swarmId === here.id);
-    if (cur?.type === "wallOff") return toggleWallOff(battle, ui, here.id);
-    if (cur?.type === "hold" && wallable(battle, here.id)) {
+    if (cur?.type === "wallOff")
+      return toggleWallOff(battle, ui, here.id, walls);
+    if (cur?.type === "hold" && walls && wallable(battle, here.id)) {
       return toggleWallOff(battle, ui, here.id);
     }
     return {
@@ -466,7 +472,7 @@ interface PlayedTurn {
 export function createController(
   load: () => BattleState,
   onChange: (c: Controller) => void,
-  options: { reducedMotion?: boolean } = {},
+  options: { reducedMotion?: boolean; walls?: boolean } = {},
 ): Controller {
   let state = load();
   let events: readonly SimEvent[] = [];
@@ -541,7 +547,8 @@ export function createController(
         : null;
     },
     wallOff() {
-      if (ui.selected) set(toggleWallOff(state, ui, ui.selected));
+      if (ui.selected)
+        set(toggleWallOff(state, ui, ui.selected, options.walls));
     },
     forecast: () =>
       playing() || over() || (ui.orders.length === 0 && !ui.support)
@@ -662,7 +669,7 @@ export function createController(
       }),
     tap(at) {
       if (!playing()) inspected = at ? entityAt(state, at) : null;
-      set(tapTile(state, ui, at));
+      set(tapTile(state, ui, at, options.walls));
     },
     clearOrder: (id) => set({ ...ui, orders: clearOrder(ui.orders, id) }),
     endTurn() {

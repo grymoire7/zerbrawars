@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 56 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~23,700 tokens. **Saves ~19,100 tokens per conversation.**
-> **Last scanned:** 2026-11-08 20:44 — re-run after significant changes
+> **Last scanned:** 2026-11-08 20:52 — re-run after significant changes
 
 ---
 
@@ -274,13 +274,13 @@
   - const BATTLE_LINES: readonly (readonly [string, string])[]
   - _...1 more_
 - `src/ui/hud.ts`
-  - function createHud: (mounts, handlers) => Hud
+  - function createHud: (mounts, handlers, options) => Hud
   - interface HudOrder
   - interface HudMedication
   - interface HudCharge
   - interface HudSupport
   - interface HudSupportCard
-  - _...11 more_
+  - _...12 more_
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
 - `src/ui/infoTip.ts`
   - function createInfoTips: () => InfoTipFactory
@@ -309,8 +309,9 @@
   - function createOutcomeOverlay: (root, handlers) => OutcomeOverlay
   - interface OutcomeHandlers
   - interface OutcomeExtra
-  - interface OutcomeOverlay
-  - const SKIRMISH_COPY
+  - interface CompareRow
+  - interface ArcCard
+  - _...3 more_
 - `src/ui/probe.ts` — function createProbe: (root) => Probe, interface Probe
 - `src/ui/statusStrip.ts`
   - function createStatusStrip: (mount) => StatusStrip
@@ -335,7 +336,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/sim/params.ts` — imported by **53** files
+- `src/sim/params.ts` — imported by **54** files
 - `src/sim/types.ts` — imported by **51** files
 - `src/sim/pathogens.ts` — imported by **27** files
 - `src/sim/battle/setup.ts` — imported by **20** files
@@ -358,7 +359,7 @@
 
 ## Import Map (who imports what)
 
-- `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/arcModel.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/campaignModel.test.ts` +48 more
+- `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/arcModel.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/campaignModel.test.ts` +49 more
 - `src/sim/types.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts` +46 more
 - `src/sim/pathogens.ts` ← `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/app/tutorialModel.ts` +22 more
 - `src/sim/battle/setup.ts` ← `src/app/arrivalModel.test.ts`, `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts` +15 more

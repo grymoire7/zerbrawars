@@ -25,6 +25,24 @@ export interface OutcomeExtra {
   readonly scoreLine?: string;
 }
 
+/** One row of Part B's before and now table. */
+export interface CompareRow {
+  readonly label: string;
+  readonly before: string;
+  readonly now: string;
+}
+
+/**
+ * Arc 1's outcome card: no energy, carry or turns-played lines, the arc's own words instead of
+ * the grade summary, and Part A's readings beside Part B's (or one line if Part A was skipped).
+ */
+export interface ArcCard {
+  readonly summary?: string;
+  readonly rows: readonly CompareRow[];
+  /** Shown when there are no rows. */
+  readonly note?: string;
+}
+
 export interface OutcomeOverlay {
   show(
     outcome: BattleOutcome,
@@ -33,11 +51,12 @@ export interface OutcomeOverlay {
     kind?: BattleKind,
     /** An arc's single battle: the Next button ends the arc under this label. */
     arcEnd?: string,
+    arcCard?: ArcCard,
   ): void;
   hide(): void;
 }
 
-const GRADE: Record<BattleGrade, { title: string; summary: string }> = {
+export const GRADE: Record<BattleGrade, { title: string; summary: string }> = {
   cleared: {
     title: "All clear",
     summary:
@@ -129,6 +148,7 @@ export function createOutcomeOverlay(
   const reasons = document.createElement("ul");
   reasons.style.cssText = "margin:0;padding-left:20px;line-height:1.4;";
   const carry = document.createElement("div");
+  const compare = document.createElement("div");
   const stats = document.createElement("p");
   stats.style.cssText = "margin:0;line-height:1.4;";
   const score = document.createElement("p");
@@ -152,7 +172,7 @@ export function createOutcomeOverlay(
   const peek = button("Look at the board", () => setCollapsed(true));
   const next = button("Next", () => handlers.onNext?.(), true);
   buttons.append(next, again, fresh, replay, peek);
-  card.append(title, summary, reasons, carry, stats, score, buttons);
+  card.append(title, summary, reasons, compare, carry, stats, score, buttons);
   backdrop.append(card);
 
   // A small tab to bring the card back after looking at the final board.
@@ -227,14 +247,55 @@ export function createOutcomeOverlay(
     return [head, list];
   };
 
+  const table = (card: ArcCard) => {
+    if (card.rows.length === 0) {
+      const p = document.createElement("p");
+      p.style.cssText = "margin:0;line-height:1.4;";
+      p.textContent = card.note ?? "";
+      return [p];
+    }
+    const t = document.createElement("table");
+    t.style.cssText =
+      "width:100%;border-collapse:collapse;font-size:14px;line-height:1.4;";
+    const cell = (tag: "th" | "td", text: string, weight = "") => {
+      const c = document.createElement(tag);
+      c.textContent = text;
+      c.style.cssText =
+        "text-align:left;vertical-align:top;padding:4px 6px 4px 0;" +
+        "border-bottom:1px solid var(--zw-line);" +
+        (weight ? `font-weight:${weight};` : "");
+      return c;
+    };
+    const head = document.createElement("tr");
+    head.append(
+      cell("th", "", "600"),
+      cell("th", "Before", "600"),
+      cell("th", "Now", "600"),
+    );
+    t.append(
+      head,
+      ...card.rows.map((r) => {
+        const tr = document.createElement("tr");
+        tr.append(
+          cell("th", r.label, "600"),
+          cell("td", r.before),
+          cell("td", r.now),
+        );
+        return tr;
+      }),
+    );
+    return [t];
+  };
+
   return {
-    show(outcome, status, extra, kind = "full", arcEnd) {
+    show(outcome, status, extra, kind = "full", arcEnd, arcCard) {
       const skirmish = kind === "skirmish";
       const g = skirmish
         ? SKIRMISH_COPY[outcome.grade === "cleared" ? "cleared" : "loose"]
         : outcomeHeading(outcome.grade, status.reason);
       title.textContent = g.title;
-      summary.textContent = g.summary;
+      summary.textContent = arcCard?.summary ?? g.summary;
+      compare.replaceChildren(...(arcCard ? table(arcCard) : []));
       const lines = skirmish
         ? []
         : [
@@ -252,7 +313,7 @@ export function createOutcomeOverlay(
       );
       reasons.style.display = lines.length > 0 ? "" : "none";
       carry.replaceChildren(
-        ...(skirmish ? [] : rows(outcome)),
+        ...(skirmish || arcCard ? [] : rows(outcome)),
         ...(extra && !skirmish ? [meaning(extra)] : []),
       );
       next.style.display = extra || arcEnd ? "" : "none";
@@ -261,6 +322,7 @@ export function createOutcomeOverlay(
       if (extra) next.textContent = extra.nextLabel;
       else if (arcEnd) next.textContent = arcEnd;
       const { tissue } = outcome;
+      stats.style.display = arcCard ? "none" : "";
       stats.textContent = skirmish
         ? `Energy carried forward: ${outcome.energy}.` +
           (extra && !extra.lastWeek

@@ -176,7 +176,8 @@ export function createMenu(root: HTMLElement): Menu {
       const kids: HTMLElement[] = [title];
       if (m.tagline)
         kids.push(el("p", "margin:0;font-size:17px;opacity:0.9;", m.tagline));
-      for (const p of m.paragraphs ?? []) kids.push(el("p", "margin:0;", p));
+      for (const p of m.paragraphs ?? [])
+        kids.push(el("p", "margin:0;white-space:pre-line;", p));
       if (m.heading)
         kids.push(
           el("h2", "margin:8px 0 0;font:600 17px sans-serif;", m.heading),

@@ -264,13 +264,13 @@
   - const BATTLE_LINES: readonly (readonly [string, string])[]
   - _...1 more_
 - `src/ui/hud.ts`
-  - function createHud: (mounts, handlers) => Hud
+  - function createHud: (mounts, handlers, options) => Hud
   - interface HudOrder
   - interface HudMedication
   - interface HudCharge
   - interface HudSupport
   - interface HudSupportCard
-  - _...11 more_
+  - _...12 more_
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
 - `src/ui/infoTip.ts`
   - function createInfoTips: () => InfoTipFactory
@@ -299,8 +299,9 @@
   - function createOutcomeOverlay: (root, handlers) => OutcomeOverlay
   - interface OutcomeHandlers
   - interface OutcomeExtra
-  - interface OutcomeOverlay
-  - const SKIRMISH_COPY
+  - interface CompareRow
+  - interface ArcCard
+  - _...3 more_
 - `src/ui/probe.ts` — function createProbe: (root) => Probe, interface Probe
 - `src/ui/statusStrip.ts`
   - function createStatusStrip: (mount) => StatusStrip

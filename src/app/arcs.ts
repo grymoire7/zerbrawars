@@ -37,6 +37,9 @@ export type ArcPlay =
       readonly introMore: readonly string[];
       readonly begin: string;
       readonly skip: string;
+      /** Part B's outcome card text when it ends All clear, and when it ends Contained. */
+      readonly endClear: string;
+      readonly endHeld: string;
     }
   | { readonly kind: "campaign" };
 
@@ -76,6 +79,10 @@ export const ARCS: readonly ArcDef[] = [
       ],
       begin: "Begin",
       skip: "Skip to after the diagnosis",
+      endClear:
+        "Same germs, different ending. CGD takes one tool away, not your whole defence, and your medicine helps fill the gap.",
+      endHeld:
+        "Not quite all clear, and that is fine. Your medicine gave your cells a real chance, and the doctor can help with the rest.",
     },
   },
   {

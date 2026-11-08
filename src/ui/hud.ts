@@ -172,7 +172,16 @@ const STATUS_COLOR: Record<string, string> = {
   busy: "var(--zw-text-muted)",
 };
 
-export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
+/** Arc 1 teaches less: no wall off button, and the Key and "What happened" start collapsed. */
+export interface HudOptions {
+  readonly tutorial?: boolean;
+}
+
+export function createHud(
+  mounts: HudMounts,
+  handlers: HudHandlers,
+  options: HudOptions = {},
+): Hud {
   const { scroll, bar } = mounts;
   const el = (tag: string, css = "", text = "") => {
     const e = document.createElement(tag);
@@ -258,7 +267,8 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
 
   // Key: heat patterns (only those on the board) and the telegraph marks.
   const key = el("details", PANEL) as HTMLDetailsElement;
-  key.open = window.matchMedia("(min-width: 900px)").matches;
+  key.open =
+    !options.tutorial && window.matchMedia("(min-width: 900px)").matches;
   const keySummary = el(
     "summary",
     "min-height:44px;display:flex;align-items:center;padding:0 10px;cursor:pointer;font-weight:600;",
@@ -271,7 +281,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   key.append(keySummary, keyBody);
 
   const logBox = el("details", PANEL) as HTMLDetailsElement;
-  logBox.open = true;
+  logBox.open = !options.tutorial;
   const logSummary = el(
     "summary",
     "min-height:44px;display:flex;align-items:center;padding:0 10px;cursor:pointer;font-weight:600;",
@@ -325,7 +335,8 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
   );
   const onReset = handlers.onReset;
   const reset = onReset ? button("Reset", onReset, "flex:1 1 auto;") : null;
-  row.append(endTurn, wallOff, x1, x2, skip, replay);
+  row.append(endTurn, x1, x2, skip, replay);
+  if (!options.tutorial) row.insertBefore(wallOff, x1);
   if (reset) row.append(reset);
   bar.append(row);
 

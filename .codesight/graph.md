@@ -2,7 +2,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/sim/params.ts` — imported by **53** files
+- `src/sim/params.ts` — imported by **54** files
 - `src/sim/types.ts` — imported by **51** files
 - `src/sim/pathogens.ts` — imported by **27** files
 - `src/sim/battle/setup.ts` — imported by **20** files
@@ -25,7 +25,7 @@
 
 ## Import Map (who imports what)
 
-- `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/arcModel.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/campaignModel.test.ts` +48 more
+- `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/arcModel.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/campaignModel.test.ts` +49 more
 - `src/sim/types.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts` +46 more
 - `src/sim/pathogens.ts` ← `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/info.ts`, `src/app/lifeModel.ts`, `src/app/tutorialModel.ts` +22 more
 - `src/sim/battle/setup.ts` ← `src/app/arrivalModel.test.ts`, `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts` +15 more
