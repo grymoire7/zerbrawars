@@ -36,7 +36,12 @@ import { createGameMenu } from "../ui/gameMenu";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { incomingKey, nextArrival } from "./arrivalModel";
-import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
+import {
+  escapeAction,
+  leaveNote,
+  menuItems,
+  whereLines,
+} from "./gameMenuModel";
 import { backAction } from "./navGuardModel";
 import type { ArcId, VariantId } from "./arcs";
 import { createStatusStrip } from "../ui/statusStrip";
@@ -146,11 +151,35 @@ export function mountBattle(
     ? createGameMenu(ui, {
         where: whereLines(inPlay),
         leaveNote: leaveNote(inPlay.arc),
-        onHelp: () => help.open(),
-        onLeave: () => {
+        arc: inPlay.arc,
+        items: () =>
+          menuItems({
+            arc: inPlay.arc,
+            screen: "battle",
+            fightOver: controller.over(),
+          }),
+        on: {
+          help: () => help.open(),
+          restartFight: () => restartFight(),
+          restartSummer: () => {
+            // A new run with the same seed, held in place of this one (as the arc picker starts it).
+            if (run)
+              env.go({
+                mode: "arcPlay",
+                arc: run.arc,
+                variant: run.variant,
+                seed: run.seed,
+              });
+          },
           // The held run restarts this fight at turn 1 on Continue; the log says so.
-          run?.ui("leave", "back to the title");
-          env.go({ mode: "title" });
+          chooseArc: () => {
+            run?.ui("leave", "to the arc list");
+            env.go({ mode: "arcs", variant: inPlay.variant });
+          },
+          changeCharacter: () => {
+            run?.ui("leave", "to the title");
+            env.go({ mode: "title" });
+          },
         },
       })
     : null;
@@ -180,11 +209,8 @@ export function mountBattle(
       controller.replay();
     },
     onSpeed: (speed) => controller.setSpeed(speed),
-    onReset: () => {
-      if (run && run.campaign().mode !== "battle") return;
-      run?.ui("reset", "battle");
-      controller.reset();
-    },
+    // The debug battle keeps Reset in its bar; arc play has Start this fight over in the menu.
+    onReset: menu ? undefined : () => controller.reset(),
     onSelect: (id) => controller.select(id),
     onClearOrder: (id) => controller.clearOrder(id),
     onWallOff: () => controller.wallOff(),
@@ -247,6 +273,23 @@ export function mountBattle(
       strip.hide();
     }
   };
+  /**
+   * Start this fight over: the controller reloads the battle as the Campaign holds it (its start;
+   * the Campaign only takes a fight's result when it ends, so the week and its score are
+   * untouched). The turns already played stay in the session log, closed off by a "reset" note.
+   */
+  function restartFight() {
+    if (controller.over() || (run && run.campaign().mode !== "battle")) return;
+    flushTurn();
+    run?.ui(
+      "reset",
+      `fight restarted from turn 1 (was turn ${controller.state().turn})`,
+    );
+    probed.clear();
+    planStart = run?.elapsed() ?? 0;
+    strip.hide();
+    controller.reset();
+  }
   function endTurn() {
     if (!controller.canEndTurn() || probe.isOpen()) return;
     flushTurn();

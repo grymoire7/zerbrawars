@@ -110,6 +110,19 @@ export function continueChoice(
   };
 }
 
+/**
+ * What the arc picker lists: Continue first when a summer is held (the same item the title
+ * offers), then the arcs.
+ */
+export function pickerChoices(
+  variant: VariantId,
+  held: { campaign: Campaign; variant: VariantId } | null,
+  entries?: readonly { id: string; entry: BestEntry }[],
+): MenuChoice[] {
+  const cont = continueChoice(held);
+  return [...(cont ? [cont] : []), ...arcChoices(variant, entries)];
+}
+
 /** Which screen picks a held summer up: the campaign's own mode decides. */
 export function resumeTarget(
   c: Campaign,

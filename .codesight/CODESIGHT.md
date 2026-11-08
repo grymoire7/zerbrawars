@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 56 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~23,700 tokens. **Saves ~19,100 tokens per conversation.**
-> **Last scanned:** 2026-11-08 03:21 — re-run after significant changes
+> **Last scanned:** 2026-11-08 04:22 — re-run after significant changes
 
 ---
 
@@ -349,8 +349,8 @@
 - `src/sim/organisms.ts` — imported by **11** files
 - `src/sim/life/cards.ts` — imported by **11** files
 - `src/app/run.ts` — imported by **10** files
+- `src/app/arcs.ts` — imported by **8** files
 - `src/sim/life/calendar.ts` — imported by **8** files
-- `src/sim/score.ts` — imported by **8** files
 
 ## Import Map (who imports what)
 

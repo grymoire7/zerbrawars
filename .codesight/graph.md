@@ -20,8 +20,8 @@
 - `src/sim/organisms.ts` — imported by **11** files
 - `src/sim/life/cards.ts` — imported by **11** files
 - `src/app/run.ts` — imported by **10** files
+- `src/app/arcs.ts` — imported by **8** files
 - `src/sim/life/calendar.ts` — imported by **8** files
-- `src/sim/score.ts` — imported by **8** files
 
 ## Import Map (who imports what)
 

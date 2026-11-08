@@ -141,7 +141,8 @@ export interface HudHandlers {
   onSkip(): void;
   onReplay(): void;
   onSpeed(speed: 1 | 2): void;
-  onReset(): void;
+  /** Absent in arc play, where the menu has Start this fight over; the debug battle keeps Reset. */
+  onReset?(): void;
   onSelect(swarmId: string): void;
   onClearOrder(swarmId: string): void;
   onWallOff(): void;
@@ -322,8 +323,10 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
     handlers.onReplay,
     "flex:2 1 auto;",
   );
-  const reset = button("Reset", handlers.onReset, "flex:1 1 auto;");
-  row.append(endTurn, wallOff, x1, x2, skip, replay, reset);
+  const onReset = handlers.onReset;
+  const reset = onReset ? button("Reset", onReset, "flex:1 1 auto;") : null;
+  row.append(endTurn, wallOff, x1, x2, skip, replay);
+  if (reset) row.append(reset);
   bar.append(row);
 
   const swatch = (css: string) => {
@@ -732,7 +735,7 @@ export function createHud(mounts: HudMounts, handlers: HudHandlers): Hud {
       skip.style.display = pb.playing ? "" : "none";
       replay.style.display = pb.playing ? "none" : "";
       replay.disabled = !pb.canReplay;
-      reset.disabled = pb.playing;
+      if (reset) reset.disabled = pb.playing;
       logBox.style.display = m.log.length > 0 ? "block" : "none";
       log.replaceChildren(...m.log.map((t) => line(t)));
     },

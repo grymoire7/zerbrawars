@@ -7,11 +7,11 @@ import {
   TITLE,
   VARIANT_HEADING,
   WILSON,
-  arcChoices,
   arcCompleteTitle,
   completeButtons,
   continueChoice,
   needsReplaceConfirm,
+  pickerChoices,
   variantChoices,
 } from "./arcModel";
 import type { Screen, ScreenEnv, ScreenRequest } from "./screen";
@@ -56,11 +56,15 @@ function modelFor(
         ],
       };
     }
-    case "arcs":
+    case "arcs": {
+      const held = heldRun();
       return {
         title: variantById(req.variant).label,
         heading: "Choose an arc",
-        items: arcChoices(req.variant).map((c) => ({
+        items: pickerChoices(
+          req.variant,
+          held && { campaign: held.campaign(), variant: held.variant },
+        ).map((c) => ({
           label: c.label,
           sub: c.sub,
           lines: c.lines,
@@ -68,6 +72,7 @@ function modelFor(
         })),
         buttons: [{ label: "Back", onClick: () => go({ mode: "title" }) }],
       };
+    }
     case "arcComplete": {
       const arc = arcById(req.arc);
       return {

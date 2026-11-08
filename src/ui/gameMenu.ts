@@ -1,12 +1,21 @@
-import { trapIndex } from "../app/gameMenuModel";
+import type { ArcId } from "../app/arcs";
+import {
+  MENU_LABELS,
+  startOverConfirm,
+  trapIndex,
+  type MenuItem,
+} from "../app/gameMenuModel";
 
 export interface GameMenuOptions {
   /** Under the title; `line` also describes the dialog. */
   readonly where: { readonly line: string; readonly sub: string };
-  /** A small line under "Back to the title": what leaving keeps or loses. */
+  /** A small line under the two leave items: what leaving keeps or loses. */
   readonly leaveNote: string;
-  readonly onHelp: () => void;
-  readonly onLeave: () => void;
+  readonly arc: ArcId;
+  /** The items to offer, asked each time the menu opens (a fight that has ended drops one). */
+  readonly items: () => readonly MenuItem[];
+  /** What each item does; the two start-over items run only after their confirm. */
+  readonly on: Record<MenuItem, () => void>;
 }
 
 export interface GameMenu {
@@ -18,8 +27,6 @@ export interface GameMenu {
 }
 
 const KEEP = "Keep playing";
-const HELP = "How to play";
-const LEAVE = "Back to the title";
 
 const WIDE = "(min-width: 900px)";
 
@@ -40,8 +47,10 @@ function button(label: string, css: string, onClick: () => void) {
 }
 
 /**
- * The in-game menu: a corner button and the dialog it opens (Keep playing, How to play, Back to
- * the title, which asks nothing: the run waits there). The button is the first child of `root` so it leads the tab order, and it sits above
+ * The in-game menu: a corner button and the dialog it opens (Keep playing, then the items the
+ * screen offers). Starting a fight or a summer over asks first, in the card itself; choosing
+ * another arc or changing character asks nothing, since the run waits. The button is the first
+ * child of `root` so it leads the tab order, and it sits above
  * the screen overlays (outcome, interlude, brought strip) but under the dialogs (help, probe, this
  * menu). While the menu is open it owns the keyboard: Escape closes it and Tab cycles inside.
  */
@@ -96,15 +105,6 @@ export function createGameMenu(
     opts.where.sub,
   );
 
-  const keep = button(KEEP, "font-weight:700;", () => api.close());
-  const help = button(HELP, "", () => {
-    api.close();
-    opts.onHelp();
-  });
-  const leave = button(LEAVE, "", () => {
-    api.close();
-    opts.onLeave();
-  });
   const note = text(
     "p",
     "margin:0;line-height:1.4;opacity:0.85;font-size:14px;",
@@ -112,7 +112,50 @@ export function createGameMenu(
   );
   const list = document.createElement("div");
   list.style.cssText = "display:flex;flex-direction:column;gap:8px;";
-  list.append(keep, help, leave, note);
+
+  let keep = button(KEEP, "font-weight:700;", () => api.close());
+  const buttons = (): HTMLButtonElement[] => [
+    ...list.querySelectorAll<HTMLButtonElement>("button"),
+  ];
+
+  /** Keep playing, then the screen's items; the leave note follows the leave items. */
+  const showItems = () => {
+    keep = button(KEEP, "font-weight:700;", () => api.close());
+    const rows: HTMLElement[] = [keep];
+    for (const item of opts.items()) {
+      const confirms = item === "restartFight" || item === "restartSummer";
+      rows.push(
+        button(MENU_LABELS[item], "", () => {
+          if (confirms) return showConfirm(item);
+          api.close();
+          opts.on[item]();
+        }),
+      );
+      if (item === "changeCharacter") rows.push(note);
+    }
+    list.replaceChildren(...rows);
+    card.setAttribute("aria-describedby", "game-menu-where");
+  };
+
+  /** The confirm swaps in place: the safe button first, bold and focused. */
+  const showConfirm = (item: "restartFight" | "restartSummer") => {
+    const c = startOverConfirm(item, opts.arc);
+    const q = text(
+      "p",
+      "margin:0;line-height:1.4;font-weight:600;",
+      c.question,
+    );
+    q.id = "game-menu-confirm";
+    const detail = text("p", "margin:0;line-height:1.4;", c.detail);
+    keep = button(c.keep, "font-weight:700;", () => api.close());
+    const go = button(c.go, "", () => {
+      api.close();
+      opts.on[item]();
+    });
+    list.replaceChildren(q, detail, keep, go);
+    card.setAttribute("aria-describedby", "game-menu-confirm");
+    keep.focus({ preventScroll: true });
+  };
 
   card.append(title, where, sub, list);
   backdrop.append(card);
@@ -129,6 +172,7 @@ export function createGameMenu(
       returnTo = was && was !== document.body ? was : null;
       backdrop.style.display = "flex";
       trigger.setAttribute("aria-expanded", "true");
+      showItems();
       card.scrollTop = 0;
       keep.focus({ preventScroll: true });
     },
@@ -164,9 +208,7 @@ export function createGameMenu(
     } else if (e.key === "Tab") {
       e.preventDefault();
       e.stopImmediatePropagation();
-      const stops = [keep, help, leave].filter(
-        (b) => b.getClientRects().length > 0,
-      );
+      const stops = buttons().filter((b) => b.getClientRects().length > 0);
       const at = trapIndex(
         stops.indexOf(document.activeElement as HTMLButtonElement),
         stops.length,

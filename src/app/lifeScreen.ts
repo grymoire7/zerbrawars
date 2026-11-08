@@ -34,7 +34,12 @@ import {
   symptomText,
   weekOpening,
 } from "./campaignModel";
-import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
+import {
+  escapeAction,
+  leaveNote,
+  menuItems,
+  whereLines,
+} from "./gameMenuModel";
 import { backAction } from "./navGuardModel";
 import type { Run } from "./run";
 import {
@@ -147,10 +152,28 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
           },
         }),
         leaveNote: leaveNote(run.arc),
-        onHelp: () => help.open(),
-        onLeave: () => {
-          run.ui("leave", "back to the title");
-          env.go({ mode: "title" });
+        arc: run.arc,
+        items: () =>
+          menuItems({ arc: run.arc, screen: "life", fightOver: false }),
+        on: {
+          help: () => help.open(),
+          restartFight: () => {},
+          // A new run with the same seed, held in place of this one (as the arc picker starts it).
+          restartSummer: () =>
+            env.go({
+              mode: "arcPlay",
+              arc: run.arc,
+              variant: run.variant,
+              seed: run.seed,
+            }),
+          chooseArc: () => {
+            run.ui("leave", "to the arc list");
+            env.go({ mode: "arcs", variant: run.variant });
+          },
+          changeCharacter: () => {
+            run.ui("leave", "to the title");
+            env.go({ mode: "title" });
+          },
         },
       });
   const apply = (fn: (l: LifeState) => LifeStep): LifeEvent[] => {

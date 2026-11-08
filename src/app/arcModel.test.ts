@@ -10,6 +10,7 @@ import {
   needsReplaceConfirm,
   resumeTarget,
   parseStart,
+  pickerChoices,
   variantChoices,
 } from "./arcModel";
 import type { BestEntry } from "./bestScores";
@@ -176,6 +177,20 @@ describe("held summer", () => {
     expect(item?.label).toBe("Continue your summer");
     expect(item?.to).toEqual({ mode: "continue" });
     expect(item?.sub).toMatch(/Week 1 of 2/);
+  });
+  it("puts Continue first in the arc picker only with a held run", () => {
+    const plain = pickerChoices("xl", null, []);
+    expect(plain.map((c) => c.label)).toEqual(
+      arcChoices("xl", []).map((c) => c.label),
+    );
+    const held = pickerChoices("xl", { campaign: camp(), variant: "ar" }, []);
+    expect(held).toHaveLength(plain.length + 1);
+    expect(held[0]).toEqual(
+      continueChoice({ campaign: camp(), variant: "ar" }),
+    );
+    expect(held[0]?.to).toEqual({ mode: "continue" });
+    expect(needsReplaceConfirm(held[0]?.to, true)).toBe(false);
+    expect(needsReplaceConfirm(held[2]?.to, true)).toBe(true);
   });
   it("resumes on the screen the campaign mode names", () => {
     const c = camp();

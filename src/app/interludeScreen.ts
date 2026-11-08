@@ -10,7 +10,12 @@ import { createInterlude, type InterludeModel } from "../ui/interlude";
 import { bestId, recordRun, type RecordResult } from "./bestScores";
 import { scoreCard } from "./summaryModel";
 import { weekLine } from "./campaignModel";
-import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
+import {
+  escapeAction,
+  leaveNote,
+  menuItems,
+  whereLines,
+} from "./gameMenuModel";
 import { backAction } from "./navGuardModel";
 import type { Run } from "./run";
 import type { Screen, ScreenEnv } from "./screen";
@@ -58,10 +63,21 @@ export function mountInterlude(
       week: { cycle: c.cycle, cycles: c.cycles },
     }),
     leaveNote: leaveNote(run.arc),
-    onHelp: () => help.open(),
-    onLeave: () => {
-      run.ui("leave", "back to the title");
-      env.go({ mode: "title" });
+    arc: run.arc,
+    items: () =>
+      menuItems({ arc: run.arc, screen: "interlude", fightOver: false }),
+    on: {
+      help: () => help.open(),
+      restartFight: () => {},
+      restartSummer: () => {},
+      chooseArc: () => {
+        run.ui("leave", "to the arc list");
+        env.go({ mode: "arcs", variant: run.variant });
+      },
+      changeCharacter: () => {
+        run.ui("leave", "to the title");
+        env.go({ mode: "title" });
+      },
     },
   });
   const ac = new AbortController();
