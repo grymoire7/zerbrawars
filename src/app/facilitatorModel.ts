@@ -15,7 +15,7 @@ export const RESET_LABEL = "Reset for a new player";
 /** The in-menu confirm for Reset for a new player (the words come from the navigation design). */
 export const RESET_CONFIRM = {
   question: "Clear best scores and first-time help for a new player?",
-  detail: "A summer that is waiting on the title will end too.",
+  detail: "Any arc in progress will end too.",
   keep: "Cancel",
   go: "Clear",
 };
