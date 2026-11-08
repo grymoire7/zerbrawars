@@ -54,11 +54,11 @@ describe("a met goal", () => {
 describe("bestLines", () => {
   it("says New best when it is one", () => {
     expect(bestLines(rec({ newBestTotal: true }))).toEqual([
-      "New best on this seed!",
+      "New best on this summer!",
     ]);
   });
   it("otherwise names the best", () => {
-    expect(bestLines(rec({}))).toEqual(["Best on this seed: 600"]);
+    expect(bestLines(rec({}))).toEqual(["Best on this summer: 600"]);
   });
   it("adds the best-choices line only when a previous best exists", () => {
     expect(bestLines(rec({ newBestChoices: true }))).toHaveLength(2);

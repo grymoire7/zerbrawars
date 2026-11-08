@@ -62,7 +62,7 @@ export function mountInterlude(
       variant: run.variant,
       week: { cycle: c.cycle, cycles: c.cycles },
     }),
-    leaveNote: leaveNote(run.arc),
+    leaveNote: leaveNote(run.arc, kind === "summary"),
     arc: run.arc,
     items: () =>
       menuItems({ arc: run.arc, screen: "interlude", fightOver: false }),

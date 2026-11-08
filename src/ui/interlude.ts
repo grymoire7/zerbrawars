@@ -65,7 +65,7 @@ export function createInterlude(root: HTMLElement): Interlude {
   const backdrop = document.createElement("div");
   backdrop.style.cssText =
     "position:absolute;inset:0;display:none;align-items:center;justify-content:center;" +
-    "padding:12px;box-sizing:border-box;background:rgba(14,15,19,0.55);pointer-events:auto;" +
+    "padding:60px 12px 12px;box-sizing:border-box;background:rgba(14,15,19,0.55);pointer-events:auto;" +
     "font:15px sans-serif;color:var(--zw-text);";
   const card = document.createElement("div");
   card.setAttribute("role", "dialog");

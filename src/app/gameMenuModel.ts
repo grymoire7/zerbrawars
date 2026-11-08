@@ -19,7 +19,8 @@ export function whereLines(w: WhereInput): { line: string; sub: string } {
 }
 
 /** The line under the two leave items: a summer is held; a single fight is not. */
-export function leaveNote(arc: ArcId): string {
+export function leaveNote(arc: ArcId, finished = false): string {
+  if (finished) return "This summer is finished, and your score is saved.";
   return arcById(arc).play.kind === "campaign"
     ? "Your summer waits. Continue it from the title or the arc list."
     : "This fight is not kept. You would start it again from the beginning.";

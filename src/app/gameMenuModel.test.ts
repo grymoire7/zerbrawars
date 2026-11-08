@@ -33,6 +33,9 @@ describe("leaveNote", () => {
   it("says a summer is kept", () => {
     expect(leaveNote("summer")).toMatch(/Your summer waits/);
   });
+  it("does not promise a finished summer waits", () => {
+    expect(leaveNote("summer", true)).toMatch(/finished/);
+  });
   it("says a single fight is not kept", () => {
     expect(leaveNote("tutorial")).toMatch(/not kept/);
   });

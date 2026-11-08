@@ -24,10 +24,10 @@ export const weekScoreLine = (w: WeekScore) =>
 export function bestLines(rec: RecordResult | null): string[] {
   if (!rec || !rec.stored || !rec.entry) return [];
   const lines: string[] = [];
-  if (rec.newBestTotal) lines.push("New best on this seed!");
-  else lines.push(`Best on this seed: ${rec.entry.total}`);
+  if (rec.newBestTotal) lines.push("New best on this summer!");
+  else lines.push(`Best on this summer: ${rec.entry.total}`);
   if (rec.newBestChoices && rec.previous)
-    lines.push("Your best choices yet on this seed.");
+    lines.push("Your best choices yet on this summer.");
   return lines;
 }
 
