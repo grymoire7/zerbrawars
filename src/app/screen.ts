@@ -2,6 +2,7 @@ import type * as THREE from "three";
 import type { BattleState } from "../sim/types";
 import type { ArcId, VariantId } from "./arcs";
 import type { Run } from "./run";
+import type { TutorialPart } from "./tutorialModel";
 
 /** What a screen (battle or life phase) is given to build on. */
 export interface ScreenEnv {
@@ -51,7 +52,10 @@ export type ScreenRequest =
       variant: VariantId;
       /** A given seed (Replay); absent, the run's own. */
       seed?: number;
+      /** Arc 1 only: play this part now. Absent, the arc opens with its intro card. */
+      part?: TutorialPart;
     }
+  | { readonly mode: "arcIntro"; arc: ArcId; variant: VariantId }
   | { readonly mode: "continue" }
   | { readonly mode: "arcComplete"; arc: ArcId; variant: VariantId };
 

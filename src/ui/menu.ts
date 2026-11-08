@@ -20,6 +20,12 @@ export interface MenuModel {
   readonly items?: readonly MenuItem[];
   /** A question card: focus lands on the first button (the safe one) instead of the card. */
   readonly focusFirstButton?: boolean;
+  /**
+   * Shown over the board instead of covering it (a story card at a fight's end): a see-through
+   * backdrop, a raised card, and a `look` button that clears the card to reveal the board, with
+   * a `show` tab to bring it back.
+   */
+  readonly overBoard?: { readonly look: string; readonly show: string };
   readonly buttons?: readonly {
     readonly label: string;
     readonly primary?: boolean;
@@ -30,6 +36,8 @@ export interface MenuModel {
 
 export interface Menu {
   show(model: MenuModel): void;
+  /** Hides the card (and its tab) without removing it; `show` brings it back. */
+  hide(): void;
   dispose(): void;
 }
 
@@ -64,7 +72,20 @@ export function createMenu(root: HTMLElement): Menu {
   card.setAttribute("aria-labelledby", "menu-title");
   card.tabIndex = -1;
   backdrop.append(card);
-  root.append(backdrop);
+  // The tab that brings an over-the-board card back after looking at the board.
+  const tab = el(
+    "button",
+    "position:absolute;left:50%;top:8px;transform:translateX(-50%);display:none;pointer-events:auto;" +
+      "min-height:44px;min-width:44px;padding:0 16px;font:inherit;font-weight:700;",
+  );
+  tab.type = "button";
+  root.append(backdrop, tab);
+  const setCollapsed = (collapsed: boolean) => {
+    backdrop.style.display = collapsed ? "none" : "flex";
+    tab.style.display = collapsed ? "" : "none";
+    (collapsed ? tab : card).focus();
+  };
+  tab.addEventListener("click", () => setCollapsed(false));
 
   const button = (
     label: string,
@@ -161,28 +182,55 @@ export function createMenu(root: HTMLElement): Menu {
           el("h2", "margin:8px 0 0;font:600 17px sans-serif;", m.heading),
         );
       kids.push(...(m.items ?? []).map(itemView));
-      if (m.buttons?.length) {
+      const buttons = [
+        ...(m.buttons ?? []),
+        ...(m.overBoard
+          ? [{ label: m.overBoard.look, onClick: () => setCollapsed(true) }]
+          : []),
+      ];
+      if (buttons.length) {
         const row = el(
           "div",
           "display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;",
         );
         const report = el("p", "margin:0;font-size:14px;width:100%;");
         report.setAttribute("role", "status");
-        for (const b of m.buttons) {
-          const btn = button(b.label, !!b.primary, b.onClick, (line) => {
-            report.textContent = line;
-          });
+        for (const b of buttons) {
+          const btn = button(
+            b.label,
+            "primary" in b && !!b.primary,
+            b.onClick,
+            (line) => {
+              report.textContent = line;
+            },
+          );
           btn.style.flex = "1 1 auto";
           row.append(btn);
         }
         row.append(report);
         kids.push(row);
       }
+      backdrop.style.background = m.overBoard
+        ? "color-mix(in srgb, var(--zw-bg) 60%, transparent)"
+        : "var(--zw-bg)";
+      card.style.cssText += m.overBoard
+        ? "background:var(--zw-raised);border:1px solid var(--zw-line-strong);border-radius:10px;padding:18px 20px;max-height:100%;overflow:auto;"
+        : "background:none;border:none;border-radius:0;padding:0;max-height:none;overflow:visible;";
+      title.style.fontSize = m.overBoard ? "26px" : "32px";
+      tab.textContent = m.overBoard?.show ?? "";
       card.replaceChildren(...kids);
+      tab.style.display = "none";
       backdrop.style.display = "flex";
       const first = m.focusFirstButton ? card.querySelector("button") : null;
       (first ?? card).focus();
     },
-    dispose: () => backdrop.remove(),
+    hide() {
+      backdrop.style.display = "none";
+      tab.style.display = "none";
+    },
+    dispose() {
+      backdrop.remove();
+      tab.remove();
+    },
   };
 }

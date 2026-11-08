@@ -2,13 +2,18 @@ import * as THREE from "three";
 import { createScene } from "../render/scene";
 import { battleFromLoadout } from "../sim/battle/setup";
 import { PARAMS } from "../sim/params";
-import { DEFAULT_SCENARIO } from "../sim/scenarios";
+import {
+  DEFAULT_SCENARIO,
+  defaultSeedFor,
+  type ScenarioName,
+} from "../sim/scenarios";
 import { getPanels, getUiRoot } from "../ui";
 import { mountBattle } from "./battleScreen";
 import { mountInterlude } from "./interludeScreen";
 import { mountLife } from "./lifeScreen";
 import { parseGoal, parseReservoirs } from "./campaignModel";
 import { createRun, type Run } from "./run";
+import { afterPart } from "./tutorialModel";
 import { arcById, type ArcId, type VariantId } from "./arcs";
 import { initFacilitator } from "./facilitator";
 import { mountMenu } from "./menuScreens";
@@ -155,10 +160,11 @@ function mount(req: ScreenRequest) {
   if (
     req.mode === "title" ||
     req.mode === "arcs" ||
-    req.mode === "arcComplete"
+    req.mode === "arcComplete" ||
+    req.mode === "arcIntro"
   ) {
     // Menus are not a debug start: reloading one lands on the title.
-    for (const k of ["mode", "seed", "variant", "arc"])
+    for (const k of ["mode", "seed", "variant", "arc", "part"])
       url.searchParams.delete(k);
     setUrl(url);
     screen = mountMenu(env, req);
@@ -175,20 +181,52 @@ function mount(req: ScreenRequest) {
       screen = mountLife(env, run);
       return;
     }
+    // A single battle from a scenario, with the variant's residual kill chance (a scenario that
+    // fixes its own, like tutorial-a, keeps it).
+    const fight = (scenario: ScenarioName) =>
+      battleFromLoadout(
+        loadoutFor(scenario, defaultSeedFor(scenario), {
+          ...DEFAULT_OPTIONS,
+          residual: PARAMS.residualByVariant[req.variant],
+        }),
+      );
+    const complete = () =>
+      go({ mode: "arcComplete", arc: arc.id, variant: req.variant });
+    if (arc.play.kind === "tutorial") {
+      const part = req.part;
+      if (!part)
+        return mount({ mode: "arcIntro", arc: arc.id, variant: req.variant });
+      arcFightInPlay = true;
+      screen = mountBattle(
+        env,
+        fight(part === "a" ? arc.play.partA : arc.play.partB),
+        undefined,
+        {
+          label: "Finish",
+          arc: arc.id,
+          variant: req.variant,
+          part,
+          onDone: () => {
+            const next = afterPart(part);
+            if (next === "complete") complete();
+            else
+              go({
+                mode: "arcPlay",
+                arc: arc.id,
+                variant: req.variant,
+                part: next,
+              });
+          },
+        },
+      );
+      return;
+    }
     arcFightInPlay = true;
-    // A single battle from the scenario, with the variant's residual kill chance.
-    const battle = battleFromLoadout(
-      loadoutFor(arc.play.scenario, PARAMS.defaultSeed, {
-        ...DEFAULT_OPTIONS,
-        residual: PARAMS.residualByVariant[req.variant],
-      }),
-    );
-    screen = mountBattle(env, battle, undefined, {
+    screen = mountBattle(env, fight(arc.play.scenario), undefined, {
       label: "Finish",
       arc: arc.id,
       variant: req.variant,
-      onDone: () =>
-        go({ mode: "arcComplete", arc: arc.id, variant: req.variant }),
+      onDone: complete,
     });
     return;
   }
@@ -226,7 +264,12 @@ const start = parseStart(params);
 if (start.kind === "title") go({ mode: "title" });
 else if (start.kind === "arcs") go({ mode: "arcs", variant: start.variant });
 else if (start.kind === "arc")
-  go({ mode: "arcPlay", arc: start.arc, variant: start.variant });
+  go({
+    mode: "arcPlay",
+    arc: start.arc,
+    variant: start.variant,
+    part: start.part,
+  });
 else {
   const first = parseMode(params);
   go(first === "campaign" ? { mode: "campaign" } : { mode: first });

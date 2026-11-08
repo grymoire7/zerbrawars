@@ -29,6 +29,17 @@ describe("whereLines", () => {
   });
 });
 
+describe("whereLines in the tutorial", () => {
+  it("names the part", () => {
+    expect(whereLines({ arc: "tutorial", variant: "xl", part: "a" }).line).toBe(
+      "First infection, before the diagnosis",
+    );
+    expect(whereLines({ arc: "tutorial", variant: "xl", part: "b" }).line).toBe(
+      "First infection, after the diagnosis",
+    );
+  });
+});
+
 describe("leaveNote", () => {
   it("says a summer is kept", () => {
     expect(leaveNote("summer")).toMatch(/Your summer waits/);

@@ -1,10 +1,13 @@
 import { arcById, variantById, type ArcId, type VariantId } from "./arcs";
+import { PART_LABEL, type TutorialPart } from "./tutorialModel";
 
 /** What the in-game menu says about where the player is. `week` is absent in a single-fight arc. */
 export interface WhereInput {
   readonly arc: ArcId;
   readonly variant: VariantId;
   readonly week?: { readonly cycle: number; readonly cycles: number };
+  /** Arc 1: which of its two fights this is. */
+  readonly part?: TutorialPart;
 }
 
 /** The two lines under the menu title; the first also describes the dialog to a screen reader. */
@@ -13,7 +16,9 @@ export function whereLines(w: WhereInput): { line: string; sub: string } {
   return {
     line: w.week
       ? `${title} · week ${w.week.cycle} of ${w.week.cycles}`
-      : title,
+      : w.part
+        ? `${title}, ${PART_LABEL[w.part]}`
+        : title,
     sub: variantById(w.variant).label,
   };
 }

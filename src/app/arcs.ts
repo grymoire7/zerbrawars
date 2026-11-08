@@ -1,4 +1,4 @@
-import { DEFAULT_SCENARIO, type ScenarioName } from "../sim/scenarios";
+import type { ScenarioName } from "../sim/scenarios";
 
 /** Which form of CGD the player's character has. It picks per-character parameters, not mechanics. */
 export type VariantId = "xl" | "ar";
@@ -27,6 +27,17 @@ export type ArcId = "tutorial" | "summer";
 /** What an arc plays: one battle from a scenario, or the two-week campaign. */
 export type ArcPlay =
   | { readonly kind: "battle"; readonly scenario: ScenarioName }
+  /** Arc 1: an intro card, part A, a story card, part B. Both parts use the tutorial seed. */
+  | {
+      readonly kind: "tutorial";
+      readonly partA: ScenarioName;
+      readonly partB: ScenarioName;
+      /** The intro card: its title, the paragraphs after the arc `intro`, and its two buttons. */
+      readonly introTitle: string;
+      readonly introMore: readonly string[];
+      readonly begin: string;
+      readonly skip: string;
+    }
   | { readonly kind: "campaign" };
 
 /** An arc is data: the screens around it come from here, the play is one of two existing flows. */
@@ -44,18 +55,28 @@ export interface ArcDef {
   readonly play: ArcPlay;
 }
 
-/** In play order. Arc 1 is a placeholder until the tutorial is built. */
+/** In play order. */
 export const ARCS: readonly ArcDef[] = [
   {
     id: "tutorial",
     number: 1,
     title: "First infection",
-    blurb: "A short first fight, to learn the board.",
+    blurb: "Two short fights, before and after a diagnosis.",
     intro:
-      "Arc 1 is a placeholder until the tutorial is built. For now it is one short fight.",
+      "Some people remember the time before they knew they had CGD. Some were too little to remember. Either way, it often goes something like this.",
     completion:
-      "That was the first fight. The real tutorial will walk you through it step by step.",
-    play: { kind: "battle", scenario: DEFAULT_SCENARIO },
+      "That is how it started. From here on, medicine is part of your routine, and the fights are yours to plan.",
+    play: {
+      kind: "tutorial",
+      partA: "tutorial-a",
+      partB: "tutorial-b",
+      introTitle: "Before anyone knew",
+      introMore: [
+        "A germ got into your lungs, and your cells rushed in to deal with it.",
+      ],
+      begin: "Begin",
+      skip: "Skip to after the diagnosis",
+    },
   },
   {
     id: "summer",

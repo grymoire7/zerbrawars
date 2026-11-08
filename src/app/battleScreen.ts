@@ -39,6 +39,12 @@ import { createGameMenu } from "../ui/gameMenu";
 import { facilitator, resetForNewPlayer } from "./facilitator";
 import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
+import { createMenu } from "../ui/menu";
+import {
+  partAResult,
+  partAStoryCard,
+  type TutorialPart,
+} from "./tutorialModel";
 import { incomingKey, nextArrival } from "./arrivalModel";
 import {
   escapeAction,
@@ -78,6 +84,8 @@ export function mountBattle(
     readonly onDone: () => void;
     readonly arc: ArcId;
     readonly variant: VariantId;
+    /** Arc 1: which part this is. Part A ends on a story card, not the outcome card. */
+    readonly part?: TutorialPart;
   },
 ): Screen {
   // In a campaign the Campaign owns the battle; the controller plays it and hands it back.
@@ -157,7 +165,9 @@ export function mountBattle(
     : arcEnd;
   const menu = inPlay
     ? createGameMenu(ui, {
-        where: whereLines(inPlay),
+        where: whereLines(
+          arcEnd?.part && !run ? { ...inPlay, part: arcEnd.part } : inPlay,
+        ),
         leaveNote: leaveNote(inPlay.arc),
         arc: inPlay.arc,
         items: () =>
@@ -343,6 +353,8 @@ export function mountBattle(
     },
     onReplay: () => controller.replay(),
   });
+  // Part A's story card, over the final board; it takes the place of the outcome card.
+  const storyMenu = arcEnd?.part === "a" ? createMenu(ui) : null;
   let outcomeShown = false;
   const readout = document.createElement("div");
   readout.style.cssText =
@@ -472,17 +484,30 @@ export function mountBattle(
               : undefined,
           };
         }
-        outcomeOverlay.show(
-          outcome,
-          battleStatus(controller.state()),
-          extra,
-          controller.state().kind,
-          arcEnd?.label,
-        );
+        if (storyMenu && arcEnd) {
+          const card = partAStoryCard(partAResult(load(), controller.state()));
+          storyMenu.show({
+            title: card.title,
+            paragraphs: card.paragraphs,
+            overBoard: { look: "Look at the board", show: "Show the story" },
+            buttons: [
+              { label: card.button, primary: true, onClick: arcEnd.onDone },
+            ],
+          });
+        } else {
+          outcomeOverlay.show(
+            outcome,
+            battleStatus(controller.state()),
+            extra,
+            controller.state().kind,
+            arcEnd?.label,
+          );
+        }
       }
     } else if (outcomeShown) {
       outcomeShown = false;
       outcomeOverlay.hide();
+      storyMenu?.hide();
     }
     showStatus({
       tissue: s.tissueHealth,
@@ -715,6 +740,7 @@ export function mountBattle(
       probe.dispose();
       help.dispose();
       menu?.dispose();
+      storyMenu?.dispose();
       status.clear();
       panels.scroll.replaceChildren();
       panels.bar.replaceChildren();

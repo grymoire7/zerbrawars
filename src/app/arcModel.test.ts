@@ -31,8 +31,8 @@ describe("arcs data", () => {
     expect(ARCS.map((a) => a.number)).toEqual([1, 2]);
     expect(new Set(ARCS.map((a) => a.id)).size).toBe(ARCS.length);
   });
-  it("arc 1 is a single battle and arc 2 is the campaign", () => {
-    expect(ARCS[0]!.play.kind).toBe("battle");
+  it("arc 1 is the two-part tutorial and arc 2 is the campaign", () => {
+    expect(ARCS[0]!.play.kind).toBe("tutorial");
     expect(ARCS[1]!.play.kind).toBe("campaign");
   });
 });
@@ -116,7 +116,7 @@ describe("completeButtons", () => {
     });
   });
   it("replays, goes back to the arcs or to the title", () => {
-    const b = completeButtons("tutorial", "ar");
+    const b = completeButtons("tutorial", "ar").slice(1);
     expect(b.map((x) => x.label)).toEqual([
       "Replay",
       "Choose another arc",
@@ -130,9 +130,40 @@ describe("completeButtons", () => {
     expect(b[1]!.to).toEqual({ mode: "arcs", variant: "ar" });
     expect(b[2]!.to).toEqual({ mode: "title" });
   });
+  it("Arc 1 leads on to Arc 2 as its primary button; Arc 2 has no such button", () => {
+    const [first, replay] = completeButtons("tutorial", "xl");
+    expect(first).toEqual({
+      label: "Go on to Arc 2",
+      primary: true,
+      to: { mode: "arcPlay", arc: "summer", variant: "xl" },
+    });
+    expect(replay!.primary).toBeFalsy();
+    expect(
+      completeButtons("summer", "xl").some((b) => /Go on/.test(b.label)),
+    ).toBe(false);
+  });
+  it("going on to Arc 2 asks before replacing a held summer", () => {
+    expect(
+      needsReplaceConfirm(completeButtons("tutorial", "xl")[0]!.to, true),
+    ).toBe(true);
+  });
 });
 
 describe("parseStart", () => {
+  it("starts Arc 1 at part B with ?part=b, and only Arc 1", () => {
+    expect(parseStart(q("arc=1&part=b"))).toEqual({
+      kind: "arc",
+      arc: "tutorial",
+      variant: "xl",
+      part: "b",
+    });
+    expect(parseStart(q("arc=1"))).toEqual({
+      kind: "arc",
+      arc: "tutorial",
+      variant: "xl",
+    });
+    expect(parseStart(q("arc=2&part=b"))).not.toHaveProperty("part");
+  });
   it("boots to the title with no relevant parameters", () => {
     expect(parseStart(q(""))).toEqual({ kind: "title" });
     expect(parseStart(q("foo=1"))).toEqual({ kind: "title" });

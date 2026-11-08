@@ -11,6 +11,7 @@ import {
   type VariantId,
 } from "./arcs";
 import type { ScreenRequest } from "./screen";
+import { parseTutorialPart, type TutorialPart } from "./tutorialModel";
 
 // The pure side of the title, the pickers and the arc-complete screen: what is offered, what each
 // choice leads to, and the text. The screens in menuScreens.ts only draw it.
@@ -165,26 +166,42 @@ export const completeButtons = (
   variant: VariantId,
   seed?: number,
   randomSeed: () => number = () => Math.floor(Math.random() * 1_000_000),
-): CompleteButton[] => [
-  {
-    label: "Replay",
-    primary: true,
-    to:
-      seed === undefined
-        ? { mode: "arcPlay", arc, variant }
-        : { mode: "arcPlay", arc, variant, seed },
-  },
-  ...(arcById(arc).play.kind === "campaign"
-    ? [
-        {
-          label: "New game",
-          to: { mode: "arcPlay", arc, variant, seed: randomSeed() },
-        } as CompleteButton,
-      ]
-    : []),
-  { label: "Choose another arc", to: { mode: "arcs", variant } },
-  { label: "Change character", to: { mode: "title" } },
-];
+): CompleteButton[] => {
+  // A tutorial arc leads straight into the next one, so that is its primary button.
+  const next =
+    arcById(arc).play.kind === "tutorial"
+      ? ARCS.find((a) => a.number === arcById(arc).number + 1)
+      : undefined;
+  return [
+    ...(next
+      ? [
+          {
+            label: `Go on to Arc ${next.number}`,
+            primary: true,
+            to: { mode: "arcPlay", arc: next.id, variant },
+          } as CompleteButton,
+        ]
+      : []),
+    {
+      label: "Replay",
+      primary: !next,
+      to:
+        seed === undefined
+          ? { mode: "arcPlay", arc, variant }
+          : { mode: "arcPlay", arc, variant, seed },
+    },
+    ...(arcById(arc).play.kind === "campaign"
+      ? [
+          {
+            label: "New game",
+            to: { mode: "arcPlay", arc, variant, seed: randomSeed() },
+          } as CompleteButton,
+        ]
+      : []),
+    { label: "Choose another arc", to: { mode: "arcs", variant } },
+    { label: "Change character", to: { mode: "title" } },
+  ];
+};
 
 export const arcCompleteTitle = (a: ArcDef) =>
   `Arc ${a.number} complete: ${a.title}`;
@@ -192,7 +209,13 @@ export const arcCompleteTitle = (a: ArcDef) =>
 export type StartChoice =
   | { readonly kind: "title" }
   | { readonly kind: "arcs"; readonly variant: VariantId }
-  | { readonly kind: "arc"; readonly arc: ArcId; readonly variant: VariantId }
+  | {
+      readonly kind: "arc";
+      readonly arc: ArcId;
+      readonly variant: VariantId;
+      /** ?part=b (debug): start Arc 1 at part B. */
+      readonly part?: TutorialPart;
+    }
   | { readonly kind: "debug" };
 
 const DEBUG_KEYS = [
@@ -222,7 +245,16 @@ export function parseStart(params: URLSearchParams): StartChoice {
   const variant = parseVariant(params.get("variant"));
   const n = Number(params.get("arc"));
   const arc = ARCS.find((a) => a.number === n);
-  if (arc) return { kind: "arc", arc: arc.id, variant: variant ?? "xl" };
+  if (arc) {
+    const part =
+      arc.play.kind === "tutorial" ? parseTutorialPart(params) : undefined;
+    return {
+      kind: "arc",
+      arc: arc.id,
+      variant: variant ?? "xl",
+      ...(part ? { part } : {}),
+    };
+  }
   if (isDebugStart(params)) return { kind: "debug" };
   if (variant) return { kind: "arcs", variant };
   return { kind: "title" };

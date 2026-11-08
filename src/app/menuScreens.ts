@@ -23,12 +23,13 @@ import {
   pickerChoices,
   variantChoices,
 } from "./arcModel";
+import { introCardFor, partAfterIntro } from "./tutorialModel";
 import type { Run } from "./run";
 import type { Screen, ScreenEnv, ScreenRequest } from "./screen";
 
 type MenuRequest = Extract<
   ScreenRequest,
-  { mode: "title" | "arcs" | "arcComplete" }
+  { mode: "title" | "arcs" | "arcComplete" | "arcIntro" }
 >;
 
 function modelFor(
@@ -100,8 +101,29 @@ function modelFor(
         buttons: completeButtons(req.arc, req.variant).map((b) => ({
           label: b.label,
           primary: b.primary,
-          onClick: () => go(b.to),
+          // Go on to Arc 2 replaces a held summer, so it asks first like the picker does.
+          onClick: () => pick(b.to),
         })),
+      };
+    }
+    case "arcIntro": {
+      const card = introCardFor(arcById(req.arc));
+      const start = (button: "begin" | "skip") =>
+        go({
+          mode: "arcPlay",
+          arc: req.arc,
+          variant: req.variant,
+          part: partAfterIntro(button),
+        });
+      return {
+        title: card.title,
+        paragraphs: card.paragraphs,
+        buttons: [
+          { label: card.begin, primary: true, onClick: () => start("begin") },
+          ...(card.skip
+            ? [{ label: card.skip, onClick: () => start("skip") }]
+            : []),
+        ],
       };
     }
   }
