@@ -22,7 +22,8 @@ status table below is the only place that tracks slices.
 | B2 organism names | done | f242926 (`src/sim/organisms.ts`, enforced by a test) | |
 | B3 arc framework and title/hub | done | a61f042 (arcs data, title, picker, arc-complete; Arc 1 is a placeholder battle until B4) | |
 | BN navigation (N1 menu, N2 continue, N3 back/reload guards, N4 start-over, N5 facilitator, N6 one ending) | N1 to N6 done | 1d39dc6 (N1), c4971ec (N2), 3de071f (N3), 6183211 (N4), f215cdc (N5), 593c1ea (N6) | `navigation-design.md` (all ten defaults accepted 2026-11-07) |
-| B4 to B10 | not started | | |
+| B4 Arc 1 tutorial (T1 scenarios, T2 runner and cards, T3 battle chrome, T4 coach model, T5 coach strip, T6 copy) | T1 in progress | | `arc1-tutorial-design.md` (decisions in its section 8) |
+| B5 to B10 | not started | | |
 
 Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
 more battle, but neither felt noticeably harder or more fun; `?goal=N` still overrides). The smarter bot
