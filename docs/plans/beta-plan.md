@@ -195,7 +195,7 @@ no worktrees, conventional commits, one commit per task, never run a formatter o
 
 - **Rate limits:** a long Opus run hit the 5-hour limit once. Keep Opus tasks small and resumable.
 - **Real phone testing needs the user's device.** Plan one 15-minute session.
-- **Tutorial scripting** can sprawl. Keep it to five coach marks and one fixed seed.
+- **Tutorial scripting** can sprawl. Keep it to about nine one-line coach marks across two short fights (one on screen at a time, none blocking) and one fixed seed.
 - **Clinical claims in the epilogue** are unverified. The draft marker and flag contain the risk.
 - **One patient tester** is a weak signal; treat their feedback as anecdote plus the session log.
 - **Demo-day failure modes:** browser blocking WebGL, laptop sleep, port conflicts. B8 covers them.

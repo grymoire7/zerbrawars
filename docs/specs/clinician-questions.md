@@ -46,4 +46,13 @@ C = deferred / low priority.
 |---|----------|--------------------|----------|
 | 18 | Age scaling: how does infection frequency and speed change with age? | Not modeled | C |
 | 19 | Vaccines: any to avoid? | Out of scope. The user has never been told to avoid any | C |
-| 20 | Diagnosis experience: how varied is it (XL often early, AR sometimes much later), and how should the undiagnosed prologue arc be framed? | Short, skippable prologue | B |
+| 20 | Diagnosis experience: how varied is it (XL often early, AR sometimes much later), and how should the undiagnosed prologue arc be framed? | "Before anyone knew", second person, skippable. Raised to A: it is the first thing a demo visitor plays. | A |
+
+## Arc 1 tutorial
+
+| # | Question | Working assumption | Priority |
+|---|----------|--------------------|----------|
+| 23 | Is a first serious lung infection, where the cells arrive and swallow germs but cannot finish a mold, a fair picture of how CGD is often found? | Fair as one common story, told as not everyone's. Patient-side answer (2026-11-08): yes; CGD is often first suspected from recurrent or severe infections, commonly lung (pneumonia) or liver (abscesses). Pending a clinician. | A |
+| 24 | Is "CGD takes one tool away, not your whole defence" acceptable wording for a patient, given that macrophages and monocytes are also affected? | Yes, with no claim about which other cells are fine (see 9). Patient-side answer: fair; CGD does not put you in a bubble, but it takes away one of the tools the immune system uses. Pending a clinician. | A |
+| 25 | Is Aspergillus a fair organism for the first lung infection in the tutorial (rather than Staphylococcus or Burkholderia), with Streptococcus as the germ the cells do finish? | Yes for the lung. Patient-side answer: possible. Pending a clinician. | B |
+| 26 | In the tutorial, daily medicine visibly slows germs and gives charges that finish a small mold. Is that an acceptable game picture of antibacterial and antifungal prophylaxis, as long as it is never stated as fact? | Yes, as a declared game rule (related to 21). Unanswered. | B |
