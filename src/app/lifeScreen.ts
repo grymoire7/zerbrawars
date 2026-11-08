@@ -35,6 +35,7 @@ import {
   weekOpening,
 } from "./campaignModel";
 import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
+import { backAction } from "./navGuardModel";
 import type { Run } from "./run";
 import {
   createLifePanel,
@@ -614,6 +615,18 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   return {
     setStats: (text) => debug.setStats(text),
     tick: (dt) => inset.tick(dt),
+    back: menu
+      ? () => {
+          const act = backAction({
+            menuOpen: menu.isOpen(),
+            helpOpen: help.isOpen(),
+            blocked: false,
+          });
+          if (act === "openMenu") menu.open();
+          else if (act === "closeMenu") menu.close();
+          else if (act === "closeHelp") help.close();
+        }
+      : undefined,
     dispose() {
       ac.abort();
       kept.set(run, {

@@ -11,6 +11,7 @@ import { bestId, recordRun, type RecordResult } from "./bestScores";
 import { scoreCard } from "./summaryModel";
 import { weekLine } from "./campaignModel";
 import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
+import { backAction } from "./navGuardModel";
 import type { Run } from "./run";
 import type { Screen, ScreenEnv } from "./screen";
 import { sessionOptions } from "./sessionOptions";
@@ -182,6 +183,16 @@ export function mountInterlude(
   return {
     setStats: (text) => debug.setStats(text),
     tick: (dt) => inset.tick(dt),
+    back() {
+      const act = backAction({
+        menuOpen: menu.isOpen(),
+        helpOpen: help.isOpen(),
+        blocked: false,
+      });
+      if (act === "openMenu") menu.open();
+      else if (act === "closeMenu") menu.close();
+      else if (act === "closeHelp") help.close();
+    },
     dispose() {
       document.getElementById("app")?.classList.remove("life");
       ac.abort();

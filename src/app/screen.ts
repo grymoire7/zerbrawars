@@ -23,6 +23,11 @@ export interface ScreenEnv {
 export interface Screen {
   tick(dtSeconds: number): void;
   setStats(text: string): void;
+  /**
+   * Browser Back during play (a screen with the game menu): open or close the menu. Absent on
+   * screens where Back should simply behave as the browser does.
+   */
+  back?(): void;
   dispose(): void;
 }
 

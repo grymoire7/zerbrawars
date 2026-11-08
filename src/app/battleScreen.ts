@@ -37,6 +37,7 @@ import { createHelp } from "../ui/help";
 import { createHud } from "../ui/hud";
 import { incomingKey, nextArrival } from "./arrivalModel";
 import { escapeAction, leaveNote, whereLines } from "./gameMenuModel";
+import { backAction } from "./navGuardModel";
 import type { ArcId, VariantId } from "./arcs";
 import { createStatusStrip } from "../ui/statusStrip";
 import { weekChoices, weekScore } from "../sim/score";
@@ -635,6 +636,18 @@ export function mountBattle(
       auraView.tick(dt);
       view.tick(dt);
     },
+    back: menu
+      ? () => {
+          const act = backAction({
+            menuOpen: menu.isOpen(),
+            helpOpen: help.isOpen(),
+            blocked: probe.isOpen(),
+          });
+          if (act === "openMenu") menu.open();
+          else if (act === "closeMenu") menu.close();
+          else if (act === "closeHelp") help.close();
+        }
+      : undefined,
     dispose() {
       ac.abort();
       flushTurn();

@@ -19,6 +19,12 @@ import {
   parseLoadoutParams,
 } from "./loadoutOptions";
 import { parseMode, type Screen, type ScreenRequest } from "./screen";
+import {
+  GUARD_STATE,
+  historyStep,
+  isGuardState,
+  shouldWarnOnLeave,
+} from "./navGuardModel";
 import { applyCssTokens } from "../theme/palette";
 
 applyCssTokens(document.documentElement);
@@ -62,16 +68,77 @@ function newRun(
   });
 }
 
-/** Tears down the current screen and mounts the requested one. The campaign loop drives this. */
+// Back during play. Play screens (those with a game menu) sit on one extra history entry, the
+// guard. Back pops it; we answer by opening or closing the menu and pushing it again, so the stack
+// never grows and Back never leaves play. Leaving for a menu screen pops it (one history.back,
+// whose popstate is swallowed), so Back on the title is the browser's own.
+let cleanUrl: URL = new URL(window.location.href);
+let armed = false;
+let swallow = 0;
+let arcFightInPlay = false;
+
+/** Rewrites the address without touching the history entry's state (the guard marker). */
+function setUrl(url: URL) {
+  cleanUrl = url;
+  window.history.replaceState(window.history.state, "", url);
+}
+
+function pushGuard() {
+  window.history.pushState(GUARD_STATE, "", window.location.href);
+}
+
+function syncGuard(want: boolean) {
+  armed = want;
+  const step = historyStep({
+    wantGuard: want,
+    onGuardEntry: isGuardState(window.history.state),
+  });
+  if (step === "push") pushGuard();
+  else if (step === "pop") {
+    swallow++;
+    window.history.back();
+  }
+}
+
+window.addEventListener("popstate", () => {
+  if (swallow > 0) {
+    swallow--;
+    if (swallow > 0) return;
+    // Back on the page's own entry: its address may be stale (a debug start), so tidy it.
+    window.history.replaceState(window.history.state, "", cleanUrl);
+    if (armed) pushGuard();
+    return;
+  }
+  if (!armed) return;
+  screen?.back?.();
+  pushGuard();
+});
+
+// A reload or tab close would lose the held summer or the arc fight in play.
+window.addEventListener("beforeunload", (e) => {
+  if (shouldWarnOnLeave({ held: heldRun() !== null, arcFightInPlay })) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
+/** Mounts the requested screen, then makes the history match it. */
 function go(req: ScreenRequest) {
+  mount(req);
+  syncGuard(screen?.back !== undefined);
+}
+
+/** Tears down the current screen and mounts the requested one. The campaign loop drives this. */
+function mount(req: ScreenRequest) {
   if (req.mode === "continue") {
     // A held summer picks up where the campaign was left: a week as it was, a fight from turn 1.
     const run = heldRun();
-    if (!run) return go({ mode: "title" });
+    if (!run) return mount({ mode: "title" });
     run.ui("continue", resumeTarget(run.campaign()));
     const to = resumeTarget(run.campaign());
-    return go(to === "battle" ? { mode: "battle", run } : { mode: to, run });
+    return mount(to === "battle" ? { mode: "battle", run } : { mode: to, run });
   }
+  arcFightInPlay = false;
   screen?.dispose();
   if (root) ctx.scene.remove(root);
   root = new THREE.Scene();
@@ -90,13 +157,13 @@ function go(req: ScreenRequest) {
     // Menus are not a debug start: reloading one lands on the title.
     for (const k of ["mode", "seed", "variant", "arc"])
       url.searchParams.delete(k);
-    window.history.replaceState(null, "", url);
+    setUrl(url);
     screen = mountMenu(env, req);
     return;
   }
   if (req.mode === "arcPlay") {
     setMode(null);
-    window.history.replaceState(null, "", url);
+    setUrl(url);
     const arc = arcById(req.arc);
     if (arc.play.kind === "campaign") {
       // Arc play held for Continue; a new summer replaces the one held.
@@ -105,6 +172,7 @@ function go(req: ScreenRequest) {
       screen = mountLife(env, run);
       return;
     }
+    arcFightInPlay = true;
     // A single battle from the scenario, with the variant's residual kill chance.
     const battle = battleFromLoadout(
       loadoutFor(arc.play.scenario, PARAMS.defaultSeed, {
@@ -131,10 +199,10 @@ function go(req: ScreenRequest) {
   if (req.mode === "campaign") {
     if (req.seed !== undefined) url.searchParams.set("seed", String(req.seed));
     if (req.variant !== undefined) url.searchParams.set("variant", req.variant);
-    window.history.replaceState(null, "", url);
+    setUrl(url);
     const run = newRun(false, req.seed, req.variant);
     setMode(null);
-    window.history.replaceState(null, "", url);
+    setUrl(url);
     screen = mountLife(env, run);
     return;
   }
@@ -149,7 +217,7 @@ function go(req: ScreenRequest) {
     setMode(null);
     screen = mountInterlude(env, req.run, req.mode);
   }
-  window.history.replaceState(null, "", url);
+  setUrl(url);
 }
 const start = parseStart(params);
 if (start.kind === "title") go({ mode: "title" });
