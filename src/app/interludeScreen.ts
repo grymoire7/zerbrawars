@@ -9,6 +9,7 @@ import { facilitator, resetForNewPlayer } from "./facilitator";
 import { createHelp, LIFE_LINES, LIFE_SEEN_KEY } from "../ui/help";
 import { createInterlude, type InterludeModel } from "../ui/interlude";
 import { bestId, recordRun, type RecordResult } from "./bestScores";
+import { completeButtons } from "./arcModel";
 import { scoreCard } from "./summaryModel";
 import { weekLine } from "./campaignModel";
 import {
@@ -175,33 +176,11 @@ export function mountInterlude(
           lines: [w.result, w.doctor, w.carried],
         };
       }),
-      buttons: [
-        {
-          label: "Replay",
-          primary: true,
-          onClick: () =>
-            env.go({
-              mode: "arcPlay",
-              arc: run.arc,
-              variant: run.variant,
-              seed: run.seed,
-            }),
-        },
-        {
-          label: "New game",
-          onClick: () =>
-            env.go({
-              mode: "arcPlay",
-              arc: run.arc,
-              variant: run.variant,
-              seed: Math.floor(Math.random() * 1_000_000),
-            }),
-        },
-        {
-          label: "Back to arcs",
-          onClick: () => env.go({ mode: "arcs", variant: run.variant }),
-        },
-      ],
+      buttons: completeButtons(run.arc, run.variant, run.seed).map((b, i) => ({
+        label: b.label,
+        primary: i === 0,
+        onClick: () => env.go(b.to),
+      })),
     };
   }
   card.show(model);

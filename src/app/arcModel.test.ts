@@ -94,12 +94,33 @@ describe("bestsText", () => {
 });
 
 describe("completeButtons", () => {
+  it("replays a summer with its seed and offers a new game", () => {
+    const b = completeButtons("summer", "xl", 7, () => 42);
+    expect(b.map((x) => x.label)).toEqual([
+      "Replay",
+      "New game",
+      "Choose another arc",
+      "Change character",
+    ]);
+    expect(b[0]!.to).toEqual({
+      mode: "arcPlay",
+      arc: "summer",
+      variant: "xl",
+      seed: 7,
+    });
+    expect(b[1]!.to).toEqual({
+      mode: "arcPlay",
+      arc: "summer",
+      variant: "xl",
+      seed: 42,
+    });
+  });
   it("replays, goes back to the arcs or to the title", () => {
     const b = completeButtons("tutorial", "ar");
     expect(b.map((x) => x.label)).toEqual([
       "Replay",
-      "Back to arcs",
-      "Back to title",
+      "Choose another arc",
+      "Change character",
     ]);
     expect(b[0]!.to).toEqual({
       mode: "arcPlay",

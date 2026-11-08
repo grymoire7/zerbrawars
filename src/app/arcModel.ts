@@ -156,13 +156,34 @@ export interface CompleteButton {
   readonly to: ScreenRequest;
 }
 
+/**
+ * How an arc ends, the same for every arc: Replay (the same game, with `seed` when it has one),
+ * New game (arcs that play a seeded campaign), Choose another arc, Change character.
+ */
 export const completeButtons = (
   arc: ArcId,
   variant: VariantId,
+  seed?: number,
+  randomSeed: () => number = () => Math.floor(Math.random() * 1_000_000),
 ): CompleteButton[] => [
-  { label: "Replay", primary: true, to: { mode: "arcPlay", arc, variant } },
-  { label: "Back to arcs", to: { mode: "arcs", variant } },
-  { label: "Back to title", to: { mode: "title" } },
+  {
+    label: "Replay",
+    primary: true,
+    to:
+      seed === undefined
+        ? { mode: "arcPlay", arc, variant }
+        : { mode: "arcPlay", arc, variant, seed },
+  },
+  ...(arcById(arc).play.kind === "campaign"
+    ? [
+        {
+          label: "New game",
+          to: { mode: "arcPlay", arc, variant, seed: randomSeed() },
+        } as CompleteButton,
+      ]
+    : []),
+  { label: "Choose another arc", to: { mode: "arcs", variant } },
+  { label: "Change character", to: { mode: "title" } },
 ];
 
 export const arcCompleteTitle = (a: ArcDef) =>
