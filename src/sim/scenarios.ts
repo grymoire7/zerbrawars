@@ -70,12 +70,68 @@ export function skirmishLoadout(seed: number, medLevel = 1): Loadout {
   };
 }
 
+/**
+ * The tutorial's one seed, shared by both parts so the dice line up: on turn 1 the mold grows
+ * with no medication (part A) and stalls with it (part B), and in A it telegraphs a spore on turn
+ * 2. Pinned by tutorial.test.ts.
+ */
+export const TUTORIAL_SEED = 54;
+
+/**
+ * Arc 1, part A, "before the diagnosis": no medication, no charges, three turns. s1 can engulf the
+ * strep on turn 1 (an easy kill), the mold (p1, size 2) grows and spores, and a second mold
+ * arrives at (5,0) as the clock runs out. Residual kill chance is 0 here (the loadout wins over the
+ * variant's), so no mold can ever be finished: p1 is always on the board, inside a swarm or walled
+ * off at the end, whatever is played. Three turns, not four: two germs on the board drain 10 or
+ * more tissue over four turns even if left alone, and three keeps a do-nothing player at 12 or
+ * more (tutorial.test.ts).
+ */
+export function tutorialALoadout(seed: number): Loadout {
+  return {
+    ...tutorialBoard(seed),
+    scenario: "tutorial-a",
+    medLevel: 0,
+    residualKillChance: 0,
+    maxTurns: 3,
+  };
+}
+
+/** The board both tutorial parts share: same germs, same arrival, same seed. */
+function tutorialBoard(seed: number): Loadout {
+  return {
+    schema: 1,
+    scenario: "tutorial",
+    seed,
+    medLevel: 1,
+    exposures: [
+      { kind: "aspergillus", size: 2, at: { x: 4, y: 1 } },
+      { kind: "strep", size: 1, at: { x: 1, y: 3 } },
+    ],
+    arrivals: [{ turn: 3, kind: "aspergillus", size: 2, door: { x: 5, y: 0 } }],
+    load: 0,
+    reservoirs: [],
+    doctorVisit: false,
+    energy: 0,
+  };
+}
+
+/**
+ * Arc 1, part B, "after the diagnosis": part A's board and seed at full medication (the glow, one
+ * antibacterial and two antifungal charges), the normal six turns. The mold that grew in A stalls
+ * on turn 1; an antifungal charge finishes it, and the second finishes the arrival.
+ */
+export function tutorialBLoadout(seed: number): Loadout {
+  return { ...tutorialBoard(seed), scenario: "tutorial-b" };
+}
+
 /** Each named scenario's loadout, for the debug panel to start from. */
 export const SCENARIO_LOADOUTS = {
   "first-board": firstBoardLoadout,
   duel: duelLoadout,
   "lake-week": lakeWeekLoadout,
   skirmish: skirmishLoadout,
+  "tutorial-a": tutorialALoadout,
+  "tutorial-b": tutorialBLoadout,
 } as const satisfies Record<
   string,
   (seed: number, medLevel?: number) => Loadout
@@ -92,6 +148,13 @@ export const SCENARIOS = Object.fromEntries(
 ) as Record<ScenarioName, (seed: number) => BattleState>;
 
 export const SCENARIO_NAMES = Object.keys(SCENARIOS) as ScenarioName[];
+
+/** The seed a scenario starts from when the URL names none. */
+export function defaultSeedFor(name: ScenarioName): number {
+  return name === "tutorial-a" || name === "tutorial-b"
+    ? TUTORIAL_SEED
+    : PARAMS.defaultSeed;
+}
 
 export const DEFAULT_SCENARIO: ScenarioName = "first-board";
 

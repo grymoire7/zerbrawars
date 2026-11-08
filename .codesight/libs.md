@@ -202,9 +202,9 @@
   - function duelLoadout: (seed, medLevel) => Loadout
   - function lakeWeekLoadout: (seed, medLevel) => Loadout
   - function skirmishLoadout: (seed, medLevel) => Loadout
-  - function isScenarioName: (name) => name is ScenarioName
-  - function loadScenario: (name, seed) => BattleState | null
-  - _...5 more_
+  - function tutorialALoadout: (seed) => Loadout
+  - function tutorialBLoadout: (seed) => Loadout
+  - _...9 more_
 - `src/sim/score.ts`
   - function cardChoices: (card) => void
   - function weekChoices: (life) => ChoicesParts
@@ -222,6 +222,7 @@
   - function parseSessionLog: (text) => SessionLog
   - _...3 more_
 - `src/sim/validate.ts`
+  - function maxTurnsOf: (kind) => number
   - function validateBattle: (battle) => string[]
   - function validateLife: (life) => string[]
   - function validateCampaign: (c) => string[]

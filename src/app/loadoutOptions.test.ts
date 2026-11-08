@@ -57,4 +57,15 @@ describe("loadoutFor", () => {
     expect(plain.meds.level).toBe(1);
     expect(plain.meds.charges.strong).toBe(0);
   });
+
+  it("keeps a residual chance the scenario fixes (tutorial-a) and fills in the rest", () => {
+    const o = { ...DEFAULT_OPTIONS, residual: 0.25 };
+    expect(battleFromLoadout(loadoutFor("tutorial-a", 54, o))).toMatchObject({
+      residualKillChance: 0,
+      maxTurns: 3,
+    });
+    expect(
+      battleFromLoadout(loadoutFor("tutorial-b", 54, o)).residualKillChance,
+    ).toBe(0.25);
+  });
 });

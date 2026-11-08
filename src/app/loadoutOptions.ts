@@ -57,15 +57,19 @@ export function writeLoadoutParams(url: URL, o: LoadoutOptions): void {
   );
 }
 
-/** The scenario's preset loadout (first-board and friends) with the chosen levers applied. */
+/**
+ * The scenario's preset loadout (first-board and friends) with the chosen levers applied. A
+ * residual chance the scenario fixes itself (tutorial-a) stays; the lever fills in the rest.
+ */
 export function loadoutFor(
   scenario: ScenarioName,
   seed: number,
   o: LoadoutOptions,
 ): Loadout {
+  const preset = SCENARIO_LOADOUTS[scenario](seed, clamp01(o.med));
   return {
-    ...SCENARIO_LOADOUTS[scenario](seed, clamp01(o.med)),
+    ...preset,
     doctorVisit: o.doctor,
-    residualKillChance: clamp01(o.residual),
+    residualKillChance: preset.residualKillChance ?? clamp01(o.residual),
   };
 }

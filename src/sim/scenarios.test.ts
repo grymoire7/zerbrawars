@@ -105,11 +105,11 @@ describe("skirmish", () => {
     }
   });
 
-  it("keeps every other scenario a full battle", () => {
+  it("keeps every other scenario a full battle, tutorial-a's clock aside", () => {
     for (const name of SCENARIO_NAMES.filter((n) => n !== "skirmish"))
       expect(loadScenario(name)).toMatchObject({
         kind: "full",
-        maxTurns: PARAMS.maxTurns,
+        maxTurns: name === "tutorial-a" ? 3 : PARAMS.maxTurns,
       });
   });
 });

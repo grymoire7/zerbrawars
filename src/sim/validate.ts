@@ -5,7 +5,14 @@ import { medLevelOf } from "./life/meds";
 import type { LifeState } from "./life/types";
 import { isPathogenKindId, pathogenKind, wallOf } from "./pathogens";
 import { PARAMS } from "./params";
-import type { BattleState, Contained, Coord } from "./types";
+import type { BattleKind, BattleState, Contained, Coord } from "./types";
+
+/** The most turns a battle of this kind plays; a loadout may only shorten it. */
+export function maxTurnsOf(kind: BattleKind): number {
+  return kind === "skirmish"
+    ? PARAMS.campaign.skirmish.maxTurns
+    : PARAMS.maxTurns;
+}
 
 /**
  * Structural checks on a BattleState (for fixtures, setup and anything loaded from JSON).
@@ -96,11 +103,11 @@ export function validateBattle(battle: BattleState): string[] {
   }
   if (battle.kind !== "full" && battle.kind !== "skirmish")
     problems.push(`unknown battle kind ${String(battle.kind)}`);
-  const turns =
-    battle.kind === "skirmish"
-      ? PARAMS.campaign.skirmish.maxTurns
-      : PARAMS.maxTurns;
-  if (battle.maxTurns !== turns)
+  if (
+    !Number.isInteger(battle.maxTurns) ||
+    battle.maxTurns < 1 ||
+    battle.maxTurns > maxTurnsOf(battle.kind)
+  )
     problems.push(`a ${battle.kind} battle with ${battle.maxTurns} turns`);
   const doorsDue = new Set<string>();
   for (const a of battle.arrivals) {

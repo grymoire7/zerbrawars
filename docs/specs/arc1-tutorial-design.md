@@ -357,3 +357,12 @@ All defaults in section 7 are accepted except as follows.
   "CGD does not put you in a bubble, but it takes away one of the tools your immune system uses to
   fight infections" is fair (item 24). Item 26 is unanswered. These are recorded in
   `clinician-questions.md` as patient-side answers, still pending a clinician.
+
+### Built differently from sections 3.2 and 3.3 (T1)
+
+- **Part A is 3 turns, not 4.** With the strep and the mold both on the board, a player who does
+  nothing loses 10 or more tissue over 4 turns, so "at least 12 of 20" cannot hold. At 3 turns it
+  holds on every seed tried, and the arriving mold lands as the clock runs out: the player sees its
+  ring but never fights it.
+- **Part A's residual kill chance is fixed at 0** (both variants). Without that, a lucky roll can
+  finish the mold, which would erase the point of Part A. Part B uses the variant's own value.

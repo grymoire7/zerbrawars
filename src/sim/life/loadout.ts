@@ -56,6 +56,11 @@ export interface Loadout {
   readonly energy: number;
   /** Per-character residual oxidase activity; omitted = PARAMS.residualKillChance. */
   readonly residualKillChance?: number;
+  /**
+   * Turns before the battle ends on the clock; omitted = the kind's own (PARAMS.maxTurns, or the
+   * skirmish's). Can only shorten it: a tutorial fight ends earlier than a full battle.
+   */
+  readonly maxTurns?: number;
 }
 
 /** The battle's seed: fixed by the life seed and week, whatever was played. */

@@ -9,7 +9,7 @@ import type {
   MedState,
   Pathogen,
 } from "../types";
-import { validateBattle } from "../validate";
+import { maxTurnsOf, validateBattle } from "../validate";
 import { initBattle } from "./intents";
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
@@ -83,8 +83,7 @@ export function battleFromLoadout(loadout: Loadout): BattleState {
     scenario: loadout.scenario,
     kind,
     turn: 1,
-    maxTurns:
-      kind === "skirmish" ? PARAMS.campaign.skirmish.maxTurns : PARAMS.maxTurns,
+    maxTurns: loadout.maxTurns ?? maxTurnsOf(kind),
     board: createBoard(PARAMS.boardWidth, PARAMS.boardHeight),
     swarms,
     pathogens,

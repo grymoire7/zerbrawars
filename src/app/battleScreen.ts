@@ -10,10 +10,13 @@ import { createSwarmView } from "../render/swarmView";
 import { createTelegraphView } from "../render/telegraphView";
 import { createAuraView } from "../render/auraView";
 import { battleFromLoadout } from "../sim/battle/setup";
-import { DEFAULT_SCENARIO, isScenarioName } from "../sim/scenarios";
+import {
+  DEFAULT_SCENARIO,
+  defaultSeedFor,
+  isScenarioName,
+} from "../sim/scenarios";
 import { stallChance } from "../sim/battle/intents";
 import { battleStatus } from "../sim/battle/outcome";
-import { PARAMS } from "../sim/params";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 
 const PATHOGEN_ORDER = Object.keys(PATHOGEN_KINDS) as PathogenKindId[];
@@ -102,7 +105,11 @@ export function mountBattle(
   const load = () =>
     start ??
     battleFromLoadout(
-      loadoutFor(scenarioName, validSeed ?? PARAMS.defaultSeed, loadoutOptions),
+      loadoutFor(
+        scenarioName,
+        validSeed ?? defaultSeedFor(scenarioName),
+        loadoutOptions,
+      ),
     );
 
   const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -555,7 +562,7 @@ export function mountBattle(
     ? null
     : createDebugPanel(panels.scroll, {
         scenario: state.scenario,
-        seed: validSeed ?? PARAMS.defaultSeed,
+        seed: validSeed ?? defaultSeedFor(scenarioName),
         loadout: loadoutOptions,
         onRestart: (o) => {
           loadoutOptions = o;
