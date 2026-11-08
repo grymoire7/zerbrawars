@@ -11,6 +11,7 @@ export interface ScreenEnv {
   /** A fresh child scene for this screen's meshes; removed when the screen is disposed. */
   readonly root: THREE.Scene;
   readonly panels: {
+    readonly coach: HTMLElement;
     readonly status: HTMLElement;
     readonly scroll: HTMLElement;
     readonly bar: HTMLElement;

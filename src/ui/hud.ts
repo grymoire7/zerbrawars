@@ -126,6 +126,8 @@ export interface HudModel {
   readonly wall: HudWall | null;
   readonly forecast: HudForecast | null;
   readonly playback: HudPlayback;
+  /** The control the coach strip points at (End Turn or a charge), outlined and pulsing. */
+  readonly coachTarget?: string | null;
 }
 
 export interface Hud {
@@ -659,6 +661,7 @@ export function createHud(
                 : ""),
           );
           b.setAttribute("aria-pressed", String(c.selected));
+          b.classList.toggle("zw-coach-pulse", m.coachTarget === c.charge);
           b.title = "Use this charge on a germ or a carried load";
           return b;
         }),
@@ -731,6 +734,7 @@ export function createHud(
       wallOff.textContent = w?.queued ? "Cancel wall off (W)" : "Wall off (W)";
       wallOff.disabled = !w || (!w.queued && w.reason !== null);
       endTurn.disabled = !m.canEndTurn;
+      endTurn.classList.toggle("zw-coach-pulse", m.coachTarget === "endTurn");
       endTurn.style.display = pb.playing ? "none" : "flex";
       endHint.textContent = m.hint;
       endHint.style.display = m.hint ? "" : "none";

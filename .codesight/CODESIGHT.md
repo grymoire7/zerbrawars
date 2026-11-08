@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 56 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~23,700 tokens. **Saves ~19,100 tokens per conversation.**
-> **Last scanned:** 2026-11-08 21:05 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 57 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~23,900 tokens. **Saves ~19,300 tokens per conversation.**
+> **Last scanned:** 2026-11-08 21:20 — re-run after significant changes
 
 ---
 
@@ -252,6 +252,7 @@
   - type CardFamily
   - const CARD_FAMILY: Readonly<Record<string, CardFamily>>
   - const CARD_ICON: Readonly<Record<string, string>>
+- `src/ui/coachStrip.ts` — function createCoachStrip: (root, onDismiss) => void, interface CoachStrip
 - `src/ui/debugPanel.ts`
   - function createDebugPanel: (root, opts) => DebugPanel
   - interface DebugLoadout

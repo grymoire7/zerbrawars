@@ -72,6 +72,10 @@ export interface CoachInput {
   readonly pointer: "tap" | "click";
 }
 
+/** The mode for the strip: planning only when a turn is not playing and the fight is not over. */
+export const coachMode = (playing: boolean, over: boolean): CoachMode =>
+  playing ? "playback" : over ? "over" : "planning";
+
 const swallowedShelled = (events: readonly SimEvent[]) =>
   events.some((e) => e.type === "Engulfed" && e.wall === "sealed");
 

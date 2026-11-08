@@ -242,6 +242,7 @@
   - type CardFamily
   - const CARD_FAMILY: Readonly<Record<string, CardFamily>>
   - const CARD_ICON: Readonly<Record<string, string>>
+- `src/ui/coachStrip.ts` — function createCoachStrip: (root, onDismiss) => void, interface CoachStrip
 - `src/ui/debugPanel.ts`
   - function createDebugPanel: (root, opts) => DebugPanel
   - interface DebugLoadout

@@ -65,6 +65,50 @@
         background: var(--zw-surface, #1f232b);
         border-top: 1px solid var(--zw-line, #3a4150);
       }
+      /* Coach strip (Arc 1 only): one line above the status strip; empty means hidden. */
+      #coach {
+        flex: none;
+        z-index: 2;
+        box-sizing: border-box;
+        padding: 4px 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--zw-info-bg, #2a3140);
+        border-bottom: 1px solid var(--zw-line, #3a4150);
+      }
+      #coach:empty {
+        display: none;
+      }
+      .zw-coach-text {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 13px;
+        line-height: 1.3;
+        color: var(--zw-text, #e8eaf0);
+      }
+      .zw-coach-got {
+        flex: none;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 10px;
+      }
+      /* A control the coach points at: a static outline, pulsing only if motion is welcome. */
+      .zw-coach-pulse {
+        outline: 2px solid var(--zw-focus, #9fd8f0);
+        outline-offset: 2px;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .zw-coach-pulse {
+          animation: zw-coach-pulse 1.2s ease-in-out infinite;
+        }
+      }
+      @keyframes zw-coach-pulse {
+        50% {
+          outline-color: transparent;
+          outline-offset: 5px;
+        }
+      }
       /* Status strip: pinned at the top of the side panel while #sideScroll scrolls; never on the board. */
       #status {
         flex: none;
@@ -279,6 +323,12 @@
     <div id="app">
       <div id="board"><canvas id="scene"></canvas></div>
       <aside id="side" aria-label="Orders and information">
+        <div
+          id="coach"
+          role="status"
+          aria-live="polite"
+          aria-label="Hint"
+        ></div>
         <div id="status"></div>
         <div id="sideScroll"></div>
         <div id="bar"></div>

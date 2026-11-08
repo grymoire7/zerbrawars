@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**56 library files** across 4 modules
+**57 library files** across 4 modules
 
 ## Sim (25 files)
 
@@ -32,6 +32,25 @@
 - `src/sim/validate.ts` — maxTurnsOf, validateBattle, validateLife, validateCampaign
 - `src/sim/battle/setup.ts` — chargesFor, medStateFor, battleFromLoadout
 
+## Ui (16 files)
+
+- `src/ui/hud.ts` — createHud, HudOrder, HudMedication, HudCharge, HudSupport, HudSupportCard, …
+- `src/ui/outcome.ts` — outcomeHeading, createOutcomeOverlay, OutcomeHandlers, OutcomeExtra, CompareRow, ArcCard, …
+- `src/ui/help.ts` — createHelp, Help, HelpOptions, LIFE_SEEN_KEY, HELP_SEEN_KEYS, BATTLE_LINES, …
+- `src/ui/lifePanel.ts` — createLifePanel, LifeCardModel, LifeSlotModel, LifeSummaryModel, LifePanelModel, LifePanelHandlers, …
+- `src/ui/cardStyle.ts` — cardAccent, cardTint, cardBadge, CardFamily, CARD_FAMILY, CARD_ICON
+- `src/ui/debugPanel.ts` — createDebugPanel, DebugLoadout, SessionDebug, DebugPanelOptions, DebugPanel, DebugMode
+- `src/ui/statusStrip.ts` — createStatusStrip, cellLabel, StatusCell, StatusModel, StatusStrip, StatusBar
+- `src/ui/gameMenu.ts` — createGameMenu, GameMenuOptions, FacilitatorMenu, GameMenu
+- `src/ui/interlude.ts` — createInterlude, ScoreCardModel, InterludeModel, Interlude
+- `src/ui/menu.ts` — createMenu, MenuItem, MenuModel, Menu
+- `src/ui/broughtStrip.ts` — createBroughtStrip, BroughtView, BroughtStrip
+- `src/ui/infoTip.ts` — createInfoTips, InfoTip, InfoTipFactory
+- `src/ui/coachStrip.ts` — createCoachStrip, CoachStrip
+- `src/ui/download.ts` — downloadText, copyText
+- `src/ui/index.ts` — getUiRoot, getPanels
+- `src/ui/probe.ts` — createProbe, Probe
+
 ## Render (15 files)
 
 - `src/render/playback.ts` — buildTimeline, beatProgress, createPlayback, PhaseSpan, Timeline, Playback, …
@@ -49,24 +68,6 @@
 - `src/render/playbackView.ts` — createPlaybackView, PlaybackView
 - `src/render/scene.ts` — createScene, SceneContext
 - `src/render/telegraphView.ts` — createTelegraphView, TelegraphView
-
-## Ui (15 files)
-
-- `src/ui/hud.ts` — createHud, HudOrder, HudMedication, HudCharge, HudSupport, HudSupportCard, …
-- `src/ui/outcome.ts` — outcomeHeading, createOutcomeOverlay, OutcomeHandlers, OutcomeExtra, CompareRow, ArcCard, …
-- `src/ui/help.ts` — createHelp, Help, HelpOptions, LIFE_SEEN_KEY, HELP_SEEN_KEYS, BATTLE_LINES, …
-- `src/ui/lifePanel.ts` — createLifePanel, LifeCardModel, LifeSlotModel, LifeSummaryModel, LifePanelModel, LifePanelHandlers, …
-- `src/ui/cardStyle.ts` — cardAccent, cardTint, cardBadge, CardFamily, CARD_FAMILY, CARD_ICON
-- `src/ui/debugPanel.ts` — createDebugPanel, DebugLoadout, SessionDebug, DebugPanelOptions, DebugPanel, DebugMode
-- `src/ui/statusStrip.ts` — createStatusStrip, cellLabel, StatusCell, StatusModel, StatusStrip, StatusBar
-- `src/ui/gameMenu.ts` — createGameMenu, GameMenuOptions, FacilitatorMenu, GameMenu
-- `src/ui/interlude.ts` — createInterlude, ScoreCardModel, InterludeModel, Interlude
-- `src/ui/menu.ts` — createMenu, MenuItem, MenuModel, Menu
-- `src/ui/broughtStrip.ts` — createBroughtStrip, BroughtView, BroughtStrip
-- `src/ui/infoTip.ts` — createInfoTips, InfoTip, InfoTipFactory
-- `src/ui/download.ts` — downloadText, copyText
-- `src/ui/index.ts` — getUiRoot, getPanels
-- `src/ui/probe.ts` — createProbe, Probe
 
 ## Theme (1 files)
 

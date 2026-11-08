@@ -61,6 +61,17 @@ import {
 import { backAction } from "./navGuardModel";
 import { arcById, type ArcId, type VariantId } from "./arcs";
 import { createStatusStrip } from "../ui/statusStrip";
+import { createCoachStrip } from "../ui/coachStrip";
+import {
+  advanceCoach,
+  coachMark,
+  coachMode,
+  dismissCoach,
+  START_COACH,
+  type CoachInput,
+  type CoachMark,
+  type CoachState,
+} from "./coachModel";
 import { weekChoices, weekScore } from "../sim/score";
 import { weekScoreLine } from "./summaryModel";
 import { battleStatusModel, type BattleStatusInput } from "./battleModel";
@@ -221,6 +232,28 @@ export function mountBattle(
           : undefined,
       })
     : null;
+  // Arc 1's coach line: its state lives for this part only (a new part mounts a new screen).
+  let coach: CoachState = START_COACH;
+  const coachStrip = tutorial
+    ? createCoachStrip(panels.coach, (id) => {
+        coach = dismissCoach(coach, id);
+        refresh();
+      })
+    : null;
+  const coachPointer = window.matchMedia("(pointer: coarse)");
+  const coachInput = (part: TutorialPart): CoachInput => ({
+    part,
+    battle: controller.state(),
+    ui: {
+      orders: controller.orders(),
+      selected: controller.selected(),
+      charge: controller.charges().find((c) => c.selected)?.charge ?? null,
+      support: controller.supportOrder(),
+    },
+    mode: coachMode(controller.mode() === "playback", controller.over()),
+    events: controller.lastEvents(),
+    pointer: coachPointer.matches ? "tap" : "click",
+  });
   const status = createStatusStrip(panels.status);
   let statusIn: BattleStatusInput | null = null;
   let shownTissue = -1;
@@ -546,6 +579,14 @@ export function mountBattle(
       outcomeOverlay.hide();
       storyMenu?.hide();
     }
+    // Not mid-playback: the state is already the next turn's, and the strip is hidden anyway.
+    let mark: CoachMark | null = null;
+    if (coachStrip && arcEnd?.part && !playing) {
+      const input = coachInput(arcEnd.part);
+      coach = advanceCoach(coach, input);
+      mark = coachMark(coach, input);
+    }
+    coachStrip?.update(mark);
     showStatus({
       tissue: s.tissueHealth,
       damage: forecast?.tissueDamage ?? 0,
@@ -614,6 +655,7 @@ export function mountBattle(
         rising: forecast.rising.length,
         slowed: forecast.slowed,
       },
+      coachTarget: mark?.target ?? null,
       playback: {
         playing: playing !== null,
         speed: controller.speed(),
@@ -782,6 +824,7 @@ export function mountBattle(
       menu?.dispose();
       storyMenu?.dispose();
       status.clear();
+      coachStrip?.clear();
       panels.scroll.replaceChildren();
       panels.bar.replaceChildren();
       ui.replaceChildren();

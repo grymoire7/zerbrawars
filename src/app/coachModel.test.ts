@@ -6,6 +6,7 @@ import type { BattleState, Order, SimEvent } from "../sim/types";
 import {
   advanceCoach,
   coachMark,
+  coachMode,
   dismissCoach,
   START_COACH,
   type CoachId,
@@ -548,5 +549,14 @@ describe("the real tutorial boards", () => {
     });
     st = advanceCoach(st, queued);
     expect(coachMark(st, queued)?.id).toBe("B3");
+  });
+});
+
+describe("coachMode", () => {
+  it("is planning only when not playing and not over", () => {
+    expect(coachMode(false, false)).toBe("planning");
+    expect(coachMode(true, false)).toBe("playback");
+    expect(coachMode(false, true)).toBe("over");
+    expect(coachMode(true, true)).toBe("playback");
   });
 });

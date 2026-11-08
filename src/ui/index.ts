@@ -9,13 +9,15 @@ export function getUiRoot(): HTMLElement {
   return need("ui");
 }
 
-/** The side panel regions: the pinned status strip, a scrollable column and a pinned control bar. */
+/** The side panel regions: the Arc 1 coach strip, the pinned status strip, a scrollable column and a pinned control bar. */
 export function getPanels(): {
+  coach: HTMLElement;
   status: HTMLElement;
   scroll: HTMLElement;
   bar: HTMLElement;
 } {
   return {
+    coach: need("coach"),
     status: need("status"),
     scroll: need("sideScroll"),
     bar: need("bar"),
