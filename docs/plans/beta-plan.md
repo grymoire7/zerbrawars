@@ -21,7 +21,7 @@ status table below is the only place that tracks slices.
 | B1 mobile layout and touch | done | 6a07dae (real-device pass on Brave/Android; landscape and tablet not tuned) | |
 | B2 organism names | done | f242926 (`src/sim/organisms.ts`, enforced by a test) | |
 | B3 arc framework and title/hub | done | a61f042 (arcs data, title, picker, arc-complete; Arc 1 is a placeholder battle until B4) | |
-| BN navigation (N1 menu, N2 continue, N3 back/reload guards, N4 start-over, N5 facilitator, N6 one ending) | N1, N2 done, N3 next | 1d39dc6 (N1), c4971ec (N2) | `navigation-design.md` (all ten defaults accepted 2026-11-07) |
+| BN navigation (N1 menu, N2 continue, N3 back/reload guards, N4 start-over, N5 facilitator, N6 one ending) | N1 to N3 done, N4 next | 1d39dc6 (N1), c4971ec (N2), 3de071f (N3) | `navigation-design.md` (all ten defaults accepted 2026-11-07) |
 | B4 to B10 | not started | | |
 
 Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
