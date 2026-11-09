@@ -152,11 +152,7 @@ export function mountInterlude(
     const rec = recordOnce(run, s.total, s.choices, s.outcome);
     model = {
       title: `Your ${c.cycles} weeks: ${s.total}`,
-      score: scoreCard(
-        c.history.map((h) => h.score),
-        s,
-        rec,
-      ),
+      score: scoreCard(c.history, c.cycles, s, rec),
       lead:
         `${sum.points} points across ${sum.weeks} weeks (${sum.goalsMet} goal${sum.goalsMet === 1 ? "" : "s"} met). ` +
         `${battles} ${battles === 1 ? "battle" : "battles"}, ${skirmishes} ${skirmishes === 1 ? "skirmish" : "skirmishes"}` +

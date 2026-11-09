@@ -1,7 +1,10 @@
 /** The campaign score: a card per week, a total line, the best lines and a framing line. */
 export interface ScoreCardModel {
+  /** "Goals met: 2 of 2. You lived it fully." */
+  readonly headline: string;
   readonly weeks: readonly {
     readonly head: string;
+    readonly odds: string;
     readonly choices: string;
     readonly outcome: string;
   }[];
@@ -49,15 +52,22 @@ function scoreView(s: ScoreCardModel): HTMLElement[] {
     b.append(...kids);
     return b;
   };
+  const headline = line(s.headline, "font-weight:700;");
   const weeks = s.weeks.map((w) =>
-    box("", line(w.head, "font-weight:600;"), line(w.choices), line(w.outcome)),
+    box(
+      "",
+      line(w.head, "font-weight:600;"),
+      line(w.odds),
+      line(w.choices),
+      line(w.outcome),
+    ),
   );
   const total = box("", line(s.total, "font-weight:700;"));
   const best = s.best.map((t, i) =>
     line(t, i === 0 ? "font-weight:700;" : "opacity:0.9;"),
   );
   const framing = line(s.framing, "font-size:13px;opacity:0.8;");
-  return [...weeks, total, ...best, framing];
+  return [headline, ...weeks, total, ...best, framing];
 }
 
 /** A calm card over the body view: the quiet-week beat and the campaign summary. */

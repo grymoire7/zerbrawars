@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { WeekScore } from "../sim/score";
 import type { RecordResult } from "./bestScores";
-import type { CycleResult } from "../sim/campaign";
+import type { CycleRecord, CycleResult } from "../sim/campaign";
 import type { LifeState } from "../sim/life/types";
-import { bestLines, scoreCard, thisWeekRows } from "./summaryModel";
+import {
+  bestLines,
+  goalsHeadline,
+  scoreCard,
+  summerOddsRow,
+  thisWeekRows,
+} from "./summaryModel";
 
 const week: WeekScore = {
   version: 4,
@@ -27,6 +33,29 @@ const rec = (over: Partial<RecordResult>): RecordResult => ({
   stored: true,
   ...over,
 });
+
+const record = (
+  score: WeekScore,
+  over: Partial<CycleRecord> = {},
+): CycleRecord =>
+  ({
+    score,
+    goalMet: false,
+    exposure: 0.35,
+    result: { kind: "quiet" },
+    ...over,
+  }) as unknown as CycleRecord;
+const battle = (
+  battleKind: "full" | "skirmish",
+  grade: "cleared" | "contained" | "neededBackup",
+  landed: boolean,
+) =>
+  ({
+    kind: "battle",
+    battleKind,
+    reasons: landed ? ["exposure"] : [],
+    outcome: { grade },
+  }) as unknown as CycleResult;
 
 describe("thisWeekRows", () => {
   const life = (points: number) =>
@@ -97,8 +126,12 @@ describe("a met goal", () => {
   };
   it("shows the +40 on the summary", () => {
     expect(
-      scoreCard([met], { choices: 255, outcome: 100, total: 355 }, null)
-        .weeks[0].choices,
+      scoreCard(
+        [record(met)],
+        2,
+        { choices: 255, outcome: 100, total: 355 },
+        null,
+      ).weeks[0].choices,
     ).toContain("goal met +40");
   });
 });
@@ -127,18 +160,75 @@ describe("bestLines", () => {
 describe("scoreCard", () => {
   it("lists every part per week and a total row", () => {
     const card = scoreCard(
-      [week, week],
+      [record(week), record(week)],
+      2,
       { choices: 430, outcome: 200, total: 630 },
       null,
     );
     expect(card.weeks).toHaveLength(2);
     expect(card.weeks[0]).toEqual({
       head: "Week 1: 315",
+      odds: "Odds 35%, nothing came home. Just a virus, no fight.",
       choices:
         "Choices 215: living 120, odds pushed 65, routine kept 30, checked 0",
       outcome: "Outcome 100: tissue 40, fight 40, clear 20",
     });
     expect(card.total).toBe("Total: Choices 430 + Outcome 200 = 630");
     expect(card.best).toEqual([]);
+    expect(card.headline).toBe("Goals met: 0 of 2. A quieter summer.");
+  });
+  it("counts the met goals in the headline", () => {
+    const met = record(week, { goalMet: true });
+    expect(
+      scoreCard([met, met], 2, { choices: 430, outcome: 200, total: 630 }, null)
+        .headline,
+    ).toBe("Goals met: 2 of 2. You lived it fully.");
+  });
+});
+
+describe("goalsHeadline", () => {
+  it("reads 2, 1 and 0 of 2 plainly", () => {
+    expect(goalsHeadline(2, 2)).toBe("Goals met: 2 of 2. You lived it fully.");
+    expect(goalsHeadline(1, 2)).toBe("Goals met: 1 of 2. One goal met.");
+    expect(goalsHeadline(0, 2)).toBe("Goals met: 0 of 2. A quieter summer.");
+  });
+});
+
+describe("summerOddsRow", () => {
+  const row = (exposure: number, result: CycleResult) =>
+    summerOddsRow(record(week, { exposure, result }));
+  it("says each full-battle grade, landed or not", () => {
+    expect(row(0.35, battle("full", "cleared", false))).toBe(
+      "Odds 35%, nothing came home. All clear.",
+    );
+    expect(row(0.7, battle("full", "contained", true))).toBe(
+      "Odds 70%, something came home. Contained.",
+    );
+    expect(row(0.7, battle("full", "neededBackup", true))).toBe(
+      "Odds 70%, something came home. Backup arrived.",
+    );
+    expect(row(0.35, battle("full", "contained", false))).toBe(
+      "Odds 35%, nothing came home. Contained.",
+    );
+  });
+  it("uses All quiet and Still stirring for a skirmish", () => {
+    expect(row(0.02, battle("skirmish", "cleared", false))).toBe(
+      "Odds under 5%, nothing came home. All quiet.",
+    );
+    expect(row(0.35, battle("skirmish", "contained", false))).toBe(
+      "Odds 35%, nothing came home. Still stirring.",
+    );
+  });
+  it("names a virus-only week and never blames", () => {
+    expect(row(0.35, { kind: "quiet" })).toBe(
+      "Odds 35%, nothing came home. Just a virus, no fight.",
+    );
+    const all = [
+      goalsHeadline(0, 2),
+      goalsHeadline(1, 2),
+      row(0.7, battle("full", "neededBackup", true)),
+      row(0.35, battle("skirmish", "contained", false)),
+    ].join(" ");
+    expect(all).not.toMatch(/lost|failed|defeat|fault/i);
   });
 });

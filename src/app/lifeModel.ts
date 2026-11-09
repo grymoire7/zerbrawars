@@ -607,16 +607,12 @@ export function weekOdds(life: LifeState): WeekOdds {
 const pendingChances = (life: LifeState): number[] =>
   exposurePreview(life).pending.map((p) => p.preview.chance);
 
-/** The Exposure cell for the played rolls plus these pending chances. */
-function oddsFrom(life: LifeState, pending: readonly number[]): WeekOdds {
-  let none = 1;
-  for (const r of life.rolls) none *= 1 - r.chance;
-  for (const c of pending) none *= 1 - c;
-  const chance = 1 - none;
+/** The rounded text and band the Exposure cell shows for a chance (0..1). */
+export function oddsLabel(chance: number): Pick<WeekOdds, "value" | "band"> {
   const rounded = Math.round(chance * 20) * 5;
   const value =
     chance > 0 && rounded === 0 ? "under 5%" : `${Math.min(100, rounded)}%`;
-  const word: ExposureWord =
+  const band: ExposureWord =
     chance <= 0
       ? "none"
       : rounded < 20
@@ -624,6 +620,16 @@ function oddsFrom(life: LifeState, pending: readonly number[]): WeekOdds {
         : rounded < 50
           ? "some"
           : "likely";
+  return { value, band };
+}
+
+/** The Exposure cell for the played rolls plus these pending chances. */
+function oddsFrom(life: LifeState, pending: readonly number[]): WeekOdds {
+  let none = 1;
+  for (const r of life.rolls) none *= 1 - r.chance;
+  for (const c of pending) none *= 1 - c;
+  const chance = 1 - none;
+  const { value, band: word } = oddsLabel(chance);
   const came = life.exposures.length > 0;
   const state =
     life.day === 0

@@ -67,6 +67,8 @@ export interface CycleRecord {
   /** The goal the week was played against (13 unless ?goal= overrode it). */
   readonly goalTarget: number;
   readonly medLevel: number;
+  /** Chance something new came home from the week's played rolls, 0..1 (display only). */
+  readonly exposure: number;
   readonly symptoms: readonly Symptom[];
   readonly doctor: DoctorVisit | null;
   /** Reservoirs the week started with. */
@@ -368,6 +370,7 @@ export function nextCycle(c: Campaign): CampaignStep {
     goalMet: life.goal.points >= life.goal.target,
     goalTarget: life.goal.target,
     medLevel: life.medLevel,
+    exposure: 1 - life.rolls.reduce((none, r) => none * (1 - r.chance), 1),
     symptoms: life.symptoms,
     doctor: life.doctor,
     reservoirsIn: life.reservoirs.length,
