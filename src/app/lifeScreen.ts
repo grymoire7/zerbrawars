@@ -167,6 +167,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
               arc: run.arc,
               variant: run.variant,
               seed: run.seed,
+              introSeen: true,
             }),
           chooseArc: () => {
             run.ui("leave", "to the arc list");

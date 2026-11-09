@@ -24,7 +24,8 @@ status table below is the only place that tracks slices.
 | BN navigation (N1 menu, N2 continue, N3 back/reload guards, N4 start-over, N5 facilitator, N6 one ending) | N1 to N6 done | 1d39dc6 (N1), c4971ec (N2), 3de071f (N3), 6183211 (N4), f215cdc (N5), 593c1ea (N6) | `navigation-design.md` (all ten defaults accepted 2026-11-07) |
 | B4 Arc 1 tutorial (T1 scenarios, T2 runner and cards, T3 battle chrome, T4 coach model, T5 coach strip, T6 copy) | T1 to T6 done (Tracy played Arc 1 on phone 2026-11-09, looks good) | c5e283e (T1), 56c9a92 (T2) | `arc1-tutorial-design.md` (decisions in its section 8) |
 | BO outcomes and danger meter (O1 Part A result and Part B compare, O2 Exposure cell, O3 before/after, O4 luck line and week block, O5 summary) | O1 to O5 done | | `outcomes-and-risk-design.md` (all eleven defaults accepted 2026-11-08) |
-| B5 to B10 | not started | | |
+| B5 Arc 2 framing and ending | done (ending lives on the summer summary; epilogue button waits for B6) | | |
+| B6 to B10 | not started | | |
 
 Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
 more battle, but neither felt noticeably harder or more fun; `?goal=N` still overrides). The smarter bot

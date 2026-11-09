@@ -41,7 +41,19 @@ export type ArcPlay =
       readonly endClear: string;
       readonly endHeld: string;
     }
-  | { readonly kind: "campaign" };
+  /** Arc 2: an intro card (the title is the arc's), then the two-week campaign and its summary. */
+  | {
+      readonly kind: "campaign";
+      /** The paragraphs after the arc `intro`, and the Begin button. Arc 2's card has no skip. */
+      readonly introMore: readonly string[];
+      readonly begin: string;
+      /** The summary's closing line when the summer met none of its goals, some, or all of them. */
+      readonly endNone: string;
+      readonly endSome: string;
+      readonly endAll: string;
+      /** Added when the best score could be saved. */
+      readonly endSaved: string;
+    };
 
 /** An arc is data: the screens around it come from here, the play is one of two existing flows. */
 export interface ArcDef {
@@ -91,9 +103,23 @@ export const ARCS: readonly ArcDef[] = [
     title: "A first summer",
     blurb: "Two weeks of living, and the fights that come with them.",
     intro:
-      "Two weeks of a summer: plan your days, look after yourself, and deal with what turns up.",
+      "Two weeks of summer, living with CGD. Each week you plan three days, with a daytime slot and an evening slot in each.",
     completion: "That was your first summer.",
-    play: { kind: "campaign" },
+    play: {
+      kind: "campaign",
+      introMore: [
+        "Say yes to the people who ask. Reach 13 living points in a week and that week's goal is met. You get a Goals met count for each of the two weeks.",
+        "Some plans give something a better chance of coming home with you. The Exposure meter shows the odds. Your choices change them, but luck matters too.",
+        "If something does come home, your body defends itself in a fight afterwards. Your medicine and your routine help.",
+      ],
+      begin: "Begin",
+      endNone:
+        "A quieter summer, and that is a fine way to spend one. You came through it, and there is another to try whenever you like.",
+      endSome:
+        "A summer with a lot in it. Try a different mix of plans next time and see what changes.",
+      endAll: "Both weeks went the way you hoped. That is a summer well lived.",
+      endSaved: "Your best score is saved.",
+    },
   },
 ];
 

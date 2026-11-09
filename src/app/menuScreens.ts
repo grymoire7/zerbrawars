@@ -114,6 +114,9 @@ function modelFor(
           arc: req.arc,
           variant: req.variant,
           part: partAfterIntro(button),
+          // Arc 2 plays the seed the intro was opened with, and does not show the card again.
+          ...(req.seed !== undefined ? { seed: req.seed } : {}),
+          introSeen: true,
         });
       return {
         title: card.title,

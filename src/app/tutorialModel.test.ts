@@ -29,11 +29,44 @@ describe("the intro card", () => {
     expect(card.skip).toBe("Skip to after the diagnosis");
   });
   it("is generic: an arc with no skip gets Begin only", () => {
-    const card = introCardFor(ARCS[1]!);
+    const card = introCardFor({
+      ...ARCS[1]!,
+      play: { kind: "battle", scenario: "tutorial-a" },
+    });
     expect(card).toEqual({
       title: ARCS[1]!.title,
       paragraphs: [ARCS[1]!.intro],
       begin: "Begin",
+    });
+  });
+  it("Arc 2 opens with its own card: four short paragraphs, Begin, no skip", () => {
+    const arc = ARCS[1]!;
+    const card = introCardFor(arc);
+    expect(card.title).toBe("A first summer");
+    expect(card.paragraphs[0]).toBe(arc.intro);
+    expect(card.paragraphs.length).toBeGreaterThanOrEqual(4);
+    expect(card.paragraphs.length).toBeLessThanOrEqual(6);
+    for (const p of card.paragraphs) expect(p.length).toBeLessThan(200);
+    expect(card.begin).toBe("Begin");
+    expect(card.skip).toBeUndefined();
+    const all = text(card);
+    expect(all).toMatch(/13 living points/);
+    expect(all).toMatch(/Goals met/);
+    expect(all).toMatch(/two weeks/i);
+    expect(all).toMatch(/Exposure/);
+    expect(all).toMatch(/luck matters/);
+    expect(all).toMatch(/defends itself/);
+    expect(all).not.toMatch(/lost|fail|defeat|your fault|\bwin\b|\blose\b/i);
+  });
+  it("Arc 1's card is unchanged", () => {
+    expect(introCardFor(ARCS[0]!)).toEqual({
+      title: "Before anyone knew",
+      paragraphs: [
+        "Some people remember the time before they knew they had CGD. Some were too little to remember. Either way, it often goes something like this.",
+        "A germ got into your lungs, and your cells rushed in to deal with it.",
+      ],
+      begin: "Begin",
+      skip: "Skip to after the diagnosis",
     });
   });
 });

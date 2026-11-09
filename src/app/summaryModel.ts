@@ -3,6 +3,7 @@ import type { LifeState } from "../sim/life/types";
 import type { CampaignScore, WeekScore } from "../sim/score";
 import type { ScoreCardModel } from "../ui/interlude";
 import type { RecordResult } from "./bestScores";
+import type { ArcDef } from "./arcs";
 import { oddsLabel, type WeekOdds } from "./lifeModel";
 
 // The campaign-complete score view (docs/specs/b1a-design.md 1.6). Plain and non-blaming:
@@ -22,6 +23,23 @@ export function goalsHeadline(met: number, of: number): string {
           ? "One goal met."
           : `${met} goals met.`;
   return `Goals met: ${met} of ${of}. ${word}`;
+}
+
+/**
+ * The summary's closing lines for the summer arc, from how many goals were met: warm either way,
+ * matching the headline above it. The saved line is added only when the best score was written.
+ */
+export function summerEnding(
+  arc: ArcDef,
+  met: number,
+  of: number,
+  saved: boolean,
+): string[] {
+  const play = arc.play;
+  if (play.kind !== "campaign") return [];
+  const line =
+    met >= of ? play.endAll : met === 0 ? play.endNone : play.endSome;
+  return saved ? [line, play.endSaved] : [line];
 }
 
 /** One week's Odds row for the summer: the odds, what came home, and how the fight went. */

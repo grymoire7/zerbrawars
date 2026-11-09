@@ -55,8 +55,10 @@ export type ScreenRequest =
       seed?: number;
       /** Arc 1 only: play this part now. Absent, the arc opens with its intro card. */
       part?: TutorialPart;
+      /** Arc 2 only: the intro card has been seen (Begin, or a restart). Absent, the arc opens with it. */
+      introSeen?: boolean;
     }
-  | { readonly mode: "arcIntro"; arc: ArcId; variant: VariantId }
+  | { readonly mode: "arcIntro"; arc: ArcId; variant: VariantId; seed?: number }
   | { readonly mode: "continue" }
   | { readonly mode: "arcComplete"; arc: ArcId; variant: VariantId };
 

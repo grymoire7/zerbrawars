@@ -20,6 +20,8 @@ export interface InterludeModel {
   readonly score?: ScoreCardModel;
   /** Paragraphs under the lead. */
   readonly notes: readonly string[];
+  /** Closing paragraphs after everything else, just above the buttons. */
+  readonly closing?: readonly string[];
   /** Titled groups of short lines (a week each, in the summary). */
   readonly groups: readonly {
     readonly head: string;
@@ -120,6 +122,12 @@ export function createInterlude(root: HTMLElement): Interlude {
         }
         return box;
       });
+      const closing = (m.closing ?? []).map((t) => {
+        const p = document.createElement("p");
+        p.style.cssText = "margin:0;";
+        p.textContent = t;
+        return p;
+      });
       const row = document.createElement("div");
       row.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;";
       for (const b of m.buttons) {
@@ -138,6 +146,7 @@ export function createInterlude(root: HTMLElement): Interlude {
         ...scoreBlock,
         ...notes,
         ...groups,
+        ...closing,
         row,
       );
       backdrop.style.display = "flex";

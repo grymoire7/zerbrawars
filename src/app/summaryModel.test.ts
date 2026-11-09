@@ -1,3 +1,4 @@
+import { ARCS } from "./arcs";
 import { describe, expect, it } from "vitest";
 import type { WeekScore } from "../sim/score";
 import type { RecordResult } from "./bestScores";
@@ -6,6 +7,7 @@ import type { LifeState } from "../sim/life/types";
 import {
   bestLines,
   goalsHeadline,
+  summerEnding,
   scoreCard,
   summerOddsRow,
   thisWeekRows,
@@ -230,5 +232,28 @@ describe("summerOddsRow", () => {
       row(0.35, battle("skirmish", "contained", false)),
     ].join(" ");
     expect(all).not.toMatch(/lost|failed|defeat|fault/i);
+  });
+});
+
+describe("summerEnding", () => {
+  const summer = ARCS[1]!;
+  it("picks the line from goals met, warm for each", () => {
+    const none = summerEnding(summer, 0, 2, false);
+    const one = summerEnding(summer, 1, 2, false);
+    const all = summerEnding(summer, 2, 2, false);
+    expect(none).toHaveLength(1);
+    expect(new Set([none[0], one[0], all[0]]).size).toBe(3);
+    expect(none[0]).toMatch(/quieter summer/);
+    for (const l of [...none, ...one, ...all])
+      expect(l).not.toMatch(/lost|fail|defeat|your fault/i);
+  });
+  it("adds the saved line only when the best score was saved", () => {
+    expect(summerEnding(summer, 1, 2, true)).toEqual([
+      summerEnding(summer, 1, 2, false)[0],
+      "Your best score is saved.",
+    ]);
+  });
+  it("is empty for an arc that is not the summer", () => {
+    expect(summerEnding(ARCS[0]!, 2, 2, true)).toEqual([]);
   });
 });

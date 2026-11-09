@@ -177,6 +177,13 @@ function mount(req: ScreenRequest) {
     setUrl(url);
     const arc = arcById(req.arc);
     if (arc.play.kind === "campaign") {
+      if (!req.introSeen)
+        return mount({
+          mode: "arcIntro",
+          arc: arc.id,
+          variant: req.variant,
+          seed: req.seed,
+        });
       // Arc play held for Continue; a new summer replaces the one held.
       const run = newRun(false, req.seed, req.variant, arc.id);
       holdRun(run);

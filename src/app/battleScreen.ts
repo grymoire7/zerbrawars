@@ -212,6 +212,7 @@ export function mountBattle(
                 arc: run.arc,
                 variant: run.variant,
                 seed: run.seed,
+                introSeen: true,
               });
           },
           // The held run restarts this fight at turn 1 on Continue; the log says so.

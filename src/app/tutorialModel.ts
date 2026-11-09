@@ -45,6 +45,12 @@ export function introCardFor(arc: ArcDef): IntroCard {
       begin: play.begin,
       skip: play.skip,
     };
+  if (play.kind === "campaign")
+    return {
+      title: arc.title,
+      paragraphs: [arc.intro, ...play.introMore],
+      begin: play.begin,
+    };
   return { title: arc.title, paragraphs: [arc.intro], begin: "Begin" };
 }
 

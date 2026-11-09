@@ -10,7 +10,8 @@ import { createHelp, LIFE_LINES, LIFE_SEEN_KEY } from "../ui/help";
 import { createInterlude, type InterludeModel } from "../ui/interlude";
 import { bestId, recordRun, type RecordResult } from "./bestScores";
 import { completeButtons } from "./arcModel";
-import { scoreCard } from "./summaryModel";
+import { scoreCard, summerEnding } from "./summaryModel";
+import { arcById } from "./arcs";
 import { weekLine } from "./campaignModel";
 import {
   escapeAction,
@@ -154,7 +155,7 @@ export function mountInterlude(
       title: `Your ${c.cycles} weeks: ${s.total}`,
       score: scoreCard(c.history, c.cycles, s, rec),
       lead:
-        `${sum.points} points across ${sum.weeks} weeks (${sum.goalsMet} goal${sum.goalsMet === 1 ? "" : "s"} met). ` +
+        `${sum.points} points across ${sum.weeks} weeks. ` +
         `${battles} ${battles === 1 ? "battle" : "battles"}, ${skirmishes} ${skirmishes === 1 ? "skirmish" : "skirmishes"}` +
         (sum.quietWeeks > 0 ? `, ${sum.quietWeeks} virus-only.` : "."),
       notes: [
@@ -172,6 +173,14 @@ export function mountInterlude(
           lines: [w.result, w.doctor, w.carried],
         };
       }),
+      // The summer ends here (the arc-complete screen is for the battle arcs), so its closing is on this card.
+      closing: summerEnding(
+        arcById(run.arc),
+        sum.goalsMet,
+        c.cycles,
+        rec.stored && rec.entry !== null,
+      ),
+      // TODO(B6): add an epilogue button here, labelled "What comes next".
       buttons: completeButtons(run.arc, run.variant, run.seed).map((b, i) => ({
         label: b.label,
         primary: i === 0,
