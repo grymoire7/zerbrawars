@@ -13,11 +13,11 @@
 - `src/sim/battle/outcome.ts` — imported by **16** files
 - `src/sim/life/loadout.ts` — imported by **16** files
 - `src/sim/battle/resolve.ts` — imported by **16** files
+- `src/sim/life/types.ts` — imported by **16** files
 - `src/theme/palette.ts` — imported by **16** files
 - `src/sim/validate.ts` — imported by **16** files
+- `src/sim/campaign.ts` — imported by **15** files
 - `src/sim/organisms.ts` — imported by **15** files
-- `src/sim/life/types.ts` — imported by **14** files
-- `src/sim/campaign.ts` — imported by **13** files
 - `src/app/run.ts` — imported by **11** files
 - `src/sim/life/cards.ts` — imported by **11** files
 - `src/app/arcs.ts` — imported by **10** files

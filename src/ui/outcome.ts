@@ -21,8 +21,12 @@ export interface OutcomeExtra {
   readonly dropped: number;
   readonly energyNext: number;
   readonly lastWeek: boolean;
-  /** One plain line with the week's score and its Choices and Outcome parts. */
-  readonly scoreLine?: string;
+  /** The luck line: the week's odds beside what happened. */
+  readonly luck?: string;
+  /** "Your plan and your routine were strong": a careful week that was still a hard fight. */
+  readonly stillHard?: string;
+  /** The "This week" block: Lived, Odds, Fight and Score. */
+  readonly week?: readonly { readonly label: string; readonly text: string }[];
 }
 
 /** One row of Part B's before and now table. */
@@ -151,8 +155,15 @@ export function createOutcomeOverlay(
   const compare = document.createElement("div");
   const stats = document.createElement("p");
   stats.style.cssText = "margin:0;line-height:1.4;";
-  const score = document.createElement("p");
-  score.style.cssText = "margin:0;line-height:1.4;font-weight:600;";
+  const luck = document.createElement("p");
+  luck.style.cssText = "margin:0;line-height:1.4;";
+  const weekHead = document.createElement("div");
+  weekHead.style.cssText = "font-weight:700;";
+  weekHead.textContent = "This week";
+  const week = document.createElement("div");
+  week.style.cssText =
+    "padding:8px 10px;border-radius:6px;background:var(--zw-control);line-height:1.4;font-size:14px;" +
+    "display:flex;flex-direction:column;gap:4px;";
 
   const buttons = document.createElement("div");
   buttons.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;";
@@ -172,7 +183,17 @@ export function createOutcomeOverlay(
   const peek = button("Look at the board", () => setCollapsed(true));
   const next = button("Next", () => handlers.onNext?.(), true);
   buttons.append(next, again, fresh, replay, peek);
-  card.append(title, summary, reasons, compare, carry, stats, score, buttons);
+  card.append(
+    title,
+    summary,
+    luck,
+    reasons,
+    compare,
+    carry,
+    stats,
+    week,
+    buttons,
+  );
   backdrop.append(card);
 
   // A small tab to bring the card back after looking at the final board.
@@ -334,8 +355,31 @@ export function createOutcomeOverlay(
           (extra && !extra.lastWeek
             ? ` You start next with ${extra.energyNext} energy.`
             : "");
-      score.textContent = extra?.scoreLine ?? "";
-      score.style.display = extra?.scoreLine ? "" : "none";
+      luck.textContent = [extra?.luck, extra?.stillHard]
+        .filter(Boolean)
+        .join(" ");
+      luck.style.display = luck.textContent ? "" : "none";
+      week.replaceChildren(
+        ...(extra?.week
+          ? [
+              weekHead,
+              ...extra.week.map((r) => {
+                const row = document.createElement("div");
+                row.style.cssText = "display:flex;gap:10px;";
+                const label = document.createElement("span");
+                label.style.cssText =
+                  "flex:none;width:52px;font-weight:600;opacity:0.8;";
+                label.textContent = r.label;
+                const text = document.createElement("span");
+                text.style.cssText = "min-width:0;overflow-wrap:anywhere;";
+                text.textContent = r.text;
+                row.append(label, text);
+                return row;
+              }),
+            ]
+          : []),
+      );
+      week.style.display = extra?.week ? "" : "none";
       open = true;
       setCollapsed(false);
     },

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { WeekScore } from "../sim/score";
 import type { RecordResult } from "./bestScores";
-import { bestLines, scoreCard, weekScoreLine } from "./summaryModel";
+import type { CycleResult } from "../sim/campaign";
+import type { LifeState } from "../sim/life/types";
+import { bestLines, scoreCard, thisWeekRows } from "./summaryModel";
 
 const week: WeekScore = {
   version: 4,
@@ -26,11 +28,64 @@ const rec = (over: Partial<RecordResult>): RecordResult => ({
   ...over,
 });
 
-describe("weekScoreLine", () => {
-  it("shows the total with its two parts", () => {
-    expect(weekScoreLine(week)).toBe(
-      "This week: 315 (Choices 215 + Outcome 100)",
+describe("thisWeekRows", () => {
+  const life = (points: number) =>
+    ({ goal: { points, target: 13 } }) as unknown as LifeState;
+  const outcome = (grade: "cleared" | "contained" | "neededBackup") => ({
+    grade,
+    tissue: { health: 10, max: 20, lost: 10 },
+  });
+  const full = (grade: "cleared" | "contained" | "neededBackup") =>
+    ({
+      kind: "battle",
+      battleKind: "full",
+      reasons: ["exposure"],
+      outcome: outcome(grade),
+    }) as unknown as CycleResult;
+  const odds = { value: "35%", band: "some" } as const;
+
+  it("reads the sketch: lived, odds, fight, score", () => {
+    expect(
+      thisWeekRows(life(13), full("neededBackup"), odds, true, week),
+    ).toEqual([
+      { label: "Lived", text: "13 of 13 points, goal met" },
+      { label: "Odds", text: "35%: something came home anyway" },
+      { label: "Fight", text: "backup arrived, tissue 10 of 20" },
+      { label: "Score", text: "315 = Choices 215 + Outcome 100" },
+    ]);
+  });
+  it("says short of the goal and nothing came home, without blame", () => {
+    const rows = thisWeekRows(life(9), full("cleared"), odds, false, week);
+    expect(rows[0].text).toBe("9 of 13 points, short of the goal");
+    expect(rows[1].text).toBe("35%: nothing came home");
+    expect(rows[2].text).toBe("all clear, tissue 10 of 20");
+    expect(JSON.stringify(rows)).not.toMatch(/lost|failed|defeat|fault/i);
+  });
+  it("calls a big week's landing just that", () => {
+    const rows = thisWeekRows(
+      life(13),
+      full("contained"),
+      { value: "70%", band: "likely" },
+      true,
+      week,
     );
+    expect(rows[1].text).toBe("70%: something came home");
+    expect(rows[2].text).toBe("contained, tissue 10 of 20");
+  });
+  it("uses All quiet and Still stirring for a skirmish", () => {
+    const skirmish = (grade: "cleared" | "contained") =>
+      ({
+        kind: "battle",
+        battleKind: "skirmish",
+        reasons: [],
+        outcome: outcome(grade),
+      }) as unknown as CycleResult;
+    expect(
+      thisWeekRows(life(13), skirmish("cleared"), odds, false, week)[2].text,
+    ).toBe("all quiet, tissue 10 of 20");
+    expect(
+      thisWeekRows(life(13), skirmish("contained"), odds, false, week)[2].text,
+    ).toBe("still stirring, tissue 10 of 20");
   });
 });
 
@@ -40,10 +95,7 @@ describe("a met goal", () => {
     choices: { ...week.choices, goalMet: 40, total: 255 },
     total: 355,
   };
-  it("shows the +40 on the week line and the summary", () => {
-    expect(weekScoreLine(met)).toBe(
-      "This week: 355 (Choices 255 + Outcome 100), goal met +40",
-    );
+  it("shows the +40 on the summary", () => {
     expect(
       scoreCard([met], { choices: 255, outcome: 100, total: 355 }, null)
         .weeks[0].choices,

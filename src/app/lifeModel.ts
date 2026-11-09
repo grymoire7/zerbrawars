@@ -18,7 +18,7 @@ import type {
   LifeEvent,
   LifeState,
 } from "../sim/life/types";
-import type { BattleKind } from "../sim/types";
+import type { BattleGrade, BattleKind } from "../sim/types";
 import { bodyBeats } from "./campaignModel";
 import { PARAMS } from "../sim/params";
 import { organismList, organismName } from "../sim/organisms";
@@ -587,6 +587,8 @@ export interface WeekOdds {
   readonly value: string;
   /** none, low, some or likely before the week is played; what happened once a day is played. */
   readonly state: string;
+  /** The band from the rounded value, whatever happened since: none, low, some or likely. */
+  readonly band: ExposureWord;
   /** A carried reservoir exists. Never part of the percentage. */
   readonly leftover: boolean;
 }
@@ -622,7 +624,78 @@ export function weekOdds(life: LifeState): WeekOdds {
         : life.day >= L.days
           ? "stayed away"
           : "so far clear";
-  return { chance, value, state, leftover: life.reservoirs.length > 0 };
+  return {
+    chance,
+    value,
+    state,
+    band: word,
+    leftover: life.reservoirs.length > 0,
+  };
+}
+
+/** Why a battle began beyond a new exposure, for the luck line's extra sentences. */
+export interface LuckCauses {
+  /** A leftover flared up. */
+  readonly flared: boolean;
+  /** The doctor found a leftover. */
+  readonly doctorFound: boolean;
+}
+
+/**
+ * The luck line (outcomes design 2.3): the week's odds beside what happened, said once, with no
+ * advice. `landed` is whether something new came home; a flared leftover is only worth a sentence
+ * when nothing new came.
+ */
+export function luckLine(
+  odds: Pick<WeekOdds, "value" | "band">,
+  landed: boolean,
+  causes: LuckCauses,
+): string {
+  const lines: string[] = [];
+  const at = odds.value.startsWith("under") ? odds.value : `at ${odds.value}`;
+  if (odds.band === "none") {
+    lines.push(
+      landed
+        ? "Something came home."
+        : "A quiet week at home. Nothing came home.",
+    );
+  } else if (odds.band === "likely") {
+    lines.push(
+      landed
+        ? `A big week: ${odds.value} odds, and something came home.`
+        : `A big week: ${odds.value} odds, and nothing came home. Lucky one.`,
+    );
+  } else {
+    lines.push(
+      landed
+        ? `Your plan kept the odds ${at}. Something came home anyway. That happens.`
+        : `Your plan kept the odds ${at}, and nothing came home.`,
+    );
+  }
+  if (causes.flared && !landed)
+    lines.push("Nothing new came home, but something left over flared up.");
+  if (causes.doctorFound)
+    lines.push(
+      "The doctor found something left over, so you fought it on your terms.",
+    );
+  return lines.join(" ");
+}
+
+/**
+ * The "still hard" line (2.3): a full battle that ended Contained or Backup arrived after a careful
+ * week (odds under 50% and the routine kept, 3 of 3). Nothing for a careless week.
+ */
+export function stillHardLine(
+  grade: BattleGrade,
+  kind: BattleKind,
+  odds: Pick<WeekOdds, "band">,
+  medDosesKept: number,
+): string | null {
+  const careful =
+    odds.band !== "likely" && medDosesKept >= PARAMS.life.meds.window;
+  return kind === "full" && grade !== "cleared" && careful
+    ? "Your plan and your routine were strong. Some fights are just hard."
+    : null;
 }
 
 /** The energy as a signed amount: a cost has a minus, a refund a plus. */

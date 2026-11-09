@@ -62,6 +62,8 @@ export interface LifeSummaryModel {
   readonly streak: number;
   readonly goalText: string;
   readonly metGoal: boolean;
+  /** The luck line: the week's odds beside what happened. */
+  readonly luck: string;
   readonly battle: { readonly due: boolean; readonly line: string };
   /** How the body went this week: symptoms and the doctor visit. */
   readonly notes: readonly string[];
@@ -666,6 +668,7 @@ export function createLifePanel(
         ),
       );
     }
+    box.append(el("div", "opacity:0.85;", s.luck));
     box.append(
       el(
         "div",

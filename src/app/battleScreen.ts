@@ -22,7 +22,7 @@ import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 const PATHOGEN_ORDER = Object.keys(PATHOGEN_KINDS) as PathogenKindId[];
 import type { BattleState, ChargeKind, Coord } from "../sim/types";
 import type { Screen, ScreenEnv } from "./screen";
-import { carryPreview } from "../sim/campaign";
+import { carryPreview, type Campaign } from "../sim/campaign";
 import { battleDueReasons } from "../sim/life/calendar";
 import { createBroughtStrip } from "../ui/broughtStrip";
 import { createProbe } from "../ui/probe";
@@ -73,9 +73,10 @@ import {
   type CoachState,
 } from "./coachModel";
 import { weekChoices, weekScore } from "../sim/score";
-import { weekScoreLine } from "./summaryModel";
+import { thisWeekRows } from "./summaryModel";
+import { luckLine, medDoses, stillHardLine, weekOdds } from "./lifeModel";
 import { battleStatusModel, type BattleStatusInput } from "./battleModel";
-import { createOutcomeOverlay } from "../ui/outcome";
+import { createOutcomeOverlay, type OutcomeExtra } from "../ui/outcome";
 import {
   createController,
   describeOrder,
@@ -531,9 +532,7 @@ export function mountBattle(
             dropped: carry.dropped.length,
             energyNext: carry.energy.next,
             lastWeek: c.cycle >= c.cycles,
-            scoreLine: c.result
-              ? weekScoreLine(weekScore(c.life, c.result, carry.kept.length))
-              : undefined,
+            ...weekCardLines(c, carry.kept.length),
           };
         }
         if (storyMenu && arcEnd) {
@@ -835,4 +834,38 @@ export function mountBattle(
 function dueReasons(run: Run) {
   const life = run.campaign().life;
   return battleDueReasons(life);
+}
+
+/** The luck line, the "still hard" line and the "This week" block for a finished campaign week. */
+function weekCardLines(
+  c: Campaign,
+  kept: number,
+): Pick<OutcomeExtra, "luck" | "stillHard" | "week"> {
+  const { result, life } = c;
+  if (!result) return {};
+  const odds = weekOdds(life);
+  const reasons = result.kind === "battle" ? result.reasons : [];
+  const landed = reasons.includes("exposure");
+  return {
+    luck: luckLine(odds, landed, {
+      flared: reasons.includes("reservoir"),
+      doctorFound: reasons.includes("doctor"),
+    }),
+    stillHard:
+      result.kind === "battle"
+        ? (stillHardLine(
+            result.outcome.grade,
+            result.battleKind,
+            odds,
+            medDoses(life.medLevel),
+          ) ?? undefined)
+        : undefined,
+    week: thisWeekRows(
+      life,
+      result,
+      odds,
+      landed,
+      weekScore(life, result, kept),
+    ),
+  };
 }

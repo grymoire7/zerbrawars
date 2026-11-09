@@ -50,7 +50,9 @@ import {
 } from "../ui/lifePanel";
 import {
   scoreLine,
+  luckLine,
   weekEndText,
+  weekOdds,
   doseStrip,
   lifeBeats,
   lifeStatusModel,
@@ -366,6 +368,10 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
             goalText: `${s.points} of ${s.target} points.`,
             metGoal: s.metGoal,
             notes,
+            luck: luckLine(weekOdds(life), due.reasons.includes("exposure"), {
+              flared: due.reasons.includes("reservoir"),
+              doctorFound: due.reasons.includes("doctor"),
+            }),
             battle: { due: end.due, line: end.line },
           }
         : null,

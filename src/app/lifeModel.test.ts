@@ -27,6 +27,8 @@ import {
   earliestDoctorSlot,
   weekSummary,
   weekOdds,
+  luckLine,
+  stillHardLine,
   scoreLine,
   weekEndText,
   lifeStatusModel,
@@ -668,5 +670,90 @@ describe("energy hint", () => {
     }
     expect(refused.length).toBeGreaterThan(0);
     for (const r of refused) expect(r).toMatch(/Not enough energy\. .*\./);
+  });
+});
+
+describe("luckLine", () => {
+  const none = { flared: false, doctorFound: false };
+  const at = (value: string, band: "none" | "low" | "some" | "likely") => ({
+    value,
+    band,
+  });
+  it("covers the low and some band", () => {
+    expect(luckLine(at("35%", "some"), true, none)).toBe(
+      "Your plan kept the odds at 35%. Something came home anyway. That happens.",
+    );
+    expect(luckLine(at("35%", "some"), false, none)).toBe(
+      "Your plan kept the odds at 35%, and nothing came home.",
+    );
+    expect(luckLine(at("10%", "low"), false, none)).toContain("odds at 10%");
+    expect(luckLine(at("under 5%", "low"), false, none)).toBe(
+      "Your plan kept the odds under 5%, and nothing came home.",
+    );
+  });
+  it("covers the likely band", () => {
+    expect(luckLine(at("70%", "likely"), true, none)).toBe(
+      "A big week: 70% odds, and something came home.",
+    );
+    expect(luckLine(at("70%", "likely"), false, none)).toBe(
+      "A big week: 70% odds, and nothing came home. Lucky one.",
+    );
+  });
+  it("covers the none band (something coming home cannot happen)", () => {
+    expect(luckLine(at("0%", "none"), false, none)).toBe(
+      "A quiet week at home. Nothing came home.",
+    );
+  });
+  it("adds a flared leftover only when nothing new came home", () => {
+    expect(luckLine(at("35%", "some"), false, { ...none, flared: true })).toBe(
+      "Your plan kept the odds at 35%, and nothing came home. Nothing new came home, but something left over flared up.",
+    );
+    expect(
+      luckLine(at("35%", "some"), true, { ...none, flared: true }),
+    ).not.toContain("flared");
+  });
+  it("adds the doctor find", () => {
+    expect(
+      luckLine(at("35%", "some"), false, { ...none, doctorFound: true }),
+    ).toMatch(
+      /nothing came home\. The doctor found something left over, so you fought it on your terms\.$/,
+    );
+  });
+  it("reads its band from weekOdds, so the text and the meter agree", () => {
+    const l = createLife({ seed: 1 });
+    const rolled = {
+      ...l,
+      day: 1,
+      rolls: [
+        {
+          day: 0,
+          slot: 0,
+          card: "yard" as const,
+          kind: "aspergillus" as const,
+          chance: 0.33,
+          roll: 0.9,
+          landed: false,
+        },
+      ],
+    };
+    expect(luckLine(weekOdds(rolled), false, none)).toContain("odds at 35%");
+  });
+});
+
+describe("stillHardLine", () => {
+  const some = { band: "some" } as const;
+  const line =
+    "Your plan and your routine were strong. Some fights are just hard.";
+  it("shows for a careful full battle that was Contained or Backup arrived", () => {
+    expect(stillHardLine("contained", "full", some, 3)).toBe(line);
+    expect(stillHardLine("neededBackup", "full", some, 3)).toBe(line);
+  });
+  it("is silent on All clear, a skirmish and careless weeks", () => {
+    expect(stillHardLine("cleared", "full", some, 3)).toBeNull();
+    expect(stillHardLine("contained", "skirmish", some, 3)).toBeNull();
+    expect(
+      stillHardLine("contained", "full", { band: "likely" }, 3),
+    ).toBeNull();
+    expect(stillHardLine("neededBackup", "full", some, 2)).toBeNull();
   });
 });
