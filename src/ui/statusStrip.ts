@@ -66,10 +66,10 @@ function buildBar(bar: StatusBar, color: PaletteName): HTMLElement {
   if (bar.kind === "fill") {
     const ghost = document.createElement("div");
     ghost.className = "zw-bar-ghost";
-    ghost.style.cssText = `width:${clamp01(bar.ghost) * 100}%;background:${tone};`;
+    ghost.style.cssText = `width:${clamp01(bar.ghost) * 100}%;background-color:${tone};`;
     const solid = document.createElement("div");
     solid.className = "zw-bar-solid";
-    solid.style.cssText = `width:${clamp01(bar.solid) * 100}%;background:${tone};`;
+    solid.style.cssText = `width:${clamp01(bar.solid) * 100}%;background-color:${tone};`;
     track.append(ghost, solid);
     if (bar.notch !== undefined) {
       const notch = document.createElement("div");

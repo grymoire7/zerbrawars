@@ -56,6 +56,7 @@ import {
   doseStrip,
   lifeBeats,
   lifeStatusModel,
+  exposureShift,
   oddsText,
   particleCount,
   pct,
@@ -226,6 +227,18 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     canvas.setAttribute("aria-label", label);
   };
 
+  // The picked card to preview in the Exposure cell: an activity with no slot yet (not rest, not the doctor).
+  const pickCard = (): CardId | null => {
+    const sel = selOf();
+    if (!sel || sel === "rest" || pending.slot) return null;
+    const v = versionOf(sel);
+    return cardDef(v).doctor ? null : v;
+  };
+  const pickShift = (): string => {
+    const v = pickCard();
+    return v ? ` ${exposureShift(life, v).text}` : "";
+  };
+
   const model = (): LifePanelModel => {
     const sel = selOf();
     const week = exposurePreview(life);
@@ -340,7 +353,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       : sel === "rest"
         ? "Now tap a time slot to clear it for a rest."
         : sel
-          ? `Now tap a time slot for ${cardDef(versionOf(sel)).label}.`
+          ? `Now tap a time slot for ${cardDef(versionOf(sel)).label}.${pickShift()}`
           : "";
     return {
       title: over
@@ -618,7 +631,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     run.campaign().history.reduce((n, h) => n + h.score.total, 0);
 
   function draw() {
-    strip.update(lifeStatusModel(life, earlierScore()));
+    strip.update(lifeStatusModel(life, earlierScore(), pickCard()));
     panel.update(model());
     showInset();
   }

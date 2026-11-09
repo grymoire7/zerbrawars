@@ -27,6 +27,8 @@ import {
   earliestDoctorSlot,
   weekSummary,
   weekOdds,
+  weekOddsWith,
+  exposureShift,
   luckLine,
   stillHardLine,
   scoreLine,
@@ -457,6 +459,103 @@ describe("weekOdds", () => {
     };
     expect(weekOdds(came).state).toBe("came home");
     expect(weekOdds({ ...came, day: 3 }).state).toBe("came home");
+  });
+});
+
+describe("weekOddsWith and exposureShift", () => {
+  const fresh = () => createLife({ seed: 1 });
+
+  it("rises when a risky card is added", () => {
+    const l = put(fresh(), 0, 0, "yard");
+    const s = exposureShift(l, "lake");
+    expect(s.before.value).toBe("45%");
+    expect(s.after.chance).toBeGreaterThan(s.before.chance);
+    expect(s.after.value).toBe("70%");
+    expect(s.text).toBe("Exposure 45% to 70%.");
+  });
+
+  it("is the same as placing the card (reuses weekOdds)", () => {
+    const l = put(fresh(), 0, 0, "yard");
+    expect(weekOddsWith(l, "lake")).toEqual(weekOdds(put(l, 1, 0, "lake")));
+  });
+
+  it("stays when a safe card adds under rounding", () => {
+    let l = put(fresh(), 0, 0, "yard");
+    l = put(l, 1, 0, "lake");
+    const s = exposureShift(l, "band");
+    expect(s.after.chance).toBeGreaterThan(s.before.chance);
+    expect(s.before.value).toBe("70%");
+    expect(s.text).toBe("Exposure stays at 70%.");
+  });
+
+  it("goes from an empty plan to the card's own odds", () => {
+    const s = exposureShift(fresh(), "yard");
+    expect(s.before.value).toBe("0%");
+    expect(s.after.value).toBe("45%");
+    expect(s.text).toBe("Exposure 0% to 45%.");
+  });
+
+  it("lowers when a riskier version is swapped for a safer one", () => {
+    const l = put(fresh(), 0, 0, "yard");
+    const s = exposureShift(l, "yardIndoor");
+    expect(s.after.chance).toBeCloseTo(0.1, 10);
+    expect(s.after.chance).toBeLessThan(s.before.chance);
+    expect(s.text).toBe("Exposure 45% to 10%.");
+    // Unplaced hand card: the swap is added on top of the plan.
+    expect(exposureShift(fresh(), "beach").text).toBe("Exposure 0% to 15%.");
+  });
+
+  it("does not double count a card already in the plan", () => {
+    const l = put(fresh(), 0, 0, "yard");
+    expect(weekOddsWith(l, "yard").chance).toBeCloseTo(weekOdds(l).chance, 10);
+    expect(exposureShift(l, "yard").text).toBe("Exposure stays at 45%.");
+  });
+
+  it("does not add a played card again", () => {
+    const l: LifeState = {
+      ...fresh(),
+      day: 1,
+      rolls: [
+        {
+          day: 0,
+          slot: 0,
+          card: "yard",
+          kind: "aspergillus",
+          chance: 0.45,
+          roll: 0.99,
+          landed: false,
+        },
+      ],
+      plan: put(fresh(), 0, 0, "yard").plan,
+    };
+    expect(weekOddsWith(l, "yard").chance).toBeCloseTo(0.45, 10);
+  });
+
+  it("never moves for the doctor card or no pick", () => {
+    const l = put(fresh(), 0, 0, "yard");
+    expect(weekOddsWith(l, "doctor")).toEqual(weekOdds(l));
+    expect(weekOddsWith(l, null)).toEqual(weekOdds(l));
+  });
+
+  it("ghosts the bar only with a pick, and shows the lower side solid", () => {
+    const l = put(fresh(), 0, 0, "yard");
+    const none = lifeStatusModel(l).cells.find((c) => c.id === "exposure")!;
+    const bar = none.bar as { solid: number; ghost: number };
+    expect(bar.ghost).toBe(bar.solid);
+    const up = lifeStatusModel(l, 0, "lake").cells.find(
+      (c) => c.id === "exposure",
+    )!;
+    expect(up.value).toBe("45%");
+    const upBar = up.bar as { solid: number; ghost: number };
+    expect(upBar.solid).toBeCloseTo(0.45, 10);
+    expect(upBar.ghost).toBeGreaterThan(upBar.solid);
+    // A safer swap ghosts the part it would take away.
+    const down = lifeStatusModel(l, 0, "yardIndoor").cells.find(
+      (c) => c.id === "exposure",
+    )!;
+    const downBar = down.bar as { solid: number; ghost: number };
+    expect(downBar.solid).toBeCloseTo(0.1, 10);
+    expect(downBar.ghost).toBeCloseTo(0.45, 10);
   });
 });
 

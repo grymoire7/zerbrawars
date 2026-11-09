@@ -600,9 +600,18 @@ export interface WeekOdds {
  * from the rounded value, so the word never disagrees with the number beside it.
  */
 export function weekOdds(life: LifeState): WeekOdds {
+  return oddsFrom(life, pendingChances(life));
+}
+
+/** The odds of the cards still to play, in play order. */
+const pendingChances = (life: LifeState): number[] =>
+  exposurePreview(life).pending.map((p) => p.preview.chance);
+
+/** The Exposure cell for the played rolls plus these pending chances. */
+function oddsFrom(life: LifeState, pending: readonly number[]): WeekOdds {
   let none = 1;
   for (const r of life.rolls) none *= 1 - r.chance;
-  for (const p of exposurePreview(life).pending) none *= 1 - p.preview.chance;
+  for (const c of pending) none *= 1 - c;
   const chance = 1 - none;
   const rounded = Math.round(chance * 20) * 5;
   const value =
@@ -631,6 +640,40 @@ export function weekOdds(life: LifeState): WeekOdds {
     band: word,
     leftover: life.reservoirs.length > 0,
   };
+}
+
+/**
+ * The Exposure cell as it would read with `card` in the plan (the before/after preview, design
+ * 3.4). A card already planned is swapped for this version, never counted twice; one already
+ * played, or the doctor, changes nothing. Leftovers and the doctor never move it.
+ */
+export function weekOddsWith(life: LifeState, card: CardId | null): WeekOdds {
+  if (!card || cardDef(card).doctor) return weekOdds(life);
+  const at = findPlaced(life, card);
+  if (at && at.day < life.day) return weekOdds(life);
+  const week = exposurePreview(life).pending;
+  const others = week
+    .filter((p) => !(at && p.day === at.day && p.slot === at.slot))
+    .map((p) => p.preview.chance);
+  return oddsFrom(life, [...others, cardDef(card).exposure.chance]);
+}
+
+export interface ExposureShift {
+  readonly before: WeekOdds;
+  readonly after: WeekOdds;
+  /** "Exposure 35% to 65%." or "Exposure stays at 35%." by the rounded values shown. */
+  readonly text: string;
+}
+
+/** The pair a picked card shows: the plan's odds now and with the card added (or swapped in). */
+export function exposureShift(life: LifeState, card: CardId): ExposureShift {
+  const before = weekOdds(life);
+  const after = weekOddsWith(life, card);
+  const text =
+    before.value === after.value
+      ? `Exposure stays at ${before.value}.`
+      : `Exposure ${before.value} to ${after.value}.`;
+  return { before, after, text };
 }
 
 /** Why a battle began beyond a new exposure, for the luck line's extra sentences. */
@@ -739,7 +782,11 @@ const energyWord = (energy: number) =>
  * The five life-screen cells. `earlier` is the total score of the weeks already finished; it only
  * appears in the Score explanation.
  */
-export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
+export function lifeStatusModel(
+  life: LifeState,
+  earlier = 0,
+  pick: CardId | null = null,
+): StatusModel {
   const week = exposurePreview(life);
   const rows = energyPlan(life).flat();
   const endEnergy = rows.length ? rows[rows.length - 1] : life.energy;
@@ -803,13 +850,19 @@ export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
     explain: `Doses taken over the last ${window} days, as planned: ${doses} of ${window}. That gives ${chargesText(week.charges)} in the fight. Fewer doses means a weaker aura and fewer charges.`,
   };
   const odds = weekOdds(life);
+  const next = pick ? weekOddsWith(life, pick) : odds;
   const exposureCell: StatusCell = {
     id: "exposure",
     label: "Exposure",
     value: odds.leftover ? `${odds.value} + leftover` : odds.value,
     state: odds.state,
     showState: true,
-    bar: { kind: "fill", solid: odds.chance, ghost: odds.chance },
+    // A picked card ghosts the part it would add (or, if safer, the part it would take away).
+    bar: {
+      kind: "fill",
+      solid: Math.min(odds.chance, next.chance),
+      ghost: Math.max(odds.chance, next.chance),
+    },
     // A colour band that follows the odds; the state word always rides with it.
     color: odds.chance < 0.2 ? "swarm" : odds.chance < 0.5 ? "notice" : "heat",
     explain:
