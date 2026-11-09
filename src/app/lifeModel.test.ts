@@ -26,7 +26,7 @@ import {
   stopBanner,
   earliestDoctorSlot,
   weekSummary,
-  battleOddsText,
+  weekOdds,
   scoreLine,
   weekEndText,
   lifeStatusModel,
@@ -257,12 +257,6 @@ describe("weekEndText", () => {
   });
 });
 
-describe("battleOddsText", () => {
-  it("names the chance as a full battle", () => {
-    expect(battleOddsText(0.4)).toBe("Full battle odds: 40%");
-  });
-});
-
 describe("scoreLine", () => {
   it("signs the energy: a cost has a minus, a refund a plus", () => {
     expect(scoreLine(4, 2, 40)).toBe("+4 points, -2 energy, +40 score");
@@ -275,10 +269,10 @@ describe("lifeStatusModel", () => {
   const cellOf = (l: LifeState, id: string) =>
     lifeStatusModel(l).cells.find((c) => c.id === id)!;
 
-  it("has Points, Energy, Medication and Score in order", () => {
+  it("has Points, Energy, Medication, Exposure and Score in order", () => {
     expect(
       lifeStatusModel(createLife({ seed: 1 })).cells.map((c) => c.label),
-    ).toEqual(["Points", "Energy", "Medication", "Score"]);
+    ).toEqual(["Points", "Energy", "Medication", "Exposure", "Score"]);
   });
 
   it("reads points earned out of the target, with planned points in the sentence", () => {
@@ -327,6 +321,145 @@ describe("lifeStatusModel", () => {
     expect(later.explain).toContain("Earlier weeks: 315");
   });
 });
+
+describe("weekOdds", () => {
+  const fresh = () => createLife({ seed: 1 });
+  const roll = (chance: number, landed = false) => ({
+    day: 0,
+    slot: 0,
+    card: "yard" as const,
+    kind: "aspergillus" as const,
+    chance,
+    roll: landed ? 0 : 0.99,
+    landed,
+  });
+  const withRolls = (l: LifeState, ...chances: number[]): LifeState => ({
+    ...l,
+    day: 1,
+    rolls: chances.map((c) => roll(c)),
+  });
+
+  it("is 0% none for an empty plan", () => {
+    const o = weekOdds(fresh());
+    expect(o).toMatchObject({ value: "0%", state: "none", leftover: false });
+    expect(o.chance).toBe(0);
+  });
+
+  it("reads one card as its own chance", () => {
+    const o = weekOdds(put(fresh(), 0, 0, "yard"));
+    expect(o.value).toBe("45%");
+    expect(o.state).toBe("some");
+  });
+
+  it("combines several cards as 1 - product of the misses", () => {
+    let l = put(fresh(), 0, 0, "yard");
+    l = put(l, 1, 0, "lake");
+    expect(weekOdds(l).chance).toBeCloseTo(1 - 0.55 * 0.55, 10);
+    expect(weekOdds(l).value).toBe("70%");
+    expect(weekOdds(l).state).toBe("likely");
+  });
+
+  it("rounds to 5 and says under 5% for a small non-zero chance", () => {
+    expect(weekOdds(withRolls(fresh(), 0.32)).value).toBe("30%");
+    expect(weekOdds(withRolls(fresh(), 0.33)).value).toBe("35%");
+    expect(weekOdds(withRolls(fresh(), 0.024)).value).toBe("under 5%");
+    expect(weekOdds(withRolls(fresh(), 0.025)).value).toBe("5%");
+    expect(weekOdds(withRolls(fresh(), 0.999)).value).toBe("100%");
+  });
+
+  it("moves words at 20 and 50 of the rounded value", () => {
+    // Past day 0 the state reports the week, so check the word with day 0 and a seeded roll.
+    expect(weekOdds(withRolls(fresh(), 0.19)).value).toBe("20%");
+    const day0 = (c: number) => weekOdds({ ...withRolls(fresh(), c), day: 0 });
+    expect(day0(0.17).state).toBe("low");
+    expect(day0(0.18).state).toBe("some");
+    expect(day0(0.19).state).toBe("some");
+    expect(day0(0.2).state).toBe("some");
+    expect(day0(0.47).state).toBe("some");
+    expect(day0(0.48).state).toBe("likely");
+    expect(day0(0.49).state).toBe("likely");
+    expect(day0(0.5).state).toBe("likely");
+    expect(day0(0.01).state).toBe("low");
+  });
+
+  it("counts played rolls and pending cards together", () => {
+    let l = put(fresh(), 0, 0, "yard");
+    l = put(l, 2, 0, "lake");
+    const before = weekOdds(l).chance;
+    const played = advanceDay(l).state;
+    expect(played.rolls.length).toBe(1);
+    expect(weekOdds(played).chance).toBeCloseTo(before, 10);
+  });
+
+  it("tags a carried reservoir without changing the percentage", () => {
+    const base = put(fresh(), 0, 0, "yard");
+    const carried = {
+      ...base,
+      reservoirs: [
+        {
+          kind: "aspergillus" as const,
+          size: 2,
+          hidden: true,
+          symptomDay: 3,
+          flared: false,
+          grown: false,
+        },
+      ],
+    };
+    const o = weekOdds(carried);
+    expect(o.leftover).toBe(true);
+    expect(o.value).toBe(weekOdds(base).value);
+    expect(o.value).not.toContain("leftover");
+    expect(cellOfModel(carried).value).toBe("45% + leftover");
+    expect(cellOfModel(carried).explain).toContain("left over");
+    expect(cellOfModel(base).explain).not.toContain("left over");
+  });
+
+  it("is never moved by the doctor visit", () => {
+    const base = put(fresh(), 0, 0, "yard");
+    const doc = put(
+      { ...base, hand: [...base.hand, "doctor"] },
+      1,
+      0,
+      "doctor",
+    );
+    expect(weekOdds(doc).chance).toBe(weekOdds(base).chance);
+  });
+
+  it("keeps the plan odds and reports what happened during and after the week", () => {
+    let l = put(put(fresh(), 0, 0, "yard"), 1, 0, "lake");
+    const planned = weekOdds(l).value;
+    l = advanceDay(l).state;
+    expect(weekOdds(l).value).toBe(planned);
+    expect(["so far clear", "came home"]).toContain(weekOdds(l).state);
+    while (l.day < 3) l = advanceDay(l).state;
+    const end = weekOdds(l);
+    expect(end.value).toBe(planned);
+    expect(end.state).toBe(l.exposures.length ? "came home" : "stayed away");
+    const clear = weekOdds({ ...withRolls(fresh(), 0.4), day: 2 });
+    expect(clear.state).toBe("so far clear");
+    expect(weekOdds({ ...withRolls(fresh(), 0.4), day: 3 }).state).toBe(
+      "stayed away",
+    );
+    const came = {
+      ...withRolls(fresh(), 0.4),
+      exposures: [
+        {
+          day: 0,
+          slot: 0,
+          card: "yard" as const,
+          kind: "aspergillus" as const,
+          size: 1,
+        },
+      ],
+    };
+    expect(weekOdds(came).state).toBe("came home");
+    expect(weekOdds({ ...came, day: 3 }).state).toBe("came home");
+  });
+});
+
+const cellOfModel = (l: LifeState) =>
+  lifeStatusModel(l).cells.find((c) => c.id === "exposure")!;
 
 describe("medStateWord and chargesText", () => {
   it("names the dose states", () => {

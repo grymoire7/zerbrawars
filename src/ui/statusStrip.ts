@@ -26,6 +26,8 @@ export interface StatusCell {
   readonly id: string;
   /** The word label, e.g. "Tissue". */
   readonly label: string;
+  /** A shorter label for narrow phones (e.g. "Meds"); the full label stays in the accessible name. */
+  readonly short?: string;
   /** The value text, e.g. "18/20". */
   readonly value: string;
   /** The state word, e.g. "healthy". Always in the accessible label. */
@@ -95,7 +97,15 @@ function buildBar(bar: StatusBar, color: PaletteName): HTMLElement {
 function fillCell(btn: HTMLButtonElement, c: StatusCell, open: boolean): void {
   const label = document.createElement("span");
   label.className = "zw-cell-label";
-  label.textContent = c.label;
+  if (c.short) {
+    const full = document.createElement("span");
+    full.className = "zw-label-full";
+    full.textContent = c.label;
+    const short = document.createElement("span");
+    short.className = "zw-label-short";
+    short.textContent = c.short;
+    label.append(full, short);
+  } else label.textContent = c.label;
   const value = document.createElement("span");
   value.className = "zw-cell-value";
   value.append(c.value);

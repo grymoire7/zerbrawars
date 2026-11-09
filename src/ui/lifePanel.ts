@@ -80,12 +80,9 @@ export interface LifePanelModel {
   readonly hint: string;
   /** How the planner works, behind the (?) beside "Your week". */
   readonly help: string;
-  /** What the odds label means, behind its (?). */
-  readonly oddsHelp: string;
   readonly restSelected: boolean;
   readonly hand: readonly LifeCardModel[];
   readonly grid: readonly (readonly LifeSlotModel[])[];
-  readonly odds: string;
   readonly beats: readonly {
     readonly day: string;
     readonly lines: readonly string[];
@@ -509,13 +506,6 @@ export function createLifePanel(
     }
     grid.append(thead, tbody);
     calBox.append(grid);
-    if (m.odds && !pinned) {
-      const oddsRow = el("div", ROW);
-      oddsRow.append(el("span", "font-size:13px;font-weight:600;", m.odds));
-      const oddsTip = tip("life-odds", m.oddsHelp, "full battle odds");
-      oddsRow.append(oddsTip.button);
-      calBox.append(oddsRow, oddsTip.note);
-    }
   }
 
   function renderHand(m: LifePanelModel) {

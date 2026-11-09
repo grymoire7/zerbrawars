@@ -117,6 +117,7 @@
         z-index: 2;
         padding: 6px 8px;
         background: var(--zw-surface, #1f232b);
+        container-type: inline-size;
         display: flex;
         flex-direction: column;
         gap: 4px;
@@ -131,6 +132,21 @@
       }
       .zw-status-grid[data-cols="3"] {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .zw-status-grid[data-cols="5"] {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+      .zw-label-short {
+        display: none;
+      }
+      /* The strip's own width decides, so the desktop side panel gets the short labels too. */
+      @container (max-width: 420px) {
+        .zw-label-full {
+          display: none;
+        }
+        .zw-label-short {
+          display: inline;
+        }
       }
       @media (max-width: 339px) {
         .zw-status-grid[data-cols] {

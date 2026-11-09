@@ -578,14 +578,52 @@ export function weekEndText(
   return { due: true, line, button: "Start the battle" };
 }
 
-/** The week preview's odds label. The number is the chance of a full battle, not of any fight. */
-export function battleOddsText(chanceFull: number): string {
-  return `Full battle odds: ${pct(chanceFull)}`;
+export type ExposureWord = "none" | "low" | "some" | "likely";
+
+export interface WeekOdds {
+  /** 1 - product(1 - chance) over every played roll and pending card, 0..1, unrounded. */
+  readonly chance: number;
+  /** The chance rounded to 5 ("35%"), or "under 5%" when non-zero but below 5. */
+  readonly value: string;
+  /** none, low, some or likely before the week is played; what happened once a day is played. */
+  readonly state: string;
+  /** A carried reservoir exists. Never part of the percentage. */
+  readonly leftover: boolean;
 }
 
-/** What the odds label means, for the (?) beside it. */
-export const BATTLE_ODDS_HELP =
-  "The chance that this plan brings a full battle this week. Otherwise it is a small skirmish.";
+/**
+ * The Exposure cell: the chance something from this week's plan comes home with you. Played cards
+ * count with the odds they rolled at, pending ones with the odds on their cards. The doctor card
+ * brings nothing in and a leftover is only a tag, so neither moves the number. The state word comes
+ * from the rounded value, so the word never disagrees with the number beside it.
+ */
+export function weekOdds(life: LifeState): WeekOdds {
+  let none = 1;
+  for (const r of life.rolls) none *= 1 - r.chance;
+  for (const p of exposurePreview(life).pending) none *= 1 - p.preview.chance;
+  const chance = 1 - none;
+  const rounded = Math.round(chance * 20) * 5;
+  const value =
+    chance > 0 && rounded === 0 ? "under 5%" : `${Math.min(100, rounded)}%`;
+  const word: ExposureWord =
+    chance <= 0
+      ? "none"
+      : rounded < 20
+        ? "low"
+        : rounded < 50
+          ? "some"
+          : "likely";
+  const came = life.exposures.length > 0;
+  const state =
+    life.day === 0
+      ? word
+      : came
+        ? "came home"
+        : life.day >= L.days
+          ? "stayed away"
+          : "so far clear";
+  return { chance, value, state, leftover: life.reservoirs.length > 0 };
+}
 
 /** The energy as a signed amount: a cost has a minus, a refund a plus. */
 export function energyDelta(cost: number): string {
@@ -599,7 +637,7 @@ export function scoreLine(points: number, cost: number, score: number): string {
   return `+${points} points, ${energyDelta(cost)}, +${score} score`;
 }
 
-// ---- The status strip: Points, Energy, Medication and Score (B1a design, section 2.2). ----
+// ---- The status strip: Points, Energy, Medication, Exposure and Score (B1a design, section 2.2). ----
 
 /** "2 antifungal, 1 antibacterial", or "no charges". Shared by the life and battle strips. */
 export function chargesText(c: MedCharges): string {
@@ -625,7 +663,7 @@ const energyWord = (energy: number) =>
   energy >= 4 ? "plenty" : energy >= 2 ? "some" : "low";
 
 /**
- * The four life-screen cells. `earlier` is the total score of the weeks already finished; it only
+ * The five life-screen cells. `earlier` is the total score of the weeks already finished; it only
  * appears in the Score explanation.
  */
 export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
@@ -683,12 +721,29 @@ export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
   const medCell: StatusCell = {
     id: "medication",
     label: "Medication",
+    short: "Meds",
     value: `${doses}/${window}`,
     state: medStateWord(doses, window),
     showState: doses < window,
     bar: { kind: "segments", count: window, solid: doses, ghost: doses },
     color: "med",
     explain: `Doses taken over the last ${window} days, as planned: ${doses} of ${window}. That gives ${chargesText(week.charges)} in the fight. Fewer doses means a weaker aura and fewer charges.`,
+  };
+  const odds = weekOdds(life);
+  const exposureCell: StatusCell = {
+    id: "exposure",
+    label: "Exposure",
+    value: odds.leftover ? `${odds.value} + leftover` : odds.value,
+    state: odds.state,
+    showState: true,
+    bar: { kind: "fill", solid: odds.chance, ghost: odds.chance },
+    // A colour band that follows the odds; the state word always rides with it.
+    color: odds.chance < 0.2 ? "swarm" : odds.chance < 0.5 ? "notice" : "heat",
+    explain:
+      `The chance something from this week's plan comes home with you: ${odds.value}. These are game odds. Your medicine does not change them; it helps your cells in the fight.` +
+      (odds.leftover
+        ? " Something left over from last week may also flare up; the doctor can find it."
+        : ""),
   };
   const scoreCell: StatusCell = {
     id: "score",
@@ -702,5 +757,5 @@ export function lifeStatusModel(life: LifeState, earlier = 0): StatusModel {
       "Your score for this week's choices, if the plan plays out: points, odds pushed, routine kept and a bonus for meeting the goal. Outcome is added after the fight." +
       (earlier > 0 ? ` Earlier weeks: ${earlier}.` : ""),
   };
-  return { cells: [pointsCell, energyCell, medCell, scoreCell] };
+  return { cells: [pointsCell, energyCell, medCell, exposureCell, scoreCell] };
 }

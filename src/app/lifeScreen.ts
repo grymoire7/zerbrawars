@@ -49,8 +49,6 @@ import {
   type LifeSlotModel,
 } from "../ui/lifePanel";
 import {
-  BATTLE_ODDS_HELP,
-  battleOddsText,
   scoreLine,
   weekEndText,
   doseStrip,
@@ -355,15 +353,9 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       },
       hint: message ? `Can't do that: ${message}` : hintBase,
       help: "Tap an activity, then a time slot. Or tap a time slot first. Tap a planned activity to take it off.",
-      oddsHelp: BATTLE_ODDS_HELP,
       restSelected: sel === "rest",
       hand,
       grid,
-      odds: over
-        ? ""
-        : week.pending.length === 0
-          ? ""
-          : battleOddsText(week.chanceBattle),
       beats,
       summary: over
         ? {
