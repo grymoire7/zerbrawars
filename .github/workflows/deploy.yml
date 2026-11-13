@@ -1,0 +1,51 @@
+name: Deploy to DreamHost
+
+# Production only changes when a version tag (vX.Y.Z) is pushed, so work can
+# land on main without shipping. workflow_dispatch is a manual escape hatch
+# (e.g. to redeploy an older tag: choose it in the "Use workflow from" menu).
+# See "Releasing" in AGENTS.md.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Installs the Node version pinned in mise.toml.
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: mise exec -- npm ci
+
+      - name: Check tag matches package.json version
+        if: github.ref_type == 'tag'
+        run: |
+          pkg_version="$(mise exec -- node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME}" != "v${pkg_version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${pkg_version}"
+            exit 1
+          fi
+
+      # Typecheck, lint, format, test and build; the static bundle lands in dist/.
+      - name: Check and build
+        run: mise run check
+
+      - name: Deploy dist/ to DreamHost via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          server: ${{ secrets.DREAMHOST_HOST }}
+          username: ${{ secrets.DREAMHOST_USERNAME }}
+          password: ${{ secrets.DREAMHOST_PASSWORD }}
+          port: 22
+          local_path: "./dist/*"
+          remote_path: ${{ secrets.DREAMHOST_REMOTE_PATH }}
+          delete_remote_files: true
+          sftp_only: true

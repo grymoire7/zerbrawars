@@ -8,7 +8,16 @@ Items marked **(my call)** are defaults I picked; change them freely.
 spec does not carry the schedule. This plan says what is done, in which order, and in which commit. The
 status table below is the only place that tracks slices.
 
-## Status (updated 2026-11-04)
+## Resume here (updated 2026-11-13)
+
+- **State:** B0 to B6 and BN, BO are done and merged to `main` (the GitHub remote is `origin`, repo `grymoire7/zerbrawars`). Commit hashes in the table below are from before a 2026-11-13 history rewrite that redacted patient-tester health details from two docs, so they no longer match `git log`; match by message instead. A `backup/pre-rewrite` branch holds the old history locally (delete it once nothing needs it, and never push it).
+- **Deploy:** `.github/workflows/deploy.yml` (see "Releasing" in `AGENTS.md`). Needs the four `DREAMHOST_*` secrets before the first tag; first release is `v0.1.0` (package.json is already 0.1.0).
+- **Next:** (1) set the secrets, push `main`, tag `v0.1.0` so a remote reviewer can play and send feedback; (2) B7 accessibility: send a design brief to Opus first (the battle screen takes over Tab; keyboard-only battle and week, reduced motion, grayscale, text scale, aria); (3) B8 offline demo build; (4) B9 patient session; (5) B10.
+- **Still unchecked on real devices:** Android back gesture and the "Leave site?" dialog; landscape phone; the new life-screen pieces (Exposure cell, preview hint, luck line, This week block, summary headline) and the Arc 2 intro and ending and epilogue on a phone; Arc 1 Part B "All clear" card seen by eye.
+- **Open questions waiting on people:** clinician items 1 to 31 (A-priority: 1, 2, 9, 20, 23, 24, 27, 28); week difficulty (seeded weekly event) and careless backup rate wait for the patient session; End Turn "won't click until all swarms move" was not reproducible; stray "the week is not over" error once seen during scripted testing, not reproduced.
+- **Workflow:** coordinator (me) delegates code to Sonnet subagents with REQUIRED verification lists, design to Opus (design only), runs `mise run check` and browser checks myself, commits one slice at a time with conventional commits, and updates the table below. Format only edited files with Prettier.
+
+## Status (updated 2026-11-13)
 
 | Task | State | Commits | Spec |
 | --- | --- | --- | --- |
