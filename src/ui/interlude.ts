@@ -15,6 +15,8 @@ export interface ScoreCardModel {
 
 export interface InterludeModel {
   readonly title: string;
+  /** A small marker under the title (the epilogue's draft note). */
+  readonly tag?: string;
   readonly lead: string;
   /** The campaign summary's score block, under the lead. */
   readonly score?: ScoreCardModel;
@@ -97,6 +99,12 @@ export function createInterlude(root: HTMLElement): Interlude {
       title.id = "interlude-title";
       title.style.cssText = "margin:0;font:600 24px sans-serif;";
       title.textContent = m.title;
+      const tag = m.tag ? [document.createElement("div")] : [];
+      if (m.tag && tag[0]) {
+        tag[0].style.cssText =
+          "align-self:flex-start;padding:2px 8px;border-radius:6px;font-size:13px;font-weight:600;border:1px dashed var(--zw-line-strong);";
+        tag[0].textContent = m.tag;
+      }
       const lead = document.createElement("p");
       lead.style.cssText = "margin:0;";
       lead.textContent = m.lead;
@@ -142,6 +150,7 @@ export function createInterlude(root: HTMLElement): Interlude {
       }
       card.replaceChildren(
         title,
+        ...tag,
         lead,
         ...scoreBlock,
         ...notes,

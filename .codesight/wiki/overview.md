@@ -22,4 +22,4 @@ Changes to these files have the widest blast radius across the codebase:
 - `src/sim/battle/intents.ts` — imported by **18** files
 
 ---
-_Back to [index.md](./index.md) · Generated 2026-11-09_
+_Back to [index.md](./index.md) · Generated 2026-11-13_

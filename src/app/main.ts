@@ -16,6 +16,7 @@ import { createRun, type Run } from "./run";
 import { afterPart, type PartAReadings } from "./tutorialModel";
 import { arcById, type ArcId, type VariantId } from "./arcs";
 import { initFacilitator } from "./facilitator";
+import { epilogue, initEpilogue } from "./epilogue";
 import { mountMenu } from "./menuScreens";
 import { parseStart, resumeTarget } from "./arcModel";
 import { clearHeld, heldRun, holdRun } from "./heldRun";
@@ -41,6 +42,7 @@ const panels = getPanels();
 const params = new URLSearchParams(window.location.search);
 // Facilitator mode and the developer-start check are read once here and kept for the page session.
 initFacilitator(params);
+initEpilogue(params);
 
 // Both screens share the battle board's footprint, so one camera framing serves them.
 const extent = battleFromLoadout(
@@ -148,6 +150,9 @@ function mount(req: ScreenRequest) {
     const to = resumeTarget(run.campaign());
     return mount(to === "battle" ? { mode: "battle", run } : { mode: to, run });
   }
+  // With the epilogue hidden it cannot be reached, whoever asks.
+  if (req.mode === "epilogue" && !epilogue.on)
+    return mount({ mode: "summary", run: req.run });
   arcFightInPlay = false;
   screen?.dispose();
   if (root) ctx.scene.remove(root);

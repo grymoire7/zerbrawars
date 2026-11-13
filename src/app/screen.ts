@@ -45,6 +45,7 @@ export type ScreenRequest =
   | { readonly mode: "campaign"; seed?: number; variant?: VariantId }
   | { readonly mode: "quiet"; run: Run }
   | { readonly mode: "summary"; run: Run }
+  | { readonly mode: "epilogue"; run: Run }
   | { readonly mode: "title" }
   | { readonly mode: "arcs"; variant: VariantId }
   | {

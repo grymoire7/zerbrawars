@@ -6,6 +6,12 @@ import { loadoutFromLife } from "../sim/life/loadout";
 import { createDebugPanel } from "../ui/debugPanel";
 import { createGameMenu } from "../ui/gameMenu";
 import { facilitator, resetForNewPlayer } from "./facilitator";
+import {
+  epilogue,
+  epilogueCard,
+  EPILOGUE_BACK,
+  EPILOGUE_LABEL,
+} from "./epilogue";
 import { createHelp, LIFE_LINES, LIFE_SEEN_KEY } from "../ui/help";
 import { createInterlude, type InterludeModel } from "../ui/interlude";
 import { bestId, recordRun, type RecordResult } from "./bestScores";
@@ -46,7 +52,7 @@ function recordOnce(run: Run, total: number, choices: number, outcome: number) {
 export function mountInterlude(
   env: ScreenEnv,
   run: Run,
-  kind: "quiet" | "summary",
+  kind: "quiet" | "summary" | "epilogue",
 ): Screen {
   const { root, panels, ui } = env;
   document.getElementById("app")?.classList.add("life");
@@ -65,7 +71,7 @@ export function mountInterlude(
       variant: run.variant,
       week: { cycle: c.cycle, cycles: c.cycles },
     }),
-    leaveNote: leaveNote(run.arc, kind === "summary"),
+    leaveNote: leaveNote(run.arc, kind !== "quiet"),
     arc: run.arc,
     items: () =>
       menuItems({ arc: run.arc, screen: "interlude", fightOver: false }),
@@ -118,7 +124,24 @@ export function mountInterlude(
       });
 
   let model: InterludeModel;
-  if (kind === "quiet") {
+  if (kind === "epilogue") {
+    const e = epilogueCard();
+    model = {
+      title: e.title,
+      tag: e.draft,
+      lead: e.paragraphs[0] ?? "",
+      notes: e.paragraphs.slice(1),
+      groups: [],
+      // The run is kept, and its score was recorded once, so the summary comes back the same.
+      buttons: [
+        {
+          label: EPILOGUE_BACK,
+          primary: true,
+          onClick: () => env.go({ mode: "summary", run }),
+        },
+      ],
+    };
+  } else if (kind === "quiet") {
     const carry = carryPreview(c);
     const last = c.cycle >= c.cycles;
     model = {
@@ -180,12 +203,21 @@ export function mountInterlude(
         c.cycles,
         rec.stored && rec.entry !== null,
       ),
-      // TODO(B6): add an epilogue button here, labelled "What comes next".
-      buttons: completeButtons(run.arc, run.variant, run.seed).map((b, i) => ({
-        label: b.label,
-        primary: i === 0,
-        onClick: () => env.go(b.to),
-      })),
+      buttons: [
+        ...completeButtons(run.arc, run.variant, run.seed).map((b, i) => ({
+          label: b.label,
+          primary: i === 0,
+          onClick: () => env.go(b.to),
+        })),
+        ...(epilogue.on
+          ? [
+              {
+                label: EPILOGUE_LABEL,
+                onClick: () => env.go({ mode: "epilogue" as const, run }),
+              },
+            ]
+          : []),
+      ],
     };
   }
   card.show(model);
