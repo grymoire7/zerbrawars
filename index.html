@@ -288,6 +288,44 @@
         flex-direction: column;
         gap: 8px;
       }
+      /* Scroll affordance: scrollbars on touch phones are overlay and hide, so a soft shadow shows at
+         the bottom edge while there is more below. It is scroll-linked (not motion) and fades out at the
+         end of the content; where scroll timelines are unsupported it is simply absent. */
+      #sideScroll,
+      #app.life #side {
+        scrollbar-width: thin;
+        scrollbar-color: var(--zw-text-muted, #8b93a3) transparent;
+      }
+      #sideScroll::after,
+      #app.life #side::after {
+        content: "";
+        display: none;
+        flex: none;
+        position: sticky;
+        bottom: 0;
+        height: 18px;
+        margin-top: -26px; /* cancels its own height and the 8px flex gap, so it adds no scroll length */
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+      }
+      @supports (animation-timeline: scroll()) {
+        #sideScroll::after {
+          display: block;
+          animation: zw-scroll-more linear both;
+          animation-timeline: scroll(nearest);
+        }
+      }
+      @keyframes zw-scroll-more {
+        0%,
+        85% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
       #bar {
         flex: none;
         padding: 8px 8px max(8px, env(safe-area-inset-bottom));
@@ -322,6 +360,33 @@
         #app.life #bar {
           position: static;
         }
+        #app.life #side::after {
+          display: none;
+        }
+        @supports (animation-timeline: scroll()) {
+          #app.life #side::after {
+            display: block;
+            margin-top: -18px;
+            animation: zw-scroll-more linear both;
+            animation-timeline: scroll(nearest);
+          }
+        }
+        /* Coach strip: tighter, the 44px Got it button still sets the height. */
+        #coach {
+          padding: 0 6px;
+        }
+        .zw-coach-text {
+          font-size: 12px;
+          line-height: 1.2;
+        }
+        /* Bar buttons in one row: End Turn takes the most room, nothing drops under 44px. */
+        #bar .zw-endturn {
+          flex: 3 1 150px !important;
+          min-height: 44px !important;
+        }
+        #bar .zw-endturn span:first-child {
+          font-size: 15px !important;
+        }
       }
       /* Wide or landscape: board left, fixed side panel right. */
       @media (min-width: 900px), (min-aspect-ratio: 5/4) {
@@ -334,7 +399,7 @@
           min-height: 0;
         }
         #side {
-          flex: 0 0 clamp(300px, 28vw, 360px);
+          flex: 0 0 clamp(340px, 40vw, 480px);
           border-top: 0;
           border-left: 1px solid var(--zw-line, #3a4150);
         }

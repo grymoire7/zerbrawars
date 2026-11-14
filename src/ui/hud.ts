@@ -315,6 +315,7 @@ export function createHud(
     handlers.onEndTurn,
     "min-height:52px;flex:1 1 100%;",
   );
+  endTurn.className = "zw-endturn";
   endTurn.style.fontWeight = "700";
   endTurn.style.display = "flex";
   endTurn.style.flexDirection = "column";
