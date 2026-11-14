@@ -9,6 +9,19 @@ Everything here is a working assumption until a clinician says otherwise. Two it
 patient-side answer from our adult tester (dated 2026-11-08). That is anecdote, not a clinical
 answer.
 
+## Game words
+
+Players see plain words, not lab terms. In this brief we use the clinical term and give the game word once.
+
+| Game word | What it stands for |
+| --- | --- |
+| Leaky germ | a catalase-negative organism (for example Streptococcus). Engulfing it kills it. |
+| Sealed germ (a pale ring on the board) | a catalase-positive organism (for example Aspergillus, Staph aureus, Burkholderia). Engulfing only contains it. |
+| Swarm | a group of neutrophils the player moves |
+| Charges | the antibacterial, antifungal and strong doses from medication |
+| Granuloma | a blocked tile where a swarm walls off a swallowed germ |
+| Carrying forward (the fight's result card) | a swallowed germ that wasn't killed and may surface later. The code calls it a reservoir. |
+
 ## How to use this
 
 1. Let them play Arc 1 (the tutorial) and one week of Arc 2 first. Most of the questions are easier with the screen in front of them.
@@ -19,14 +32,14 @@ answer.
 
 ### 1. Residual kill chance (gameplay)
 
-**Ask:** What chance should a cell have of killing a sealed germ (one that resists the usual kill) on its own? Is one number per character a fair simplification?
+**Ask:** What chance should a cell have of killing a catalase-positive organism on its own, through residual oxidase activity, in a typical X-linked patient and a typical p47phox patient? Is one number per character a fair simplification?
 **We assume:** about 10% for X-linked and 25% for autosomal recessive. The 25% is our guess, from the idea that some oxidase activity remains.
-**Where it shows:** Arc 1 part B and every Arc 2 fight. It sets how often cells finish a sealed germ without medicine.
+**Where it shows:** Arc 1 part B and every Arc 2 fight. It sets how often cells finish a catalase-positive germ without medicine.
 **If the answer is no:** we change the two numbers (one line each) and rebalance.
 
 ### 2. Which germs, which organ (gameplay)
 
-**Ask:** Which organisms most often infect which sites? Is splitting germs into "leaky" and "sealed" a fair basis for the pairings we show?
+**Ask:** Which organisms most often infect which sites? Is splitting germs by catalase (negative, which a CGD cell can still kill, versus positive, which it can't) a fair basis for the pairings we show?
 **We assume:** lung first, then lymph node, liver and skin. The pairings are our guess.
 **Where it shows:** the germ names on the board, the Key, and which germs come after which activity.
 **If the answer is no:** we change the germ list and pairings.
