@@ -1,3 +1,15 @@
+---
+# Guide for demonstrating the Zebra Wars game
+# Convert with:
+#   pandoc -f markdown+raw_tex -o demo-sheet.pdf demo-sheet.md 
+#
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{geometry}
+  - \pagenumbering{gobble}
+  - \geometry{margin=1in}  # Sets all margins to 1 inch
+---
+
 # Zebra Wars: how to demo
 
 One page, meant to be printed. The demo laptop is the dev laptop. The phone is Tracy's phone.
@@ -19,14 +31,21 @@ The Mac stays awake while the demo runs. Leave the Terminal window open.
 
 ## During the demo
 
-- **Arc 1, "First infection"** is the short tutorial. Start there with a new person.
-- **Arc 2, "A first summer"** is the full game: pick activities for the week, then fight what you caught.
-- Keyboard shortcuts in a battle: Enter ends the turn, Space skips the replay, Escape clears a pick (or opens the menu), W walls off.
-- The menu button (top left) has How to play, Start this fight over, Start this summer over, Choose another arc and Change character.
+- **Arc 1, "First infection"** is the short tutorial. Start there with a new
+  person.
+- **Arc 2, "A first summer"** is the full game: pick activities for the week,
+  then fight what you caught.
+- Keyboard shortcuts in a battle: Enter ends the turn, Space skips the replay,
+  Escape clears a pick (or opens the menu), W walls off.
+- The menu button (top left) has How to play, Start this fight over, Start this
+  summer over, Choose another arc and Change character.
 
 ## Next person
 
-A summer in progress is kept when you leave it, so the next person would find it waiting. For a clean start, open the game at `http://localhost:4173/?facilitator=1`, open the menu, and choose **Reset for a new player**. It clears best scores, first-time help and any arc in progress.
+A summer in progress is kept when you leave it, so the next person would find
+it waiting. For a clean start, open the game at
+`http://localhost:4173/?facilitator=1`, open the menu, and choose **Reset for a
+new player**. It clears best scores, first-time help and any arc in progress.
 
 ## If something goes wrong
 
@@ -41,7 +60,9 @@ A summer in progress is kept when you leave it, so the next person would find it
 
 ## Phone
 
-Open the hosted address in the phone's browser. It plays in portrait. Tap an activity, then tap a time slot. Cell signal and the clinic wi-fi both worked in the past.
+Open the hosted address in the phone's browser. It plays in portrait. Tap an
+activity, then tap a time slot. Cell signal and the clinic wi-fi both worked in
+the past.
 
 ## Shut down
 
