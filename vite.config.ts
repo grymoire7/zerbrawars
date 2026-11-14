@@ -5,6 +5,9 @@ export default defineConfig({
   base: "./",
   test: {
     environment: "node",
+    // The balance and determinism suites run whole campaigns. They take a few seconds here and
+    // more than the 5s default on a shared CI runner, so give them room.
+    testTimeout: 30_000,
     // Render and app tests cover pure modules only (no three, no DOM).
     include: [
       "src/sim/**/*.test.ts",
