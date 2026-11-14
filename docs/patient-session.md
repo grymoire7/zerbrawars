@@ -19,10 +19,10 @@ to check it. Don't treat either as a verdict.
 
 - Charge the laptop and the phone. Decide which device they will use (a laptop is the safe default).
 - Use the **Zebra Wars** Brave profile, and start with `mise run demo` (see `demo-sheet.md`).
-- Open the game at `http://localhost:4173/?facilitator=1`. The `?facilitator=1` part adds a "For the facilitator" section to the menu. Without it, none of the facilitator controls exist.
-- Open the menu and choose **Reset for a new player**, so best scores and first-time help start clean.
-- In the facilitator section, turn on **Prediction probe on turns 2, 4 and 6**. Leave **Show what you brought in** on for the first run. (Turn it off for a second run if you want to see whether they link life to battle without the hint.)
-- Close the menu. Check that the screen shows the title and nothing else.
+- Open the game at `http://localhost:4173/?facilitator=1`. Nothing looks different on the title or arc screens. The flag only adds a "For the facilitator" block to the in-game **Menu** (the button in the top left corner of the life and battle screens), and it is read once when the page loads. If you add it to a page that is already open, reload the page.
+- The Menu doesn't exist on the title screen, so choose a character, pick **Arc 2**, press Begin, and open the Menu there. Scroll to **For the facilitator** and choose **Reset for a new player**. That clears best scores, first-time help and any held summer, so the next screens look new.
+- After the reset, start again the way the tester will: character, then Arc 1. Open the Menu once more and set the switches: tick **Prediction probe on turns 2, 4 and 6** (it starts off). **Show what you brought in** starts on, which is right for the first run. (Untick it for a second run if you want to see whether they link life to battle without the hint.) Check that both switches still look the way you set them before the tester sits down.
+- Close the Menu with Keep playing, then go back to the title (Choose another arc or Change character in the Menu) and leave the laptop there for the tester.
 - Have a notepad. Don't record names or anything that identifies them. The log collects none, and your notes shouldn't either.
 
 ## Opening (say this, roughly)
