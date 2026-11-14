@@ -20,6 +20,7 @@
   - function sizeLabel: (sprite, height) => void
   - function labelSprite: (text, height, opts?) => THREE.Sprite
   - interface LabelOptions
+- `src/render/motion.ts` — function calm
 - `src/render/orderView.ts`
   - function createOrderView: (scene, tilePosition) => void
   - interface DoseMarks

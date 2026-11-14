@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 57 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,700 tokens. Without it, AI exploration would cost ~23,900 tokens. **Saves ~19,200 tokens per conversation.**
-> **Last scanned:** 2026-11-14 01:55 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 58 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,700 tokens. Without it, AI exploration would cost ~24,200 tokens. **Saves ~19,400 tokens per conversation.**
+> **Last scanned:** 2026-11-14 04:54 — re-run after significant changes
 
 ---
 
@@ -30,6 +30,7 @@
   - function sizeLabel: (sprite, height) => void
   - function labelSprite: (text, height, opts?) => THREE.Sprite
   - interface LabelOptions
+- `src/render/motion.ts` — function calm
 - `src/render/orderView.ts`
   - function createOrderView: (scene, tilePosition) => void
   - interface DoseMarks
@@ -376,7 +377,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 49 test files found
+> 50 test files found
 
 ---
 

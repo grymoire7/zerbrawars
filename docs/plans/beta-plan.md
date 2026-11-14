@@ -12,7 +12,7 @@ status table below is the only place that tracks slices.
 
 - **State:** B0 to B6 and BN, BO are done and merged to `main` (the GitHub remote is `origin`, repo `grymoire7/zerbrawars`). Commit hashes in the table below are from before a 2026-11-13 history rewrite that redacted patient-tester health details from two docs, so they no longer match `git log`; match by message instead. A `backup/pre-rewrite` branch holds the old history locally (delete it once nothing needs it, and never push it).
 - **Deploy:** `.github/workflows/deploy.yml` (see "Releasing" in `AGENTS.md`). Needs the four `DREAMHOST_*` secrets before the first tag; first release is `v0.1.0` (package.json is already 0.1.0).
-- **Next:** (1) set the secrets, push `main`, tag `v0.1.0` so a remote reviewer can play and send feedback; (2) B7 accessibility: send a design brief to Opus first (the battle screen takes over Tab; keyboard-only battle and week, reduced motion, grayscale, text scale, aria); (3) B8 offline demo build; (4) B9 patient session; (5) B10.
+- **Next:** (1) set the secrets, push `main`, tag `v0.1.0` so a remote reviewer can play and send feedback; (2) B8 offline demo build; (3) B9 patient session; (4) B10. B7 accessibility is designed (`../specs/b7-accessibility-design.md`, Opus, 2026-11-13) but deferred past the demo (2026-11-13: about 7 dev days left, no known accessibility needs in the audience); only the debug-readout hide, M1 reduced motion and a 20-minute grayscale check run before the demo. After the demo: K1 and K2 first (about 5h).
 - **Still unchecked on real devices:** Android back gesture and the "Leave site?" dialog; landscape phone; the new life-screen pieces (Exposure cell, preview hint, luck line, This week block, summary headline) and the Arc 2 intro and ending and epilogue on a phone; Arc 1 Part B "All clear" card seen by eye.
 - **Open questions waiting on people:** clinician items 1 to 31 (A-priority: 1, 2, 9, 20, 23, 24, 27, 28); week difficulty (seeded weekly event) and careless backup rate wait for the patient session; End Turn "won't click until all swarms move" was not reproducible; stray "the week is not over" error once seen during scripted testing, not reproduced.
 - **Workflow:** coordinator (me) delegates code to Sonnet subagents with REQUIRED verification lists, design to Opus (design only), runs `mise run check` and browser checks myself, commits one slice at a time with conventional commits, and updates the table below. Format only edited files with Prettier.
@@ -35,7 +35,8 @@ status table below is the only place that tracks slices.
 | BO outcomes and danger meter (O1 Part A result and Part B compare, O2 Exposure cell, O3 before/after, O4 luck line and week block, O5 summary) | O1 to O5 done | | `outcomes-and-risk-design.md` (all eleven defaults accepted 2026-11-08) |
 | B5 Arc 2 framing and ending | done (ending lives on the summer summary; epilogue button waits for B6) | | |
 | B6 Epilogue draft | done (flag `?epilogue=0`; copy awaiting clinician items 14-17) | | |
-| B7 to B10 | not started | | |
+| B7 accessibility | designed; deferred past the demo except M1, the readout hide and a grayscale check | | `b7-accessibility-design.md` (owner questions 1-9 still to answer; Q7: no known needs) |
+| B8 to B10 | not started | | |
 
 Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
 more battle, but neither felt noticeably harder or more fun; `?goal=N` still overrides). The smarter bot

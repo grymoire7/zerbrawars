@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**57 library files** across 4 modules
+**58 library files** across 4 modules
 
 ## Sim (25 files)
 
@@ -32,6 +32,25 @@
 - `src/sim/validate.ts` — maxTurnsOf, validateBattle, validateLife, validateCampaign
 - `src/sim/battle/setup.ts` — chargesFor, medStateFor, battleFromLoadout
 
+## Render (16 files)
+
+- `src/render/playback.ts` — buildTimeline, beatProgress, createPlayback, PhaseSpan, Timeline, Playback, …
+- `src/render/cellShape.ts` — cellHash, cellOutline, outlineArea, Point2, CELL_POINTS
+- `src/render/labels.ts` — setLabelBoost, labelMaterial, sizeLabel, labelSprite, LabelOptions
+- `src/render/boardView.ts` — createBoardView, BoardView, ORDER_COLOR
+- `src/render/orderView.ts` — createOrderView, DoseMarks, OrderView
+- `src/render/pathogenView.ts` — createPathogenView, PathogenView, KIND_COLOR
+- `src/render/swarmView.ts` — createSwarmView, SwarmPose, SwarmView
+- `src/render/tissueTexture.ts` — basePlaneUnits, createAuraTexture, createTissueTexture
+- `src/render/auraView.ts` — createAuraView, AuraView
+- `src/render/fxView.ts` — createFxView, FxView
+- `src/render/granulomaView.ts` — createGranulomaView, GranulomaView
+- `src/render/insetView.ts` — createInsetView, InsetView
+- `src/render/playbackView.ts` — createPlaybackView, PlaybackView
+- `src/render/scene.ts` — createScene, SceneContext
+- `src/render/telegraphView.ts` — createTelegraphView, TelegraphView
+- `src/render/motion.ts` — calm
+
 ## Ui (16 files)
 
 - `src/ui/hud.ts` — createHud, HudOrder, HudMedication, HudCharge, HudSupport, HudSupportCard, …
@@ -50,24 +69,6 @@
 - `src/ui/download.ts` — downloadText, copyText
 - `src/ui/index.ts` — getUiRoot, getPanels
 - `src/ui/probe.ts` — createProbe, Probe
-
-## Render (15 files)
-
-- `src/render/playback.ts` — buildTimeline, beatProgress, createPlayback, PhaseSpan, Timeline, Playback, …
-- `src/render/cellShape.ts` — cellHash, cellOutline, outlineArea, Point2, CELL_POINTS
-- `src/render/labels.ts` — setLabelBoost, labelMaterial, sizeLabel, labelSprite, LabelOptions
-- `src/render/boardView.ts` — createBoardView, BoardView, ORDER_COLOR
-- `src/render/orderView.ts` — createOrderView, DoseMarks, OrderView
-- `src/render/pathogenView.ts` — createPathogenView, PathogenView, KIND_COLOR
-- `src/render/swarmView.ts` — createSwarmView, SwarmPose, SwarmView
-- `src/render/tissueTexture.ts` — basePlaneUnits, createAuraTexture, createTissueTexture
-- `src/render/auraView.ts` — createAuraView, AuraView
-- `src/render/fxView.ts` — createFxView, FxView
-- `src/render/granulomaView.ts` — createGranulomaView, GranulomaView
-- `src/render/insetView.ts` — createInsetView, InsetView
-- `src/render/playbackView.ts` — createPlaybackView, PlaybackView
-- `src/render/scene.ts` — createScene, SceneContext
-- `src/render/telegraphView.ts` — createTelegraphView, TelegraphView
 
 ## Theme (1 files)
 
