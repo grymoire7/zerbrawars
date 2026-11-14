@@ -686,7 +686,9 @@ export function mountBattle(
         session: run ? sessionOptions(run) : undefined,
       });
   if (debug) panels.scroll.append(readout);
-  if (!tutorial) help.showFirstTime();
+  // Arc 1's coach teaches the battle, so the guide should not pop up again at the first Arc 2 fight.
+  if (tutorial) help.markSeen();
+  else help.showFirstTime();
   if (run && settings.brought) {
     const c = run.campaign();
     const skirmish = c.battleKind === "skirmish";

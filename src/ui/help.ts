@@ -6,6 +6,8 @@ export interface Help {
   isOpen(): boolean;
   /** Opens once per browser; remembers it in localStorage when that works. */
   showFirstTime(): void;
+  /** Counts the guide as seen without opening it (a screen that teaches the same thing). */
+  markSeen(): void;
   /** Removes the key listener (the screen is being torn down). */
   dispose(): void;
 }
@@ -189,6 +191,7 @@ export function createHelp(root: HTMLElement, opts: HelpOptions = {}): Help {
     showFirstTime() {
       if (!readSeen(seenKey)) api.open();
     },
+    markSeen: () => writeSeen(seenKey),
   };
 
   close.addEventListener("click", api.close);
