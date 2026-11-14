@@ -49,7 +49,7 @@ The players are patients aged 13 and up. The game alternates between two parts. 
 patient plans a week of ordinary life (yard work, a lake day, band practice, a sleepover), with a
 daily medicine routine running in the background. Each choice changes the odds that a germ comes
 home with them. In the second, a fight takes place on a map of the lungs. The player moves groups of
-neutrophils and tells them to engulf germs. There are two characters, X-linked and autosomal
+neutrophils and tells them to engulf germs. There are two types of CGD, X-linked and autosomal
 recessive (p47phox), and two short story arcs: "First infection" (a tutorial, told first before
 diagnosis and then after) and "A first summer" (two weeks of living with CGD). The game has three
 organisms so far: Streptococcus, Staphylococcus aureus and Aspergillus.
@@ -69,26 +69,31 @@ Players see plain words, not lab terms. This brief uses the clinical term and gi
 | Granuloma                                         | a blocked tile where a swarm walls off a swallowed germ                                                        |
 | Carrying forward (on the fight's result card)     | a swallowed germ that wasn't killed and may surface later (the code calls it a reservoir)                      |
 | Exposure                                          | the chance, shown as a percentage, that something comes home from an activity                                  |
+| Size (on a germ in a fight)                       | how much of the organism has taken hold. A larger size is a bigger germ load.                                  |
 | Game odds                                         | those percentages. They are game numbers, not real risk figures.                                               |
 
 # Group A: please answer these first
 
 ## A1. Residual kill chance
 
-**Our picture.** In a fight, a cell that engulfs a catalase-positive organism has a small chance of killing it anyway. This is our stand-in for residual oxidase activity. We use one number per character. The tutorial's "before diagnosis" fight uses none at all. We drew on Kuhns et al., NEJM 2010.
+**Our picture.** In a fight, a cell that engulfs a catalase-positive organism has a small chance of killing it anyway. This is our stand-in for residual oxidase activity. We use one number per type of CGD. The tutorial's "before diagnosis" fight uses none at all. We drew on Kuhns et al., NEJM 2010.
 
-**(a)** Is one number per character a fair simplification?
+**(a)** Is one number per type of CGD a fair simplification?
 
 ☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
 **(b)** How do our numbers compare with a typical patient?
 
-| Character | The game uses       | About right | Too high | Too low | Can't say |
-| --------- | ------------------- | ----------- | -------- | ------- | --------- |
-| X-linked  | about 10%           | ☐           | ☐        | ☐       | ☐         |
-| p47phox   | about 25% (a guess) | ☐           | ☐        | ☐       | ☐         |
+| Type of CGD | The game uses       | About right | Too high | Too low | Can't say |
+| ----------- | ------------------- | ----------- | -------- | ------- | --------- |
+| X-linked    | about 10%           | ☐           | ☐        | ☐       | ☐         |
+| p47phox     | about 25% (a guess) | ☐           | ☐        | ☐       | ☐         |
 
 If you can suggest numbers: X-linked ________ % p47phox ________ %
+
+**(c)** The tutorial's "before diagnosis" fight uses no residual chance for either type, so the cells can't finish the mold. For a p47phox patient with some residual activity, is that an acceptable simplification for the pre-diagnosis picture?
+
+☐ Acceptable ☐ Acceptable with changes ☐ Not acceptable ☐ Can't say
 
 ## A2. Germs, activities and sites
 
@@ -116,13 +121,9 @@ If you can suggest numbers: X-linked ________ % p47phox ________ %
 
 **Our picture.** Each tile has an inflammation level. It rises when swarms crowd together, when a loaded swarm stands still, near a visible germ, and where a swallowed germ has been walled off in a granuloma. High levels slow the cells and wear down tissue health each turn. Levels fade when the cause moves on.
 
-**(a)** Is "when too many cells pile into one spot, inflammation rises there" a fair simplification of granuloma formation?
+Is "when too many cells pile into one spot, inflammation rises there" a fair simplification of granuloma formation?
 
 ☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
-
-**(b)** Does colitis in CGD have a genetic component beyond infection?
-
-☐ Yes ☐ No ☐ Can't say
 
 \writeone
 
@@ -188,9 +189,9 @@ Others to add:
 
 ☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-**(c)** The game says a missed dose lets germs that arrive land bigger ("medicine keeps germs small when they arrive"). Is that accurate wording? We want it simple and not preachy.
+**(c)** In the game, each missed dose before an exposure makes the infection that takes hold one step bigger: more of the organism gets established (a larger germ load). Is it fair that missed prophylaxis lets a larger infection take hold from the same exposure?
 
-☐ Acceptable ☐ Acceptable with changes ☐ Not acceptable ☐ Can't say
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
 \writeone
 
@@ -208,16 +209,12 @@ May we name NK cells, T cells and antibodies, and no others?
 
 **Our picture.** The tutorial opens with a flashback, "Before anyone knew", in the second person. The player can skip it. A germ gets into the lungs and the cells rush in but can't finish it.
 
-**(a)** When is CGD usually diagnosed?
+When is CGD usually diagnosed?
 
-| Character | Infancy or early childhood | Later childhood | Adolescence or adulthood | Varies widely |
-| --------- | -------------------------- | --------------- | ------------------------ | ------------- |
-| X-linked  | ☐                          | ☐               | ☐                        | ☐             |
-| p47phox   | ☐                          | ☐               | ☐                        | ☐             |
-
-**(b)** Is a flashback a fair way to open?
-
-☐ Acceptable ☐ Acceptable with changes ☐ Not acceptable ☐ Can't say
+| Type of CGD | Infancy or early childhood | Later childhood | Adolescence or adulthood | Varies widely |
+| ----------- | -------------------------- | --------------- | ------------------------ | ------------- |
+| X-linked    | ☐                          | ☐               | ☐                        | ☐             |
+| p47phox     | ☐                          | ☐               | ☐                        | ☐             |
 
 \writeone
 
@@ -241,17 +238,27 @@ The wording you would use, if different:
 
 \writeone
 
-## A12. Percentages on activities
+## A12. Exposure odds
 
-**Our picture.** The game shows an exposure chance next to each activity (for example 45% for yard work with mulch, 10% for indoor jobs). They are game numbers. A line near the week's odds reads: "These are game odds. Your medicine does not change them; it helps your cells in the fight."
+**Our picture.** Each activity carries an exposure chance. They are game numbers, and a line near the week's odds says so: "These are game odds. Your medicine does not change them; it helps your cells in the fight."
 
-How should the game show them?
+| Activity                         | Game odds |
+| -------------------------------- | --------- |
+| Yard work with mulch             | 45%       |
+| A swim in the warm, still lagoon | 45%       |
+| The open beach                   | 15%       |
+| Indoor jobs                      | 10%       |
+| A sleepover                      | 10%       |
+| Band practice                    | 5%        |
+| A crowded game night             | 5%        |
 
-☐ As they are, with the "game odds" line\
-☐ With a stronger label (please write it)\
-☐ As bands (low, medium, high)\
-☐ Not at all\
-☐ Can't say
+**(a)** Is the order sensible for a patient with CGD? (The exact numbers are ours. The order is what matters.)
+
+☐ Sensible ☐ Some should move (please say which) ☐ Not sensible ☐ Can't say
+
+**(b)** Even with the label, could a patient take these percentages for real risk figures?
+
+☐ Unlikely ☐ Possibly ☐ Likely ☐ Can't say
 
 \writeone
 
@@ -273,29 +280,7 @@ How should the game show them?
 
 # Group B: before a wider release
 
-## B1. Steroids
-
-**Our picture.** Not in the game yet. A future part would offer steroids as a double-edged support during a gut flare.
-
-**(a)** Is "calms inflammation but weakens defence" a fair summary of the trade-off?
-
-☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
-
-**(b)** In what situations are steroids used? (A line or two is plenty.)
-
-\writeone
-
-## B2. The doctor visit
-
-**Our picture.** A visit reveals hidden infections and gives the patient strong support in the next fight. Imaging shows what is hiding.
-
-Do early doctor visits reveal and clear infections the way the game implies (imaging, IV antifungals, drainage)?
-
-☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
-
-\writeone
-
-## B3. Rare sites
+## B1. Rare sites
 
 **Our picture.** Not in the game yet. A future rare "surprise" fight would be clearly framed as uncommon, for example an infection of the spine or lower brain.
 
@@ -303,11 +288,17 @@ Do early doctor visits reveal and clear infections the way the game implies (ima
 
 ☐ Very rare ☐ Uncommon ☐ Not rare ☐ Can't say
 
-**(b)** How could we frame them so they are relatable but not frightening?
+**(b)** How could we frame them so they are relatable but not frightening? Tick any that would work.
+
+☐ Say plainly that it is uncommon\
+☐ Show the care team's help before the infection\
+☐ Tell it as one patient's story, not a typical one\
+☐ Leave it out of the game\
+☐ Another way (please say):
 
 \writeone
 
-## B4. The "weapon you can steal" idea
+## B2. The "weapon you can steal" idea
 
 **Our picture.** We keep it as a simplified picture: some germs leave a "weapon" a CGD cell can use, and others don't. Later studies suggest catalase status does not fully explain which organisms cause trouble. We would never state it as the complete story.
 
@@ -315,7 +306,7 @@ Do early doctor visits reveal and clear infections the way the game implies (ima
 
 \writeone
 
-## B5. Names for medicine
+## B3. Names for medicine
 
 **Our picture.** The game says "antibacterial" and "antifungal". It names no drugs (for example TMP-SMX, itraconazole or posaconazole) and leaves out interferon-gamma.
 
@@ -329,25 +320,25 @@ Do early doctor visits reveal and clear infections the way the game implies (ima
 
 \writeone
 
-## B6. More organisms
+## B4. More organisms
 
-**Our picture.** The game has Streptococcus, Staphylococcus aureus and Aspergillus. We are considering more. For each, should we add it?
+**Our picture.** The game has Streptococcus, Staphylococcus aureus and Aspergillus. We are considering others. How common is each as a cause of infection in CGD?
 
-| Organism                    | Add?                     |
-| --------------------------- | ------------------------ |
-| Burkholderia                | ☐ Add ☐ Skip ☐ Can't say |
-| Serratia                    | ☐ Add ☐ Skip ☐ Can't say |
-| Nocardia                    | ☐ Add ☐ Skip ☐ Can't say |
-| Granulibacter               | ☐ Add ☐ Skip ☐ Can't say |
-| Chromobacterium             | ☐ Add ☐ Skip ☐ Can't say |
-| Salmonella                  | ☐ Add ☐ Skip ☐ Can't say |
-| Aspergillus nidulans (bone) | ☐ Add ☐ Skip ☐ Can't say |
+| Organism                    | Common | Uncommon | Rare | Can't say |
+| --------------------------- | ------ | -------- | ---- | --------- |
+| Burkholderia                | ☐      | ☐        | ☐    | ☐         |
+| Serratia                    | ☐      | ☐        | ☐    | ☐         |
+| Nocardia                    | ☐      | ☐        | ☐    | ☐         |
+| Granulibacter               | ☐      | ☐        | ☐    | ☐         |
+| Chromobacterium             | ☐      | ☐        | ☐    | ☐         |
+| Salmonella                  | ☐      | ☐        | ☐    | ☐         |
+| Aspergillus nidulans (bone) | ☐      | ☐        | ☐    | ☐         |
 
-Others you would add:
+Others that are common enough to include:
 
 \writeone
 
-## B7. Aspergillus in the tutorial
+## B5. Aspergillus in the tutorial
 
 **Our picture.** The tutorial's first infection is Aspergillus in the lung, rather than Staphylococcus or Burkholderia. Streptococcus is the germ the cells do finish.
 
@@ -357,7 +348,7 @@ Is Aspergillus a fair organism for that first lung infection?
 
 \writeone
 
-## B8. Medicine in the tutorial
+## B6. Medicine in the tutorial
 
 **Our picture.** In the tutorial, daily medicine visibly slows germs and gives charges that finish a small mold. We present it as a game rule and never as fact.
 
@@ -367,9 +358,9 @@ Is that an acceptable game picture of antibacterial and antifungal prophylaxis?
 
 \writeone
 
-## B9. Medicine and what arrives
+## B7. Medicine and what arrives
 
-**Our picture.** In the game, daily prophylaxis does not change whether a germ arrives, so the activity percentages are the same whether or not the player took their medicine. It makes the fight easier (germs slowed, smaller arrivals, charges). Real prophylaxis lowers the chance an exposure becomes an infection.
+**Our picture.** In the game, daily prophylaxis does not change whether a germ arrives, so the activity percentages are the same whether or not the player took their medicine. It makes the fight easier: the starting infection is smaller, germs grow more slowly, and the player gets charges that can finish small germs. Real prophylaxis lowers the chance an exposure becomes an infection.
 
 Is the game's picture acceptable?
 
@@ -377,7 +368,7 @@ Is the game's picture acceptable?
 
 \writeone
 
-## B10. "Still sick"
+## B8. "Still sick"
 
 **The wording.** Before diagnosis the tutorial ends with: "Infection: not finished. Your body is still sick." The next card goes straight on to: "The doctors helped your body clear it, and ran some tests. The missing tool had a name: CGD."
 
@@ -387,19 +378,9 @@ Is "still sick" fair and not frightening wording for that moment?
 
 \writeone
 
-## B11. Autosomal recessive and the "before diagnosis" fight
-
-**Our picture.** The "before diagnosis" fight gives the cells no residual kill chance for either variant, so they can't finish the mold. After diagnosis, the p47phox character gets the higher residual chance (see A1).
-
-For a p47phox patient with some residual activity, is that an acceptable simplification for the pre-diagnosis picture?
-
-☐ Acceptable ☐ Acceptable with changes ☐ Not acceptable ☐ Can't say
-
-\writeone
-
 \newpage
 
-## The closing screen (B12 to B15)
+## The closing screen (B9 to B12)
 
 After the summer, the game offers a short, hopeful screen called "What comes next". It is marked "Draft: pending clinical review", and we can switch it off. This is its entire text:
 
@@ -413,7 +394,7 @@ After the summer, the game offers a short, hopeful screen called "What comes nex
 >
 > This is information, not medical advice. Your care team knows your situation, so talk with them about anything here.
 
-## B12. After a successful treatment
+## B9. After a successful treatment
 
 After a successful bone marrow transplant or gene therapy, is each statement accurate?
 
@@ -427,23 +408,19 @@ How should we word the caveats?
 
 \writeone
 
-## B13. Gene therapy figures
+## B10. Gene therapy figures
 
 **(a)** Roughly 20 to 30 percent corrected cells are enough for normal infection fighting. Is that accurate?
 
 ☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-**(b)** One recent patient reached about 70 percent. Is that accurate?
-
-☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
-
-**(c)** Are these figures safe to publish?
+**(b)** Are the 20 to 30 percent and the 70 percent figures in the screen's text safe to use in the game?
 
 ☐ Yes ☐ Yes, with hedged wording ☐ No ☐ Can't say
 
 \writeone
 
-## B14. The process
+## B11. The process
 
 **Our picture.** The screen says: "The process can be long and arduous, and it looks different for each person."
 
@@ -455,7 +432,7 @@ If you would summarize it differently, how long and how hard would you say it is
 
 \writeone
 
-## B15. Tone
+## B12. Tone
 
 **The wording.** We want to present curative options as real choices made with the care team, without implying that patients should wait or that living with CGD now is second best.
 
@@ -491,8 +468,9 @@ Thank you. Please return this page, a photo of it, or an email with your answers
 
 <!--
 For us, not printed. Handout number = number in clinician-questions.md:
-A1=1, A2=2, A3=4, A4=5, A5=7, A6=8, A7=21, A8=9, A9=20, A10=23, A11=24, A12=27, A13=28.
-B1=3, B2=6, B3=10, B4=11, B5=12, B6=13, B7=25, B8=26, B9=29, B10=30, B11=31, B12=14, B13=15, B14=16, B15=17.
+A1=1 (and 31), A2=2, A3=4, A4=5, A5=7, A6=8, A7=21, A8=9, A9=20, A10=23, A11=24, A12=27, A13=28.
+B1=10, B2=11, B3=12, B4=13, B5=25, B6=26, B7=29, B8=30, B9=14, B10=15, B11=16, B12=17.
+Not sent: 3 (steroids, deferred), 6 (doctor visit), 31 (folded into A1c). Half of 4 (colitis) and half of 15 (the 70 percent figure) are confirmed.
 C1=18, C2=19. There is no item 22 in the list.
 Patient-side answers noted in clinician-questions.md (items 23, 24, 25) are left out on purpose:
 they are anecdote, and a clinician should answer on their own.
