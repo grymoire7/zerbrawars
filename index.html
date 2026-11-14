@@ -323,6 +323,11 @@
           transparent
         );
       }
+      /* #sideScroll has 8px of padding and a sticky box stops at the padding edge, so push it flush
+         with the bottom of the scrollport or content shows through underneath. */
+      #sideScroll::after {
+        bottom: -8px;
+      }
       @supports (animation-timeline: scroll()) {
         #sideScroll::after {
           display: block;
