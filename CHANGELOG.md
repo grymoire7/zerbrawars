@@ -46,6 +46,9 @@ and this project uses [Semantic Versioning](https://semver.org/).
 - **The battle How to play popup no longer repeats.** Arc 1 now counts as
   having shown it, so it doesn't pop up again at the first fight in Arc 2.
   Someone who goes straight to Arc 2 still sees it once.
+- **The release checks no longer time out on a slow build machine.** The
+  long campaign simulation tests now have 30 seconds instead of 5, so the
+  deploy workflow doesn't fail when the shared runner is slow.
 
 ## [0.1.0] - 2026-11-13
 
