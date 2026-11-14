@@ -14,7 +14,7 @@ header-includes:
   - \renewcommand{\subsection}{\Needspace{15\baselineskip}\oldsubsection}
   - \newcommand{\writelines}{\par\vspace{0.7cm}\noindent\rule{\textwidth}{0.4pt}\par\vspace{0.7cm}\noindent\rule{\textwidth}{0.4pt}\par\vspace{0.4cm}}
   - \newcommand{\writeone}{\par\vspace{0.7cm}\noindent\rule{\textwidth}{0.4pt}\par\vspace{0.3cm}}
-  - \geometry{margin=1in} # Sets all margins to 1 inch
+  - \geometry{margin=0.5in} # Sets all margins to 1 inch
 ---
 
 # Zebra Wars: questions for a clinician
@@ -54,8 +54,6 @@ recessive (p47phox), and two short story arcs: "First infection" (a tutorial, to
 diagnosis and then after) and "A first summer" (two weeks of living with CGD). The game has three
 organisms so far: Streptococcus, Staphylococcus aureus and Aspergillus.
 
-\newpage
-
 ## Game words
 
 Players see plain words, not lab terms. This brief uses the clinical term and gives the game word once.
@@ -71,6 +69,8 @@ Players see plain words, not lab terms. This brief uses the clinical term and gi
 | Exposure                                          | the chance, shown as a percentage, that something comes home from an activity                                  |
 | Size (on a germ in a fight)                       | how much of the organism has taken hold. A larger size is a bigger germ load.                                  |
 | Game odds                                         | those percentages. They are game numbers, not real risk figures.                                               |
+
+\newpage
 
 # Group A: please answer these first
 
@@ -276,8 +276,6 @@ The wording you would use, if different:
 
 \writeone
 
-\newpage
-
 # Group B: before a wider release
 
 ## B1. Rare sites
@@ -377,8 +375,6 @@ Is "still sick" fair and not frightening wording for that moment?
 ☐ Acceptable ☐ Acceptable with changes ☐ Not acceptable ☐ Can't say
 
 \writeone
-
-\newpage
 
 ## The closing screen (B9 to B12)
 
