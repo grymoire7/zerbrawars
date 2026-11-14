@@ -1,6 +1,25 @@
+---
+# Clinician questionnaire
+# Convert with:
+#   pandoc -f markdown+raw_tex -o clinician-brief-nih.pdf clinician-brief-nih.md 
+#
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{geometry}
+  - \usepackage{newunicodechar}
+  - \newunicodechar{☐}{$\square$}
+  - \pagenumbering{gobble}
+  - \usepackage{needspace}
+  - \let\oldsubsection\subsection
+  - \renewcommand{\subsection}{\Needspace{17\baselineskip}\oldsubsection}
+  - \newcommand{\writelines}{\par\vspace{0.7cm}\noindent\rule{\textwidth}{0.4pt}\par\vspace{0.7cm}\noindent\rule{\textwidth}{0.4pt}\par\vspace{0.4cm}}
+  - \geometry{margin=1in}  # Sets all margins to 1 inch
+---
+
 # Zebra Wars: questions for a clinician
 
-Prepared by: ______________________________ Contact: ______________________________ Date: ______________
+Prepared by: ________________________________ Date: ________________\
+Contact: ________________________________
 
 Thank you for looking at these. Zebra Wars is a small game that helps people with chronic granulomatous
 disease (CGD) picture what happens inside their body. We are not clinicians, so we simplified, and we
@@ -30,20 +49,21 @@ diagnosis and then after) and "A first summer" (two weeks of living with CGD).
 
 Players see plain words, not lab terms. This brief uses the clinical term and gives the game word once.
 
-| Game word | What it stands for |
-| --- | --- |
-| Leaky germ | a catalase-negative organism (for example Streptococcus). Engulfing it kills it. |
+| Game word                                         | What it stands for                                                                                              |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Leaky germ                                        | a catalase-negative organism (for example Streptococcus). Engulfing it kills it.                                |
 | Sealed germ (shown with a pale ring on the board) | a catalase-positive organism (for example Aspergillus, Staph aureus, Burkholderia). Engulfing only contains it. |
-| Swarm | a group of neutrophils the player moves |
-| Charges | the antibacterial, antifungal and strong doses that come from taking medication |
-| Granuloma | a blocked tile where a swarm walls off a swallowed germ |
-| Carrying forward (on the fight's result card) | a swallowed germ that wasn't killed and may surface later (the code calls it a reservoir) |
-| Exposure | the chance, shown as a percentage, that something comes home from an activity |
-| Game odds | those percentages. They are game numbers, not real risk figures. |
+| Swarm                                             | a group of neutrophils the player moves                                                                         |
+| Charges                                           | the antibacterial, antifungal and strong doses that come from taking medication                                 |
+| Granuloma                                         | a blocked tile where a swarm walls off a swallowed germ                                                         |
+| Carrying forward (on the fight's result card)     | a swallowed germ that wasn't killed and may surface later (the code calls it a reservoir)                       |
+| Exposure                                          | the chance, shown as a percentage, that something comes home from an activity                                   |
+| Game odds                                         | those percentages. They are game numbers, not real risk figures.                                                |
 
-Each answer row below reads: **A** accurate as it stands, **C** fine with changes (please say what), **N** not accurate, **?** can't say.
+For each question, tick **Accurate** if the game's picture is fine as it stands, **Changes needed** if
+it needs a fix (please say what), **Not accurate** if it is wrong, or **Can't say**.
 
----
+\newpage
 
 # Group A: please answer these first
 
@@ -53,9 +73,11 @@ Each answer row below reads: **A** accurate as it stands, **C** fine with change
 
 **What the game does now.** About 10% for X-linked and 25% for p47phox. The 25% is a guess. We drew on Kuhns et al., NEJM 2010. The tutorial's "before diagnosis" fight uses no residual chance at all.
 
-☐ A ☐ C ☐ N ☐ ? Your numbers or comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Your numbers or comments:
+
+\writelines
 
 ## A2. Which organisms, which site
 
@@ -63,9 +85,11 @@ _______________________________________________________________________________
 
 **What the game does now.** The fights happen in the lung first, with lymph node, liver and skin to follow. The organisms we use are Staph aureus, Aspergillus, Burkholderia, Serratia and Nocardia, plus Streptococcus as the example the cells can finish. Which organism goes with which site is our guess.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A3. Inflammation
 
@@ -73,9 +97,11 @@ _______________________________________________________________________________
 
 **What the game does now.** Each tile has an inflammation level. It rises when swarms crowd together, when a loaded swarm stands still, near a visible germ, and where a swallowed germ has been walled off in a granuloma. High levels slow the cells and wear down tissue health each turn. Levels fade when the cause moves on.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A4. Infections that persist
 
@@ -83,9 +109,11 @@ _______________________________________________________________________________
 
 **What the game does now.** The result card shows what the fight is "carrying forward". Those germs stay hidden, can grow, and surface later as fever, pain or tiredness.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A5. Fever
 
@@ -93,9 +121,11 @@ _______________________________________________________________________________
 
 **What the game does now.** Any fever makes a doctor visit a good move. The doctor may find it was only a virus. In that case the game shows "Just a virus", with no fight that week.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A6. Exposures
 
@@ -103,9 +133,11 @@ _______________________________________________________________________________
 
 **What the game does now.** Each activity has a riskier and a safer version, for example yard work (higher exposure to mold) versus indoor jobs, and the lagoon versus the beach. Other exposures we have in mind: caves, scuba, marijuana, live trees and reptile pets.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A7. Medicine and germs already swallowed
 
@@ -113,9 +145,11 @@ _______________________________________________________________________________
 
 **What the game does now.** Full daily doses add a modest boost (about 25 percentage points) to the chance that a swallowed germ dies each turn. Skipped doses add nothing and let the next arrivals land bigger. We keep the wording simple and non-preachy.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A8. The parts that still work
 
@@ -123,9 +157,11 @@ _______________________________________________________________________________
 
 **What the game does now.** No text names them yet. We would like your guidance before we write any.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A9. How CGD is found: the opening
 
@@ -133,9 +169,11 @@ _______________________________________________________________________________
 
 **What the game does now.** The tutorial's first fight happens before diagnosis. A germ gets into the lungs and the cells rush in but can't finish it.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A10. A first serious lung infection
 
@@ -143,9 +181,11 @@ _______________________________________________________________________________
 
 **What the game does now.** In the "before diagnosis" fight the cells can't finish an Aspergillus-like mold, and the card says "Not finished". After diagnosis, the same fight ends well with medicine.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A11. "One tool away"
 
@@ -153,9 +193,11 @@ _______________________________________________________________________________
 
 **What the game does now.** It appears on the card at the end of the "after diagnosis" fight.
 
-☐ A ☐ C ☐ N ☐ ? Comments or the wording you would use:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments or the wording you would use:
+
+\writelines
 
 ## A12. Percentages on activities
 
@@ -163,9 +205,11 @@ _______________________________________________________________________________
 
 **What the game does now.** A line near the week's odds reads: "These are game odds. Your medicine does not change them; it helps your cells in the fight." The order of the numbers matters more than the values. If the numbers are a problem, we could use bands (low, medium, high).
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## A13. The overall message
 
@@ -173,11 +217,13 @@ _______________________________________________________________________________
 
 **What the game does now.** After a careful week that still ends in a hard fight, the game says: "Your plan and your routine were strong. Some fights are just hard." The score still rewards lowering the odds, and the odds visibly move.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
 
----
+\writelines
+
+\newpage
 
 # Group B: before a wider release
 
@@ -187,9 +233,11 @@ _______________________________________________________________________________
 
 **What the game does now.** Not in the game yet. A future part would offer steroids as a double-edged support during a gut flare.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B2. The doctor visit
 
@@ -197,9 +245,11 @@ _______________________________________________________________________________
 
 **What the game does now.** A visit reveals hidden infections and gives the patient strong support in the next fight.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B3. Rare sites
 
@@ -207,9 +257,11 @@ _______________________________________________________________________________
 
 **What the game does now.** Not in the game yet. A future rare "surprise" fight would be clearly framed as uncommon.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B4. The "weapon you can steal" idea
 
@@ -217,9 +269,11 @@ _______________________________________________________________________________
 
 **What the game does now.** We keep it as a simplified picture: some germs leave a "weapon" a CGD cell can use, and others don't.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B5. Names for medicine
 
@@ -227,9 +281,11 @@ _______________________________________________________________________________
 
 **What the game does now.** The game uses the two generic words and names no drugs. Interferon-gamma is left out.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B6. More organisms
 
@@ -237,9 +293,11 @@ _______________________________________________________________________________
 
 **What the game does now.** Staph aureus, Aspergillus, Burkholderia, Serratia, Nocardia, plus Streptococcus.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B7. Aspergillus in the tutorial
 
@@ -247,9 +305,11 @@ _______________________________________________________________________________
 
 **What the game does now.** Yes for the lung in our telling, and we'd like to check that.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B8. Medicine in the tutorial
 
@@ -257,9 +317,11 @@ _______________________________________________________________________________
 
 **What the game does now.** It is presented as a game rule. See also A7.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B9. Medicine and what arrives
 
@@ -267,9 +329,11 @@ _______________________________________________________________________________
 
 **What the game does now.** The activity percentages are the same whether or not the player took their medicine.
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B10. "Still sick"
 
@@ -277,9 +341,11 @@ _______________________________________________________________________________
 
 **What the game does now.** The card goes straight on to "The doctors helped your body clear it, and ran some tests. The missing tool had a name: CGD."
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B11. Autosomal recessive and the "before diagnosis" fight
 
@@ -287,9 +353,11 @@ _______________________________________________________________________________
 
 **What the game does now.** After diagnosis, the p47phox character gets the higher residual chance (see A1).
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## The closing screen (B12 to B15)
 
@@ -309,35 +377,43 @@ After the summer, the game offers a short, hopeful screen called "What comes nex
 
 **Question.** After a successful bone marrow transplant or gene therapy, is it accurate that there is no prophylaxis, that restrictions ease to those of anyone else, and that the immune response is about normal? How should we word the caveats?
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B13. Gene therapy figures
 
 **Question.** Roughly 20 to 30 percent corrected cells are enough for normal infection fighting, and one recent patient reached about 70 percent. Are these figures safe to publish, and with what wording?
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B14. The process
 
 **Question.** How long and arduous are conditioning and recovery for a bone marrow transplant or gene therapy? How should we summarize it honestly in a sentence or two?
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## B15. Tone
 
 **Question.** How can we present curative options as real choices made with the care team, without implying that patients should wait or that living with CGD now is second best?
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
 
----
+\writelines
+
+\newpage
 
 # Group C: can wait
 
@@ -345,19 +421,21 @@ _______________________________________________________________________________
 
 **Question.** How do infection frequency and speed change with age? (The game does not model age.)
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
+
+\writelines
 
 ## C2. Vaccines
 
 **Question.** Are there any vaccines a patient with CGD should avoid? (Out of scope for the game, but we'd like to be sure we aren't implying anything.)
 
-☐ A ☐ C ☐ N ☐ ? Comments:
+☐ Accurate ☐ Changes needed ☐ Not accurate ☐ Can't say
 
-_______________________________________________________________________________
+Comments:
 
----
+\writelines
 
 Thank you. Please return this page, a photo of it, or an email with your answers to the contact at the top.
 
