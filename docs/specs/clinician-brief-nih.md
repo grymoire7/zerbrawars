@@ -1,103 +1,371 @@
-# Clinician brief for the NIH visit
+# Zebra Wars: questions for a clinician
 
-Eight of the A-priority items from `clinician-questions.md`, written so one person can answer them in
-about fifteen minutes after playing Arc 1 and a week. The full list (31 items) is in that file. The
-plan names these eight as the ones to settle before the demo. Five more are also tagged A in that
-file (4, 5, 7, 8 and 21), so they're listed at the end for when there's time.
+Prepared by: ______________________________ Contact: ______________________________ Date: ______________
 
-Everything here is a working assumption until a clinician says otherwise. Two items have a
-patient-side answer from our adult tester (dated 2026-11-08). That is anecdote, not a clinical
-answer.
+Thank you for looking at these. Zebra Wars is a small game that helps people with chronic granulomatous
+disease (CGD) picture what happens inside their body. We are not clinicians, so we simplified, and we
+want to know where the simplifications are fair and where they are wrong or could mislead a patient.
+
+**You don't need to have played the game.** Each question says what the game does, in plain words.
+Nothing in the game is meant as medical advice, and a note on the closing screen says so.
+
+## How to answer
+
+- Tick one box for each question and add a few words if you like. A short answer is plenty.
+- Skip anything you can't speak to. "Can't say" is a useful answer too.
+- **Please do the A questions first.** We'd like those before the game is shown more widely. B questions come later, and C questions can wait.
+- If you would word something differently, write the wording you would accept. We'll change the game to match.
+
+## About the game, in one paragraph
+
+The players are patients aged 13 and up. The game alternates between two parts. In the first, a
+patient plans a week of ordinary life (yard work, a lake day, band practice, a sleepover), with a
+daily medicine routine running in the background. Each choice changes the odds that a germ comes
+home with them. In the second, a fight takes place on a map of the lungs. The player moves groups of
+neutrophils and tells them to engulf germs. There are two characters, X-linked and autosomal
+recessive (p47phox), and two short story arcs: "First infection" (a tutorial, told first before
+diagnosis and then after) and "A first summer" (two weeks of living with CGD).
 
 ## Game words
 
-Players see plain words, not lab terms. In this brief we use the clinical term and give the game word once.
+Players see plain words, not lab terms. This brief uses the clinical term and gives the game word once.
 
 | Game word | What it stands for |
 | --- | --- |
 | Leaky germ | a catalase-negative organism (for example Streptococcus). Engulfing it kills it. |
-| Sealed germ (a pale ring on the board) | a catalase-positive organism (for example Aspergillus, Staph aureus, Burkholderia). Engulfing only contains it. |
+| Sealed germ (shown with a pale ring on the board) | a catalase-positive organism (for example Aspergillus, Staph aureus, Burkholderia). Engulfing only contains it. |
 | Swarm | a group of neutrophils the player moves |
-| Charges | the antibacterial, antifungal and strong doses from medication |
+| Charges | the antibacterial, antifungal and strong doses that come from taking medication |
 | Granuloma | a blocked tile where a swarm walls off a swallowed germ |
-| Carrying forward (the fight's result card) | a swallowed germ that wasn't killed and may surface later. The code calls it a reservoir. |
+| Carrying forward (on the fight's result card) | a swallowed germ that wasn't killed and may surface later (the code calls it a reservoir) |
+| Exposure | the chance, shown as a percentage, that something comes home from an activity |
+| Game odds | those percentages. They are game numbers, not real risk figures. |
 
-## How to use this
+Each answer row below reads: **A** accurate as it stands, **C** fine with changes (please say what), **N** not accurate, **?** can't say.
 
-1. Let them play Arc 1 (the tutorial) and one week of Arc 2 first. Most of the questions are easier with the screen in front of them.
-2. Read each item out, show where it appears, and note their answer next to it.
-3. For each "No" or "Partly", write down the wording they would accept. We change the copy to match.
+---
 
-## The eight items
+# Group A: please answer these first
 
-### 1. Residual kill chance (gameplay)
+## A1. Residual kill chance
 
-**Ask:** What chance should a cell have of killing a catalase-positive organism on its own, through residual oxidase activity, in a typical X-linked patient and a typical p47phox patient? Is one number per character a fair simplification?
-**We assume:** about 10% for X-linked and 25% for autosomal recessive. The 25% is our guess, from the idea that some oxidase activity remains.
-**Where it shows:** Arc 1 part B and every Arc 2 fight. It sets how often cells finish a catalase-positive germ without medicine.
-**If the answer is no:** we change the two numbers (one line each) and rebalance.
+**Question.** In a fight, a cell that engulfs a catalase-positive organism has a small chance of killing it anyway. This is our stand-in for residual oxidase activity. What chance would be realistic for a typical X-linked patient and for a typical p47phox patient? Is one number per character a fair simplification?
 
-### 2. Which germs, which organ (gameplay)
+**What the game does now.** About 10% for X-linked and 25% for p47phox. The 25% is a guess. We drew on Kuhns et al., NEJM 2010. The tutorial's "before diagnosis" fight uses no residual chance at all.
 
-**Ask:** Which organisms most often infect which sites? Is splitting germs by catalase (negative, which a CGD cell can still kill, versus positive, which it can't) a fair basis for the pairings we show?
-**We assume:** lung first, then lymph node, liver and skin. The pairings are our guess.
-**Where it shows:** the germ names on the board, the Key, and which germs come after which activity.
-**If the answer is no:** we change the germ list and pairings.
+☐ A ☐ C ☐ N ☐ ? Your numbers or comments:
 
-### 9. The parts of the immune system that still work (copy)
+_______________________________________________________________________________
 
-**Ask:** Macrophages and monocytes are also affected in CGD. Can we use NK cells, T cells and antibodies as the examples of parts that still work in virus fights?
-**We assume:** yes, and no more than those three.
-**Where it shows:** nowhere yet. No current text names them. This guards future copy, and the "one tool" line in item 24.
-**If the answer is no:** we avoid naming any other cell.
+## A2. Which organisms, which site
 
-### 20. Diagnosis and the first game screen (copy)
+**Question.** Which organisms most often infect which sites (lung, lymph node, liver, skin, bone, gut)? Is splitting organisms by catalase status a fair basis for the pairings we show?
 
-**Ask:** How varied is the road to diagnosis (X-linked often early, autosomal recessive sometimes much later)? Is the opening framing fair?
-**We assume:** "Before anyone knew", in the second person, and the player can skip it.
-**Where it shows:** the first thing a new player sees in Arc 1.
-**If the answer is no:** we change the intro and skip text.
+**What the game does now.** The fights happen in the lung first, with lymph node, liver and skin to follow. The organisms we use are Staph aureus, Aspergillus, Burkholderia, Serratia and Nocardia, plus Streptococcus as the example the cells can finish. Which organism goes with which site is our guess.
 
-### 23. A first lung infection (copy and gameplay)
+☐ A ☐ C ☐ N ☐ ? Comments:
 
-**Ask:** Is a first serious lung infection, where cells arrive and swallow germs but can't finish a mold, a fair picture of how CGD is often found?
-**We assume:** yes, as one common story that isn't everyone's. Our tester agrees, adding that CGD is often first suspected from repeated or severe infections, usually in the lung or the liver.
-**Where it shows:** Arc 1 part A.
-**If the answer is no:** we swap the organism or the site, or soften the framing.
+_______________________________________________________________________________
 
-### 24. "CGD takes one tool away" (copy)
+## A3. Inflammation
 
-**Ask:** Is "CGD takes one tool away, not your whole defence" acceptable for a patient, given that macrophages and monocytes are also affected?
-**We assume:** yes, with no claim about which other cells are fine. Our tester says it's fair: CGD doesn't put you in a bubble, but it removes one of the tools the immune system uses.
-**Where it shows:** the end of Arc 1 part B: "Same germs, different ending. CGD takes one tool away, not your whole defence, and your medicine helps fill the gap."
-**If the answer is no:** we reword that line.
+**Question.** Is "when too many cells pile into one spot, inflammation rises there" a fair simplification of granuloma formation? Separately, does colitis in CGD have a genetic component beyond infection?
 
-### 27. Exposure percentages (copy)
+**What the game does now.** Each tile has an inflammation level. It rises when swarms crowd together, when a loaded swarm stands still, near a visible germ, and where a swallowed germ has been walled off in a granuloma. High levels slow the cells and wear down tissue health each turn. Levels fade when the cause moves on.
 
-**Ask:** The game shows an exposure chance for each activity (for example 45% for yard work, 10% for indoor jobs). Could a patient read these as real risk figures?
-**We assume:** they're acceptable when labelled as game odds. The relative order is what matters.
-**Where it shows:** the life screen, next to every activity. The week odds text says: "These are game odds. Your medicine does not change them; it helps your cells in the fight."
-**If the answer is no:** we drop the percentages for bands such as "low, medium, high" or add a stronger label.
+☐ A ☐ C ☐ N ☐ ? Comments:
 
-### 28. Choices change the odds, not the outcome (message)
+_______________________________________________________________________________
 
-**Ask:** The game says choices change the chance of an infection, and "Some fights are just hard": a careful week can still bring a germ home. Is that the right message for teens, and could it make precautions feel pointless?
-**We assume:** it's the right message, because the score still rewards lowering the odds and the odds visibly move.
-**Where it shows:** the end-of-week line "Your plan and your routine were strong. Some fights are just hard." and the score's split between choices and outcome.
-**If the answer is no:** we change the message and how the score frames luck.
+## A4. Infections that persist
 
-## Also tagged A in the full list
+**Question.** Is "a germ that was swallowed but not killed can persist and flare later" a fair picture of how latent infections behave in CGD?
 
-Ask these if there's time. They're about game mechanics and exposures more than the copy a player reads.
+**What the game does now.** The result card shows what the fight is "carrying forward". Those germs stay hidden, can grow, and surface later as fever, pain or tiredness.
 
-- **Item 4:** is "over-committing cells to one spot raises local inflammation" a fair simplification of granuloma formation? Also, does colitis have a genetic component beyond infection?
-- **Item 5:** is "swallowed but unkilled infections persist and flare later" a fair picture of latent infections? In the game they're hidden reservoirs that surface as fever, pain or tiredness.
-- **Item 7:** what patients are told about fever. The game must never teach dismissing one.
-- **Item 8:** whether our "smarter third options" (indoor chores, skipping the lagoon, skipping the cave) are valid, and which exposures matter most.
-- **Item 21:** does prophylaxis help cells finish germs they've already swallowed, and how strongly? Is "medicine keeps germs small when they arrive" accurate wording for what a missed dose does?
+☐ A ☐ C ☐ N ☐ ? Comments:
 
-Lower priority but relevant: item 29 (the game says daily prophylaxis doesn't change whether a germ arrives, only how hard the fight is) and items 14 to 17 (the epilogue's claims, which matter only if the epilogue stays in the build; `?epilogue=0` turns it off).
+_______________________________________________________________________________
 
-## What we need back
+## A5. Fever
 
-A yes, no or partly for each of the eight items, and the wording they would accept for any "no" or "partly". One page of notes is plenty. Then we change the working assumptions and the copy, and update the status column in `clinician-questions.md`.
+**Question.** What are patients actually told about fever? The game must never teach a patient to dismiss one, even when it turns out to be viral.
+
+**What the game does now.** Any fever makes a doctor visit a good move. The doctor may find it was only a virus. In that case the game shows "Just a virus", with no fight that week.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## A6. Exposures
+
+**Question.** Are our "smarter versions" of risky activities valid, and which exposures matter most for a patient with CGD?
+
+**What the game does now.** Each activity has a riskier and a safer version, for example yard work (higher exposure to mold) versus indoor jobs, and the lagoon versus the beach. Other exposures we have in mind: caves, scuba, marijuana, live trees and reptile pets.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## A7. Medicine and germs already swallowed
+
+**Question.** Does antibacterial or antifungal prophylaxis help phagocytes finish organisms they have already ingested (a swallowed germ that survives inside the cell), and how strongly? Is "medicine keeps germs small when they arrive" accurate wording for what a missed dose lets happen?
+
+**What the game does now.** Full daily doses add a modest boost (about 25 percentage points) to the chance that a swallowed germ dies each turn. Skipped doses add nothing and let the next arrivals land bigger. We keep the wording simple and non-preachy.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## A8. The parts that still work
+
+**Question.** Macrophages and monocytes are also affected in CGD. May we use NK cells, T cells and antibodies as the examples of "parts of the immune system that still work" when the player fights a virus? And nothing more than those three?
+
+**What the game does now.** No text names them yet. We would like your guidance before we write any.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## A9. How CGD is found: the opening
+
+**Question.** The game's first screen is a flashback, "Before anyone knew", in the second person, and the player can skip it. How varied is the road to diagnosis (X-linked often early, autosomal recessive sometimes much later), and is this a fair way to open?
+
+**What the game does now.** The tutorial's first fight happens before diagnosis. A germ gets into the lungs and the cells rush in but can't finish it.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## A10. A first serious lung infection
+
+**Question.** Is a first serious lung infection, where the cells arrive and swallow germs but cannot finish a mold, a fair picture of how CGD is often found? We tell it as one common story, not everyone's.
+
+**What the game does now.** In the "before diagnosis" fight the cells can't finish an Aspergillus-like mold, and the card says "Not finished". After diagnosis, the same fight ends well with medicine.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## A11. "One tool away"
+
+**Question.** Is this wording acceptable for a patient: "CGD takes one tool away, not your whole defence, and your medicine helps fill the gap"? Macrophages and monocytes are also affected, so we make no claim about which other cells are fine.
+
+**What the game does now.** It appears on the card at the end of the "after diagnosis" fight.
+
+☐ A ☐ C ☐ N ☐ ? Comments or the wording you would use:
+
+_______________________________________________________________________________
+
+## A12. Percentages on activities
+
+**Question.** The game shows an exposure chance next to each activity (for example 45% for yard work with mulch, 10% for indoor jobs). They are game numbers. Is it acceptable to show them, or could a patient read them as real risk figures?
+
+**What the game does now.** A line near the week's odds reads: "These are game odds. Your medicine does not change them; it helps your cells in the fight." The order of the numbers matters more than the values. If the numbers are a problem, we could use bands (low, medium, high).
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## A13. The overall message
+
+**Question.** The game's message is that choices change the chance of an infection but not the outcome: a careful week can still bring a germ home, and "some fights are just hard". Is that the right message for teenagers, and could it make precautions feel pointless?
+
+**What the game does now.** After a careful week that still ends in a hard fight, the game says: "Your plan and your routine were strong. Some fights are just hard." The score still rewards lowering the odds, and the odds visibly move.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+---
+
+# Group B: before a wider release
+
+## B1. Steroids
+
+**Question.** Is "calms inflammation but weakens defence" a fair summary of the trade-off? In what situations are steroids used?
+
+**What the game does now.** Not in the game yet. A future part would offer steroids as a double-edged support during a gut flare.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B2. The doctor visit
+
+**Question.** Do early doctor visits reveal and clear infections the way the game implies (imaging, IV antifungals, drainage)?
+
+**What the game does now.** A visit reveals hidden infections and gives the patient strong support in the next fight.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B3. Rare sites
+
+**Question.** For rare-site infections (for example spine or lower brain), how rare are they, and how can we frame them so they are relatable but not frightening?
+
+**What the game does now.** Not in the game yet. A future rare "surprise" fight would be clearly framed as uncommon.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B4. The "weapon you can steal" idea
+
+**Question.** Later studies suggest catalase status does not fully explain which organisms cause trouble. Is the idea of a weapon the cells can use against some germs but not others acceptable if we never state it as the complete story?
+
+**What the game does now.** We keep it as a simplified picture: some germs leave a "weapon" a CGD cell can use, and others don't.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B5. Names for medicine
+
+**Question.** We say "antibacterial" and "antifungal" (for example TMP-SMX, and itraconazole or posaconazole behind them). Is it safe to leave interferon-gamma out?
+
+**What the game does now.** The game uses the two generic words and names no drugs. Interferon-gamma is left out.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B6. More organisms
+
+**Question.** Should the game include Granulibacter, Chromobacterium, Salmonella or Aspergillus nidulans (bone), and are there others you would add?
+
+**What the game does now.** Staph aureus, Aspergillus, Burkholderia, Serratia, Nocardia, plus Streptococcus.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B7. Aspergillus in the tutorial
+
+**Question.** Is Aspergillus a fair organism for the first lung infection in the tutorial (rather than Staphylococcus or Burkholderia), with Streptococcus as the germ the cells do finish?
+
+**What the game does now.** Yes for the lung in our telling, and we'd like to check that.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B8. Medicine in the tutorial
+
+**Question.** In the tutorial, daily medicine visibly slows germs and gives charges that finish a small mold. Is that an acceptable game picture of antibacterial and antifungal prophylaxis, as long as we never state it as fact?
+
+**What the game does now.** It is presented as a game rule. See also A7.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B9. Medicine and what arrives
+
+**Question.** In the game, daily prophylaxis does not change whether a germ arrives. It makes the fight easier (germs slowed, smaller arrivals, charges). Is that acceptable as a game picture, given that real prophylaxis lowers the chance an exposure becomes an infection?
+
+**What the game does now.** The activity percentages are the same whether or not the player took their medicine.
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B10. "Still sick"
+
+**Question.** Before diagnosis the tutorial ends with "Infection: not finished. Your body is still sick." Is "still sick" fair and not frightening wording for that moment?
+
+**What the game does now.** The card goes straight on to "The doctors helped your body clear it, and ran some tests. The missing tool had a name: CGD."
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B11. Autosomal recessive and the "before diagnosis" fight
+
+**Question.** The "before diagnosis" fight gives the cells no residual kill chance for either variant, so they can't finish the mold. For a p47phox patient with some residual activity, is that an acceptable simplification for the pre-diagnosis picture?
+
+**What the game does now.** After diagnosis, the p47phox character gets the higher residual chance (see A1).
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## The closing screen (B12 to B15)
+
+After the summer, the game offers a short, hopeful screen called "What comes next". It is marked "Draft: pending clinical review", and we can switch it off. This is its entire text:
+
+> Bone marrow transplant and gene therapy are real options for CGD. They keep changing, and the choice is made together with your care team.
+>
+> After one of them works, there is no more prophylaxis medicine, restrictions ease to what anyone else has, and the immune response is about normal.
+>
+> The process can be long and arduous, and it looks different for each person.
+>
+> Gene therapy does not have to correct every cell. In early results, roughly 20 to 30 percent corrected cells looked like enough, and one recent patient reached about 70 percent.
+>
+> This is information, not medical advice. Your care team knows your situation, so talk with them about anything here.
+
+## B12. After a successful treatment
+
+**Question.** After a successful bone marrow transplant or gene therapy, is it accurate that there is no prophylaxis, that restrictions ease to those of anyone else, and that the immune response is about normal? How should we word the caveats?
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B13. Gene therapy figures
+
+**Question.** Roughly 20 to 30 percent corrected cells are enough for normal infection fighting, and one recent patient reached about 70 percent. Are these figures safe to publish, and with what wording?
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B14. The process
+
+**Question.** How long and arduous are conditioning and recovery for a bone marrow transplant or gene therapy? How should we summarize it honestly in a sentence or two?
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## B15. Tone
+
+**Question.** How can we present curative options as real choices made with the care team, without implying that patients should wait or that living with CGD now is second best?
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+---
+
+# Group C: can wait
+
+## C1. Age
+
+**Question.** How do infection frequency and speed change with age? (The game does not model age.)
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+## C2. Vaccines
+
+**Question.** Are there any vaccines a patient with CGD should avoid? (Out of scope for the game, but we'd like to be sure we aren't implying anything.)
+
+☐ A ☐ C ☐ N ☐ ? Comments:
+
+_______________________________________________________________________________
+
+---
+
+Thank you. Please return this page, a photo of it, or an email with your answers to the contact at the top.
+
+<!--
+For us, not printed. Handout number = number in clinician-questions.md:
+A1=1, A2=2, A3=4, A4=5, A5=7, A6=8, A7=21, A8=9, A9=20, A10=23, A11=24, A12=27, A13=28.
+B1=3, B2=6, B3=10, B4=11, B5=12, B6=13, B7=25, B8=26, B9=29, B10=30, B11=31, B12=14, B13=15, B14=16, B15=17.
+C1=18, C2=19. There is no item 22 in the list.
+Patient-side answers noted in clinician-questions.md (items 23, 24, 25) are left out on purpose:
+they are anecdote, and a clinician should answer on their own.
+-->
