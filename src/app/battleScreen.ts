@@ -685,7 +685,7 @@ export function mountBattle(
           env.go(m === "campaign" ? { mode: "campaign" } : { mode: m }),
         session: run ? sessionOptions(run) : undefined,
       });
-  panels.scroll.append(readout);
+  if (debug) panels.scroll.append(readout);
   if (!tutorial) help.showFirstTime();
   if (run && settings.brought) {
     const c = run.campaign();
