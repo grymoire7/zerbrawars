@@ -6,6 +6,8 @@ immune cells in a battle against whatever organisms came home with you. Our
 games start with chronic granulomatous disease (CGD), X-linked and autosomal
 recessive.
 
+You can play it at [zebrawars.com](https://zebrawars.com).
+
 This is a beta. The medical content has not had clinical review yet, and the
 epilogue is marked as a draft.
 
