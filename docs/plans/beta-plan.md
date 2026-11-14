@@ -37,7 +37,8 @@ status table below is the only place that tracks slices.
 | B6 Epilogue draft | done (flag `?epilogue=0`; copy awaiting clinician items 14-17) | | |
 | B7 accessibility | designed; deferred past the demo except M1, the readout hide and a grayscale check | | `b7-accessibility-design.md` (owner questions 1-9 still to answer; Q7: no known needs) |
 | B8 demo build (D1 `mise run demo`, D2 WebGL message, D3 clean profile, D4 offline rehearsal, D5 one-page sheet) | done (D4 rehearsed offline on 2026-11-14: fast start, played Arc 1 and a week; sheet in `docs/demo-sheet.md`, hosted address still to be filled in by hand) | | |
-| B9 to B10 | not started | | |
+| B9 patient session | facilitator guide written (`docs/patient-session.md`); session itself pending | | |
+| B10 | not started | | |
 
 Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
 more battle, but neither felt noticeably harder or more fun; `?goal=N` still overrides). The smarter bot
