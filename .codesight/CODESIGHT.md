@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 58 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,700 tokens. Without it, AI exploration would cost ~24,200 tokens. **Saves ~19,400 tokens per conversation.**
-> **Last scanned:** 2026-11-14 04:54 — re-run after significant changes
+> **Last scanned:** 2026-11-14 06:35 — re-run after significant changes
 
 ---
 
@@ -346,11 +346,11 @@
 - `src/sim/battle/intents.ts` — imported by **18** files
 - `src/sim/board.ts` — imported by **18** files
 - `src/sim/rng.ts` — imported by **18** files
+- `src/theme/palette.ts` — imported by **17** files
 - `src/sim/battle/outcome.ts` — imported by **16** files
 - `src/sim/life/loadout.ts` — imported by **16** files
 - `src/sim/battle/resolve.ts` — imported by **16** files
 - `src/sim/life/types.ts` — imported by **16** files
-- `src/theme/palette.ts` — imported by **16** files
 - `src/sim/validate.ts` — imported by **16** files
 - `src/sim/campaign.ts` — imported by **15** files
 - `src/sim/organisms.ts` — imported by **15** files
@@ -369,15 +369,15 @@
 - `src/sim/battle/intents.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/controller.ts`, `src/app/info.test.ts` +13 more
 - `src/sim/board.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/render/boardView.ts`, `src/render/orderView.ts`, `src/sim/battle/arrivals.test.ts` +13 more
 - `src/sim/rng.ts` ← `src/sim/battle/bots.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/intents.ts`, `src/sim/battle/orders.test.ts` +13 more
+- `src/theme/palette.ts` ← `src/app/boot.ts`, `src/app/main.ts`, `src/render/boardView.ts`, `src/render/granulomaView.ts`, `src/render/insetView.ts` +12 more
 - `src/sim/battle/outcome.ts` ← `src/app/battleScreen.ts`, `src/app/controller.ts`, `src/render/playback.test.ts`, `src/sim/battle/arrivals.test.ts`, `src/sim/battle/bots.ts` +11 more
-- `src/sim/life/loadout.ts` ← `src/app/campaignModel.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.ts`, `src/app/run.ts` +11 more
 
 ---
 
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 50 test files found
+> 51 test files found
 
 ---
 

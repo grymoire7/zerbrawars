@@ -36,3 +36,7 @@ run = "npm run format"
 [tasks.check]
 description = "Everything CI-like: typecheck, lint, format:check, test, build"
 depends = ["typecheck", "lint", "format:check", "test", "build"]
+
+[tasks.demo]
+description = "Offline demo: build if stale, serve dist/ on :4173, keep the Mac awake, open the Zebra Wars Chrome profile"
+run = "scripts/demo.sh"
