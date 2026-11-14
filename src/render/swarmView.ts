@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { PARAMS } from "../sim/params";
 import type { BattleState, Coord, Swarm, SwarmId } from "../sim/types";
 import { PALETTE, hex } from "../theme/palette";
+import { calm } from "./motion";
 
 /**
  * Playback's hold on one swarm. Every field has a neutral value (see clearPoses), so a pose only
@@ -263,7 +264,8 @@ export function createSwarmView(
     const spread = (1 + (LOADED_SWELL - 1) * swell) * (1 - 0.45 * p.stream);
     const size = CELL_SIZE * (1 + 0.5 * swell);
     // Slower, smaller drift when loaded (a swollen swarm is sluggish).
-    const amp = 0.05 * (1 - 0.5 * swell);
+    const still = calm();
+    const amp = still ? 0 : 0.05 * (1 - 0.5 * swell);
     const shellR = SHELL_RADIUS * p.wrapRadius * (1 + 0.15 * swell);
     const total = p.path ? p.cum[p.cum.length - 1]! : 0;
     const leadS = p.progress * total;
@@ -289,13 +291,13 @@ export function createSwarmView(
         cellAnchor.y +
         size * 0.6 +
         0.02 +
-        Math.sin(t * 1.3 + pz) * 0.012 +
+        (still ? 0 : Math.sin(t * 1.3 + pz) * 0.012) +
         p.jolt * 0.12 * lag;
       let tz = cellAnchor.z + rz * spread * push + Math.cos(t + pz) * amp;
       if (p.wrap > 0) {
         // The front of the swarm (low lag) reaches the token first, so it pours on.
         const w = Math.min(1, Math.max(0, p.wrap * 1.6 - lag * 0.6));
-        const wob = 1 + Math.sin(t * 2 + px) * 0.06;
+        const wob = still ? 1 : 1 + Math.sin(t * 2 + px) * 0.06;
         tx += (p.wrapAt.x + e.shell[i * 3]! * shellR * wob - tx) * w;
         ty += (p.wrapAt.y + e.shell[i * 3 + 1]! * shellR * wob - ty) * w;
         tz += (p.wrapAt.z + e.shell[i * 3 + 2]! * shellR * wob - tz) * w;
@@ -306,7 +308,7 @@ export function createSwarmView(
       e.pos[o + 1] = e.pos[o + 1]! + (ty - e.pos[o + 1]!) * k;
       e.pos[o + 2] = e.pos[o + 2]! + (tz - e.pos[o + 2]!) * k;
       dummy.position.set(e.pos[o]!, e.pos[o + 1]!, e.pos[o + 2]!);
-      dummy.rotation.set(0, px + t * 0.3, 0);
+      dummy.rotation.set(0, px + (still ? 0 : t * 0.3), 0);
       dummy.scale.set(size * 1.3, size * 0.6, size * 1.3);
       dummy.updateMatrix();
       e.mesh.setMatrixAt(i, dummy.matrix);
@@ -328,10 +330,10 @@ export function createSwarmView(
       const off = load > 1 ? (c - (load - 1) / 2) * 0.16 : 0;
       m.position.set(
         lead.x + off,
-        lead.y + 0.11 + Math.sin(clock * 0.9 + c) * 0.01,
+        lead.y + 0.11 + (still ? 0 : Math.sin(clock * 0.9 + c) * 0.01),
         lead.z,
       );
-      m.rotation.set(clock * 0.3 + c, clock * 0.2, 0);
+      m.rotation.set(still ? c : clock * 0.3 + c, still ? 0 : clock * 0.2, 0);
     }
   };
 

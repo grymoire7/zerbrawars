@@ -7,6 +7,7 @@ import {
 } from "../sim/pathogens";
 import type { BattleState, Coord, Pathogen, PathogenId } from "../sim/types";
 import { hex } from "../theme/palette";
+import { calm } from "./motion";
 
 export interface PathogenView {
   readonly group: THREE.Group;
@@ -109,7 +110,6 @@ export function createPathogenView(
   const bodies: THREE.Object3D[] = [];
   let clock = 0;
   let growing = new Set<PathogenId>();
-  const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   const addSphere = (
     body: THREE.Group,
@@ -241,12 +241,12 @@ export function createPathogenView(
     tick(dt) {
       clock += dt;
       for (const [id, t] of tokens) {
-        const swell = growing.has(id) && !calm.matches;
+        const swell = growing.has(id) && !calm();
         const f = swell ? 1 + 0.045 * Math.sin(clock * 2.2) : 1;
         t.body.scale.setScalar(bodyScale(t.size) * f);
       }
       bodies.forEach((b, i) => {
-        b.position.y = Math.sin(clock * 1.6 + i * 1.7) * 0.012;
+        b.position.y = calm() ? 0 : Math.sin(clock * 1.6 + i * 1.7) * 0.012;
       });
     },
   };

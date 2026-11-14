@@ -4,6 +4,7 @@ import { movePath, type EngulfTarget } from "../sim/battle/orders";
 import type { BattleState, Coord, Order } from "../sim/types";
 import { ORDER_COLOR } from "./boardView";
 import { labelSprite } from "./labels";
+import { calm } from "./motion";
 import { PALETTE, hex } from "../theme/palette";
 
 /** Support charge marks: every legal target while a charge is picked, and the queued one. */
@@ -296,7 +297,7 @@ export function createOrderView(
     group,
     tick(dt) {
       clock += dt;
-      idleMat.opacity = 0.4 + 0.3 * Math.sin(clock * 3);
+      idleMat.opacity = calm() ? 0.55 : 0.4 + 0.3 * Math.sin(clock * 3);
     },
     update(state, orders, targets = [], idle = [], dose) {
       group.clear();

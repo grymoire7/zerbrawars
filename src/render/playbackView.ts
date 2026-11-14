@@ -6,6 +6,7 @@ import type { FxView } from "./fxView";
 import type { GranulomaView } from "./granulomaView";
 import { KIND_COLOR, type PathogenView } from "./pathogenView";
 import { beatProgress, type Beat, type Playback } from "./playback";
+import { calm } from "./motion";
 import type { SwarmView } from "./swarmView";
 import { PALETTE, hex } from "../theme/palette";
 
@@ -216,7 +217,7 @@ export function createPlaybackView(v: Views): PlaybackView {
     }
 
     // The token struggles, then vanishes in the flash or is drawn into the swarm.
-    const shake = Math.sin(t * 45) * 0.04 * squeeze * (1 - out);
+    const shake = calm() ? 0 : Math.sin(t * 45) * 0.04 * squeeze * (1 - out);
     let scale = 1 - 0.18 * squeeze + shake;
     let dy = 0;
     if (killed) scale *= 1 - easeIn(seg(p, 0.55, 0.66));
