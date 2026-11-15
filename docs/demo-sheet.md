@@ -19,7 +19,7 @@ One page, meant to be printed. The demo laptop is the dev laptop. The phone is T
 - Plug the laptop in and charge the phone.
 - In Brave, check that the **Zebra Wars** profile opens to a clean title screen (no Continue button).
 - Run `mise run demo` once at home and play a turn. If it works there, it works anywhere.
-- Write the hosted address here for the phone: ______________________________
+- Hosted address for the phone: https://zebrawars.com
 
 ## Start it (laptop, about 10 seconds)
 
