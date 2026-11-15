@@ -689,6 +689,80 @@
         outline: 3px solid var(--zw-focus);
         outline-offset: 4px;
       }
+      /* The title's opening beat and blink (src/ui/titleScene.ts); the still final frame is the default. */
+      @keyframes zs-rise {
+        from {
+          transform: translateY(230px);
+        }
+        to {
+          transform: none;
+        }
+      }
+      @keyframes zs-pop {
+        from {
+          opacity: 0;
+          transform: scale(0.3);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes zs-fade {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .zs-lid {
+        transition: transform 0.08s linear;
+      }
+      .zs-blink .zs-lid {
+        transform: none;
+      }
+      .zs-play .zs-zoreo {
+        animation: zs-rise 0.75s cubic-bezier(0.3, 1.25, 0.5, 1) both;
+      }
+      .zs-play .zs-buddies {
+        animation: zs-fade 0.4s 0.45s both;
+      }
+      .zs-play .zs-trail {
+        animation: zs-fade 0.5s 0.8s both;
+      }
+      .zs-play .zs-v {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: zs-pop 0.22s ease-out both;
+      }
+      .zs-play .zs-v1 {
+        animation-delay: 0.8s;
+      }
+      .zs-play .zs-v2 {
+        animation-delay: 0.87s;
+      }
+      .zs-play .zs-v3 {
+        animation-delay: 0.94s;
+      }
+      .zs-play .zs-v4 {
+        animation-delay: 1.01s;
+      }
+      .zs-play .zs-v5 {
+        animation-delay: 1.08s;
+      }
+      .zs-play .zs-v6 {
+        animation-delay: 1.15s;
+      }
+      .zs-play .zs-v7 {
+        animation-delay: 1.22s;
+      }
+      .zs-play .zs-v8 {
+        animation-delay: 1.29s;
+      }
+      .zs-play .zs-v9 {
+        animation-delay: 1.36s;
+      }
       /* Phone portrait: the scene is a strip above the card; companions and far volley clumps go. */
       @media (max-aspect-ratio: 1/1) {
         .zs-island {
