@@ -7,11 +7,11 @@ import {
   advanceDay,
   createLife,
   energyPlan,
+  forgetRoll,
   medForecast,
   placeCard,
   placementProblems,
   setDose,
-  setPackPills,
   slipRoll,
   skipMeds,
   takeMeds,
@@ -52,10 +52,8 @@ const finish = (life: LifeState) => {
   return life;
 };
 
-const place =
-  (day: number, slot: number, card: CardId, pack = false) =>
-  (s: LifeState) =>
-    placeCard(s, day, slot, card, pack);
+const place = (day: number, slot: number, card: CardId) => (s: LifeState) =>
+  placeCard(s, day, slot, card);
 
 describe("cards", () => {
   it("deals five cards, three of them with a smarter version", () => {
@@ -147,10 +145,10 @@ describe("calendar rules", () => {
     // Band on day 2 spends the last point; a packed sleepover that evening would need 2 more.
     const t = placeCard(s, 1, 0, "band").state;
     expect(energyPlan(t)[1]).toEqual([0, 1]);
-    expect(placementProblems(t, 1, 1, "sleepover", true)).toEqual([
+    expect(placementProblems(t, 1, 1, "sleepover")).toEqual([
       "not enough energy",
     ]);
-    expect(() => placeCard(t, 1, 1, "sleepover", true)).toThrow(/energy/);
+    expect(() => placeCard(t, 1, 1, "sleepover")).toThrow(/energy/);
   });
 
   it("rejects bad slots and days that are over", () => {
@@ -320,20 +318,21 @@ describe("setDose, the per-day toggle", () => {
     expect(() => setDose(finish(s), 1, false)).toThrow(/over/);
   });
 
-  it("locks the friction day, planned or already lost", () => {
-    let s = placeCard(createLife({ seed: 4 }), 0, 1, "sleepover", false).state;
-    expect(() => setDose(s, 1, true)).toThrow(/home/);
-    expect(forecast(s)).toEqual([true, false, true]);
+  it("locks today's dose once the pills were left behind", () => {
+    let s = placeCard(createLife({ seed: FORGOT }), 0, 1, "sleepover").state;
+    // Before the roll is made nothing is locked, and the forecast counts the dose as taken.
+    setDose(s, 1, true);
+    expect(forecast(s)).toEqual([true, true, true]);
     s = advanceDay(s).state;
     expect(() => setDose(s, 1, true)).toThrow(/home/);
     expect(() => takeMeds(s)).toThrow(/home/);
     setDose(s, 2, false);
   });
 
-  it("friction beats a choice made before the sleepover was planned", () => {
-    let s = setDose(createLife({ seed: 4 }), 1, true).state;
-    s = placeCard(s, 0, 1, "sleepover", false).state;
-    expect(forecast(s)).toEqual([true, false, true]);
+  it("applies the roll over a choice made before the sleepover was planned", () => {
+    let s = setDose(createLife({ seed: FORGOT }), 1, true).state;
+    s = placeCard(s, 0, 1, "sleepover").state;
+    expect(forecast(s)).toEqual([true, true, true]);
     s = advanceDay(s).state;
     expect(todayDose(s)).toMatchObject({ taken: false, cause: "friction" });
   });
@@ -356,29 +355,44 @@ describe("setDose, the per-day toggle", () => {
   });
 });
 
-describe("the sleepover friction event", () => {
-  const withSleepover = (pack: boolean) =>
-    placeCard(createLife({ seed: 4 }), 0, 1, "sleepover", pack).state;
+/** A seed whose week-1, day-1 morning roll leaves the pills behind (or not), for the sleepover tests. */
+function seedWhere(left: boolean): number {
+  for (let seed = 1; ; seed++)
+    if (forgetRoll(seed, 1, 1) < L.meds.slip.sleepover === left) return seed;
+}
+const FORGOT = seedWhere(true);
+const KEPT = seedWhere(false);
 
-  it("is visible in the forecast before the day is played", () => {
-    expect(medForecast(withSleepover(false)).map((d) => d.cause)).toEqual([
-      "default",
-      "friction",
-      "default",
-    ]);
-    expect(exposurePreview(withSleepover(false))).toMatchObject({
-      frictionDays: [1],
-      medLevel: 2 / 3,
-      charges: { antibacterial: 0, antifungal: 1 },
-    });
-    expect(exposurePreview(withSleepover(true)).frictionDays).toEqual([]);
-    expect(cardPreview(withSleepover(false), "sleepover").friction).toEqual({
-      packPillsEnergy: L.packPillsEnergy,
+describe("the sleepover friction event", () => {
+  const withSleepover = (seed: number) =>
+    placeCard(createLife({ seed }), 0, 1, "sleepover").state;
+
+  it("shows only the chance before the day is played, never the roll", () => {
+    for (const seed of [FORGOT, KEPT]) {
+      const l = withSleepover(seed);
+      expect(medForecast(l).map((d) => d.cause)).toEqual([
+        "default",
+        "default",
+        "default",
+      ]);
+      expect(medForecast(l)[1].risks).toEqual([
+        { kind: "sleepover", chance: L.meds.slip.sleepover },
+      ]);
+      expect(exposurePreview(l)).toMatchObject({
+        doseRisks: [
+          { day: 1, kind: "sleepover", chance: L.meds.slip.sleepover },
+        ],
+        medLevel: 1,
+      });
+    }
+    expect(cardPreview(createLife({ seed: 1 }), "sleepover").doseRisk).toEqual({
+      chance: L.meds.slip.sleepover,
+      text: "30% the pills get left at home",
     });
   });
 
-  it("misses the next morning's dose unless the pills were packed", () => {
-    const r = advanceDay(withSleepover(false));
+  it("misses the next morning's dose when the roll leaves the pills behind", () => {
+    const r = advanceDay(withSleepover(FORGOT));
     expect(r.events).toContainEqual({
       type: "FrictionEvent",
       day: 1,
@@ -393,22 +407,30 @@ describe("the sleepover friction event", () => {
     expect(r.state.medLevel).toBeCloseTo(2 / 3);
     expect(() => takeMeds(r.state)).toThrow(/home/);
     expect(finish(r.state).medLevel).toBeCloseTo(2 / 3);
-
-    const packed = advanceDay(withSleepover(true));
-    expect(packed.events.some((e) => e.type === "FrictionEvent")).toBe(false);
-    expect(finish(packed.state).medLevel).toBe(1);
   });
 
-  it("charges energy for packing, so it competes with a card", () => {
-    const s = withSleepover(false);
-    const packed = setPackPills(s, 0, 1, true).state;
-    expect(energyPlan(packed)[0][1]).toBe(
-      energyPlan(s)[0][1] - L.packPillsEnergy,
+  it("keeps the dose when the roll does not", () => {
+    const kept = advanceDay(withSleepover(KEPT));
+    expect(kept.events.some((e) => e.type === "FrictionEvent")).toBe(false);
+    expect(finish(kept.state).medLevel).toBe(1);
+  });
+
+  it("rolls once per seed, week and day, so re-placing the card cannot reroll it", () => {
+    let l = withSleepover(FORGOT);
+    l = unplaceCard(l, 0, 1).state;
+    l = placeCard(l, 0, 1, "sleepover").state;
+    expect(advanceDay(l).events.some((e) => e.type === "FrictionEvent")).toBe(
+      true,
     );
-    expect(setPackPills(packed, 0, 1, false).state.plan[0][1]?.packPills).toBe(
-      false,
-    );
-    expect(() => setPackPills(s, 0, 0, true)).toThrow();
+  });
+
+  it("leaves the pills behind in about 30% of seeds", () => {
+    let left = 0;
+    const N = 2000;
+    for (let seed = 1; seed <= N; seed++)
+      if (forgetRoll(seed, 1, 1) < L.meds.slip.sleepover) left++;
+    expect(left / N).toBeGreaterThan(0.26);
+    expect(left / N).toBeLessThan(0.34);
   });
 });
 
@@ -517,8 +539,7 @@ describe("exposure", () => {
         const rolls = slots
           .filter(
             ([d, sl]) =>
-              placementProblems(createLife({ seed }), d, sl, card, false)
-                .length === 0,
+              placementProblems(createLife({ seed }), d, sl, card).length === 0,
           )
           .map(([d, sl]) => rollsOf(d, sl, card));
         expect(rolls.length).toBeGreaterThan(1);
@@ -555,7 +576,7 @@ describe("determinism and serialization", () => {
 
   it("gives different loadouts for different choices on the same seed", () => {
     const a = loadoutFromLife(playWeek(LIFE_BOTS.risky, 3));
-    const b = loadoutFromLife(playWeek(LIFE_BOTS.riskyNoPack, 3));
+    const b = loadoutFromLife(playWeek(LIFE_BOTS.riskySkipMeds, 3));
     expect(a.medLevel).not.toBe(b.medLevel);
     expect(a.seed).toBe(b.seed);
   });
@@ -702,11 +723,17 @@ describe("game night at Alex's", () => {
   it("forecasts the slip before the plan is played", () => {
     const life = withGame(1, "game");
     const f = medForecast(life);
-    expect(f.map((x) => x.chance)).toEqual([null, G, null]);
+    expect(f.map((x) => x.risks)).toEqual([
+      [],
+      [{ kind: "lateNight", chance: G }],
+      [],
+    ]);
     expect(f[1]).toMatchObject({ taken: true, cause: "default" });
-    expect(exposurePreview(life).slipDays).toEqual([{ day: 1, chance: G }]);
+    expect(exposurePreview(life).doseRisks).toEqual([
+      { day: 1, kind: "lateNight", chance: G },
+    ]);
     expect(
-      medForecast(withGame(1, "gameEarly")).every((x) => x.chance === null),
+      medForecast(withGame(1, "gameEarly")).every((x) => x.risks.length === 0),
     ).toBe(true);
   });
 
@@ -772,14 +799,16 @@ describe("game night at Alex's", () => {
     expect(r.events.some((e) => e.type === "MedLevelChanged")).toBe(true);
   });
 
-  it("leaves an unpacked sleepover's friction alone", () => {
-    let l = placeCard(createLife({ seed: 3 }), 0, 1, "sleepover", false).state;
+  it("lists both risks on a day with a sleepover before and a late night after", () => {
+    let l = placeCard(createLife({ seed: 3 }), 0, 1, "sleepover").state;
     l = placeCard(l, 1, 1, "game").state;
-    const f = medForecast(l);
-    expect(f[1]).toMatchObject({
-      taken: false,
-      cause: "friction",
-      chance: null,
+    expect(medForecast(l)[1]).toMatchObject({
+      taken: true,
+      cause: "default",
+      risks: [
+        { kind: "lateNight", chance: G },
+        { kind: "sleepover", chance: L.meds.slip.sleepover },
+      ],
     });
   });
 });

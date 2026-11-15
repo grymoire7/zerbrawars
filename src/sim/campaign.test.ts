@@ -630,7 +630,7 @@ describe("session log", () => {
     let t = 0;
     let step = createCampaign({ seed: 4 });
     log = logStep(log, step, t);
-    step = lifeAction(step.state, (l) => placeCard(l, 0, 1, "sleepover", true));
+    step = lifeAction(step.state, (l) => placeCard(l, 0, 1, "sleepover"));
     log = logStep(log, step, (t += 1200));
     while (!weekOver(step.state.life)) {
       step = lifeAction(step.state, advanceDay);
@@ -664,7 +664,6 @@ describe("session log", () => {
       expect.objectContaining({
         type: "card",
         card: "sleepover",
-        packPills: true,
       }),
     );
     expect(kinds.filter((k) => k === "meds")).toHaveLength(PARAMS.life.days);

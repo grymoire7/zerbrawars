@@ -219,7 +219,7 @@ export const PARAMS = {
    *   activities, the sleepover included), one short, so reaching it takes a risky card or a better
    *   arrangement; the all-risky week scores 14.
    * - Energy (game-only, labelled as such): cards cost it when their day ends, rest refunds
-   *   `restEnergy`, packing the pills costs `packPillsEnergy`. The plan's running balance may never
+   *   `restEnergy`. The plan's running balance may never
    *   go below 0, so a low-energy week has to rest a slot it would have filled. What is left
    *   carries into the Loadout (the battle ignores it) and on into the next week (T13). A first week
    *   starts at `startEnergy`: all four cards cost 6, two rests refund 2, which leaves exactly 1
@@ -246,11 +246,14 @@ export const PARAMS = {
     startEnergy: 5,
     maxEnergy: 6,
     restEnergy: 1,
-    packPillsEnergy: 1,
     meds: {
       window: 3,
-      /** Chance a dose slips, by what disrupted the routine; rolled once per seed, week and day. */
-      slip: { lateNight: 0.5 },
+      /**
+       * Chance a dose slips, by what disrupted the routine; each is rolled once per seed, week and
+       * day when the day is played, never shown beforehand. `lateNight`: that evening's pills.
+       * `sleepover`: the pills are left behind, so the next morning's dose is missed.
+       */
+      slip: { lateNight: 0.5, sleepover: 0.3 },
     },
     cards: {
       yard: {

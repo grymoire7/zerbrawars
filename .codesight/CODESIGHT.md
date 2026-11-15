@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 60 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,700 tokens. **Saves ~19,900 tokens per conversation.**
-> **Last scanned:** 2026-11-15 23:23 — re-run after significant changes
+> **Last scanned:** 2026-11-15 23:37 — re-run after significant changes
 
 ---
 
@@ -135,7 +135,7 @@
   - interface CampaignPlan
   - type DoctorPolicy
   - type CampaignBot
-  - _...2 more_
+  - _...1 more_
 - `src/sim/life/body.ts`
   - function bodyRoll: (seed, week, day, i) => number
   - function symptomDayFor: (size) => number
@@ -159,14 +159,14 @@
   - function weekStartEvents: (life) => LifeEvent[]
   - function findPlaced: (life, card) => void
   - function slotCost: (life, day, p) => number
-  - _...20 more_
+  - _...22 more_
 - `src/sim/life/cards.ts`
   - function exposureKind: (card, i) => PathogenKindId
   - function handFor: (_week) => readonly HandCardId[]
   - function isCardId: (id) => id is CardId
   - function cardDef: (id) => CardDef
   - function versionsOf: (base) => CardId[]
-  - function placementCost: (card, packPills) => number
+  - function placementCost: (card) => number
   - _...3 more_
 - `src/sim/life/loadout.ts`
   - function battleSeed: (life) => number

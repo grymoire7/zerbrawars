@@ -13,7 +13,7 @@ import { plannedChoices } from "../score";
 import type { CardId, HandCardId, LifeState } from "./types";
 
 // Headless life-phase players for balance checks. The bots that name their versions play one fixed
-// calendar shape, which fits a first week's energy with the pills packed:
+// calendar shape, which fits a first week's energy:
 //   day 1: yard, sleepover   day 2: rest, lake   day 3: band, game night
 // The full hand costs more than a week's energy, so cards are placed in the bot's drop order (first
 // = most wanted) and any that no longer fit stay home. The planner picks its own shape.
@@ -35,7 +35,6 @@ export interface Placement {
   readonly card: CardId;
   readonly day: number;
   readonly slot: number;
-  readonly packPills: boolean;
 }
 
 type Base = Exclude<HandCardId, "doctor">;
@@ -60,7 +59,6 @@ const RISKY_ORDER: readonly Base[] = [
 export interface WeekPlan {
   /** The version to play per hand card; missing = leave the slot as rest. */
   readonly cards: Partial<Record<HandCardId, CardId>>;
-  readonly packPills: boolean;
   readonly skipMeds: boolean;
   /** Which card to place first, and so the last to be dropped when energy runs out (default: the smart order). */
   readonly order?: readonly HandCardId[];
@@ -93,7 +91,7 @@ export function planPlacements(plan: WeekPlan): readonly Placement[] {
     const card = plan.cards[base];
     if (!card || !(base in SLOTS)) continue;
     const { day, slot } = SLOTS[base];
-    out.push({ card, day, slot, packPills: plan.packPills });
+    out.push({ card, day, slot });
   }
   return out;
 }
@@ -103,9 +101,9 @@ export function placeFitting(
   life: LifeState,
   placements: readonly Placement[],
 ): LifeState {
-  for (const { card, day, slot, packPills } of placements)
-    if (placementProblems(life, day, slot, card, packPills).length === 0)
-      life = placeCard(life, day, slot, card, packPills).state;
+  for (const { card, day, slot } of placements)
+    if (placementProblems(life, day, slot, card).length === 0)
+      life = placeCard(life, day, slot, card).state;
   return life;
 }
 
@@ -113,7 +111,7 @@ const bestCache = new Map<string, readonly Placement[]>();
 
 /**
  * The legal plan with the highest planned Choices (ties: the lowest total landing chance), found by
- * trying every card version in every slot, pills packed or not. Memoized by what the search reads
+ * trying every card version in every slot. Memoized by what the search reads
  * (hand, energy, doses), since the answer does not depend on the seed.
  */
 export function bestPlacements(life: LifeState): readonly Placement[] {
@@ -143,15 +141,11 @@ export function bestPlacements(life: LifeState): readonly Placement[] {
     if (smarter) versions.push(smarter);
     for (const card of versions)
       for (let day = at.day; day < at.plan.length; day++)
-        for (let slot = 0; slot < at.plan[day].length; slot++)
-          for (const packPills of cardDef(card).overnight
-            ? [true, false]
-            : [false]) {
-            if (placementProblems(at, day, slot, card, packPills).length > 0)
-              continue;
-            const next = placeCard(at, day, slot, card, packPills).state;
-            walk(i + 1, next, [...chosen, { card, day, slot, packPills }]);
-          }
+        for (let slot = 0; slot < at.plan[day].length; slot++) {
+          if (placementProblems(at, day, slot, card).length > 0) continue;
+          const next = placeCard(at, day, slot, card).state;
+          walk(i + 1, next, [...chosen, { card, day, slot }]);
+        }
   };
   walk(0, life, []);
   bestCache.set(key, best);
@@ -160,35 +154,32 @@ export function bestPlacements(life: LifeState): readonly Placement[] {
 
 export const LIFE_BOTS: Record<string, LifeBot> = {
   /** Rests every slot. */
-  home: () => ({ cards: {}, packPills: false, skipMeds: false }),
+  home: () => ({ cards: {}, skipMeds: false }),
   /** Only the safe card. */
   bandOnly: () => ({
     cards: { band: "band" },
-    packPills: false,
     skipMeds: false,
   }),
-  /** Every card in its risky version (game night at Alex's included), pills packed. */
+  /** Every card in its risky version (game night at Alex's included). */
   risky: () => ({
     cards: RISKY,
-    packPills: true,
     skipMeds: false,
     order: RISKY_ORDER,
   }),
   /**
    * The thoughtful player: with the week in view it plays the best plan by the score's own forecast
    * (at goal 13 that takes one risky card, since the all-smarter week scores 12). Without a week it
-   * falls back to every card in its smarter version, pills packed.
+   * falls back to every card in its smarter version.
    */
   smarter: (_roll, life) =>
     life
       ? {
           cards: {},
-          packPills: false,
           skipMeds: false,
           placements: bestPlacements(life),
         }
-      : { cards: SMARTER, packPills: true, skipMeds: false },
-  /** A coin flip per card version; the pills are packed four weeks in five. Drops in the smart order. */
+      : { cards: SMARTER, skipMeds: false },
+  /** A coin flip per card version. Drops in the smart order. */
   mixed: (roll) => {
     const cards = {
       yard: roll() < 0.5 ? "yard" : "yardIndoor",
@@ -197,16 +188,8 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
       sleepover: "sleepover",
       game: roll() < 0.5 ? "game" : "gameEarly",
     } as const;
-    const packPills = roll() < 0.8;
-    return { cards, packPills, skipMeds: false };
+    return { cards, skipMeds: false };
   },
-  /** Risky versions, the pills left at home: misses come from the sleepover and the late night. */
-  careless: () => ({
-    cards: RISKY,
-    packPills: false,
-    skipMeds: false,
-    order: RISKY_ORDER,
-  }),
   /**
    * The fixed shape with smarter versions, but the sleepover pills stay home and game night runs
    * late: the routine breaks. (Unlike the thoughtful player it reaches the goal through the late
@@ -214,7 +197,6 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
    */
   forgetful: () => ({
     cards: { ...SMARTER, game: "game" },
-    packPills: false,
     skipMeds: false,
   }),
   /** The reference best: the legal plan with the highest planned Choices. */
@@ -222,26 +204,15 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
     if (!life) throw new Error("the planner needs the week's life state");
     return {
       cards: {},
-      packPills: false,
       skipMeds: false,
       placements: bestPlacements(life),
     };
   },
-  /** Smarter, but forgets the pills: the friction event costs one dose. */
-  smarterNoPack: () => ({ cards: SMARTER, packPills: false, skipMeds: false }),
-  /** Risky and forgets the pills. */
-  riskyNoPack: () => ({
-    cards: RISKY,
-    packPills: false,
-    skipMeds: false,
-    order: RISKY_ORDER,
-  }),
   /** Smarter cards but skips every dose ("I feel fine"): a test bot that models misses with skipMeds. */
-  smarterSkipMeds: () => ({ cards: SMARTER, packPills: true, skipMeds: true }),
+  smarterSkipMeds: () => ({ cards: SMARTER, skipMeds: true }),
   /** Risky cards and skips every dose. */
   riskySkipMeds: () => ({
     cards: RISKY,
-    packPills: true,
     skipMeds: true,
     order: RISKY_ORDER,
   }),

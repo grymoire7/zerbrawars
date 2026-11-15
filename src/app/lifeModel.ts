@@ -84,11 +84,8 @@ function tooTight(
   day: number,
   slot: number,
   card: CardId,
-  packPills: boolean,
 ): boolean {
-  return placementProblems(life, day, slot, card, packPills).includes(
-    "not enough energy",
-  );
+  return placementProblems(life, day, slot, card).includes("not enough energy");
 }
 
 /**
@@ -101,7 +98,6 @@ export function energyAdvice(
   day: number,
   slot: number,
   card: CardId,
-  packPills: boolean,
 ): string {
   const lead = "Not enough energy.";
   // A later slot has had more rests before it.
@@ -109,7 +105,7 @@ export function energyAdvice(
     for (let s = 0; s < L.slotsPerDay; s++) {
       if (d === day && s === slot) continue;
       if (life.plan[d][s]) continue;
-      if (placementProblems(life, d, s, card, packPills).length === 0)
+      if (placementProblems(life, d, s, card).length === 0)
         return `${lead} It fits in the ${dayName(d, s)}.`;
     }
   }
@@ -129,7 +125,7 @@ export function energyAdvice(
   }
   const without = (...xs: typeof placed) =>
     xs.reduce((l, x) => unplaceCard(l, x.day, x.slot).state, life);
-  const fits = (l: LifeState) => !tooTight(l, day, slot, card, packPills);
+  const fits = (l: LifeState) => !tooTight(l, day, slot, card);
   const one = placed
     .filter((x) => fits(without(x)))
     .sort((a, b) => a.points - b.points)[0];
@@ -159,18 +155,16 @@ export function placementCheck(
   day: number,
   slot: number,
   card: CardId,
-  packPills: boolean,
 ): PlacementCheck {
   const at = findPlaced(life, card);
   const base =
     at && (at.day !== day || at.slot !== slot) && at.day >= life.day
       ? unplaceCard(life, at.day, at.slot).state
       : life;
-  const reasons = placementProblems(base, day, slot, card, packPills).map(
-    (r) =>
-      r === "not enough energy"
-        ? energyAdvice(base, day, slot, card, packPills)
-        : friendlyProblem(r),
+  const reasons = placementProblems(base, day, slot, card).map((r) =>
+    r === "not enough energy"
+      ? energyAdvice(base, day, slot, card)
+      : friendlyProblem(r),
   );
   return { day, slot, ok: reasons.length === 0, reasons };
 }
@@ -765,19 +759,14 @@ export function lifeStatusModel(
         ? `Energy is a game-only resource. Activities cost it, rest gives it back. You have ${life.energy} now and ${endEnergy} after your plan.`
         : "Energy is a game-only resource. Activities cost it, rest gives it back.",
   };
-  // The chance a full window of doses is taken: nil once a dose is lost or certain to be.
+  // The chance a full window of doses is taken: nil once a dose is already lost.
   const fullChance =
-    doses < window ? 0 : week.slipDays.reduce((p, s) => p * (1 - s.chance), 1);
-  const medNotes = [
-    ...week.frictionDays.map(
-      (d) =>
-        `Day ${d + 1}'s dose will be missed: the pills are at home after the sleepover.`,
-    ),
-    ...week.slipDays.map(
-      (s) =>
-        `Day ${s.day + 1}: late night, ${Math.round(s.chance * 100)}% the pills slip. "Game night, home by 11" removes it.`,
-    ),
-  ];
+    doses < window ? 0 : week.doseRisks.reduce((p, r) => p * (1 - r.chance), 1);
+  const medNotes = week.doseRisks.map((r) =>
+    r.kind === "sleepover"
+      ? `Day ${r.day + 1}: ${Math.round(r.chance * 100)}% the pills get left at home after the sleepover.`
+      : `Day ${r.day + 1}: late night, ${Math.round(r.chance * 100)}% the pills slip. "Game night, home by 11" removes it.`,
+  );
   const medCell: StatusCell = {
     id: "medication",
     label: "Medication",

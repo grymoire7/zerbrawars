@@ -36,7 +36,6 @@ export type SessionEntry =
       readonly day: number;
       readonly slot: number;
       readonly card: CardId;
-      readonly packPills: boolean;
     })
   | (InCycle & {
       readonly type: "meds";
@@ -176,7 +175,6 @@ export function entriesFor(step: CampaignStep, t: number): SessionEntry[] {
       case "Life": {
         const v = e.event;
         if (v.type === "CardPlaced" || v.type === "CardRemoved") {
-          const p = c.life.plan[v.day]?.[v.slot];
           out.push({
             t,
             cycle,
@@ -185,10 +183,6 @@ export function entriesFor(step: CampaignStep, t: number): SessionEntry[] {
             day: v.day,
             slot: v.slot,
             card: v.card,
-            packPills:
-              v.type === "CardPlaced" && p?.card === v.card
-                ? p.packPills
-                : false,
           });
         } else if (v.type === "MedsTaken" || v.type === "MedsSkipped") {
           out.push({

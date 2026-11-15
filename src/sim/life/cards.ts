@@ -68,7 +68,7 @@ const TEXT: Record<CardId, CardText> = {
     label: "Sleepover at Sam's",
     people: "Sam's having everyone over for the night.",
     blurb:
-      "Your pills are in the other bag. Pack them, or miss tomorrow's dose.",
+      "The pills might end up in the other bag, and then tomorrow's dose is missed.",
     base: "sleepover",
     kinds: ["strep"],
     overnight: true,
@@ -173,13 +173,7 @@ export function versionsOf(base: HandCardId): CardId[] {
 
 export const DOCTOR_CARD = "doctor" satisfies HandCardId;
 
-/**
- * Energy a placement costs, the pills included when packed for an overnight card. The doctor's
- * cost depends on its timing; see doctorCost in body.ts.
- */
-export function placementCost(card: CardId, packPills: boolean): number {
-  return (
-    cardDef(card).energy +
-    (packPills && TEXT[card].overnight ? PARAMS.life.packPillsEnergy : 0)
-  );
+/** Energy a placement costs. The doctor's cost depends on its timing; see doctorCost in body.ts. */
+export function placementCost(card: CardId): number {
+  return cardDef(card).energy;
 }

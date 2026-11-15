@@ -5,6 +5,17 @@ All notable changes to Zebra Wars are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The side-panel Medication card is gone; the Medication meter in the status
+  bar now shades from green to red as a full set of doses gets less likely,
+  and tapping it names the days at risk.
+- "Pack the pills" is gone. After a sleepover there is a 30% chance the pills
+  are left behind and the next morning's dose is missed, rolled when the day is
+  played (never shown beforehand, and the same on a replay of that day).
+
 ## [0.2.1] - 2026-11-15
 
 ### Changed

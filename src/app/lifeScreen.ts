@@ -3,7 +3,6 @@ import {
   advanceDay,
   findPlaced,
   placeCard,
-  setPackPills,
   setDose,
   unplaceCard,
   weekOver,
@@ -89,7 +88,6 @@ interface KeptView {
   readonly banner: StopBanner | null;
   readonly bookNote: string;
   readonly chosen: readonly [HandCardId, CardId][];
-  readonly packed: boolean;
 }
 const kept = new WeakMap<Run, KeptView>();
 
@@ -119,7 +117,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         ]
       : [];
   const chosen = new Map<HandCardId, CardId>(restore?.chosen ?? []);
-  let packed = restore?.packed ?? false;
 
   // The board only supplies the slab; the life phase puts nothing on it but the preview.
   const slab = battleFromLoadout(loadoutFromLife(life));
@@ -131,8 +128,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   const placed = (base: HandCardId) => findPlaced(life, base);
   const versionOf = (base: HandCardId): CardId =>
     placed(base)?.placement.card ?? chosen.get(base) ?? base;
-  const packOf = (base: HandCardId): boolean =>
-    placed(base)?.placement.packPills ?? packed;
   const here = (day: number, slot: number) =>
     `Day ${day + 1} ${slotName(slot).toLowerCase()}`;
 
@@ -249,13 +244,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         const played = day < life.day;
         let target: LifeSlotModel["target"] = null;
         if (base && !played) {
-          const c = placementCheck(
-            life,
-            day,
-            slot,
-            versionOf(base),
-            packOf(base),
-          );
+          const c = placementCheck(life, day, slot, versionOf(base));
           target = { ok: c.ok, reason: c.reasons[0] ?? "" };
         }
         return {
@@ -267,11 +256,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
                 version: p.card,
                 label: cardDef(p.card).label,
                 points: cardDef(p.card).points,
-                pills: cardDef(p.card).overnight
-                  ? p.packPills
-                    ? "packed"
-                    : "left"
-                  : null,
               }
             : null,
           played,
@@ -308,9 +292,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
                 : `Try instead: ${other.label}`,
               odds: `${oddsText(other.chance, other.kinds)}. ${scoreLine(other.points, other.energy, cardChoices(other.card).total)}${pv.doseRisk && !other.doseRisk ? ". No late night, the pills stay on routine" : ""}`,
             }
-          : null,
-        pills: pv.friction
-          ? { packed: packOf(base), extra: pv.friction.packPillsEnergy }
           : null,
         placedAt: at ? here(at.day, at.slot) : null,
         selected: sel === base,
@@ -451,13 +432,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     const base = effect.activity as HandCardId;
     if (effect.day < life.day) return;
     const card = versionOf(base);
-    const check = placementCheck(
-      life,
-      effect.day,
-      effect.slot,
-      card,
-      packOf(base),
-    );
+    const check = placementCheck(life, effect.day, effect.slot, card);
     if (!check.ok) {
       message = check.reasons[0];
       pending = { activity: base, slot: null };
@@ -471,7 +446,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
     ) {
       apply(() => unplaceCard(life, old.day, old.slot));
     }
-    apply(() => placeCard(life, effect.day, effect.slot, card, packOf(base)));
+    apply(() => placeCard(life, effect.day, effect.slot, card));
   }
 
   const panel = createLifePanel(panels, {
@@ -500,21 +475,9 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
       chosen.set(b, next);
       const at = placed(b);
       if (at && at.day >= life.day) {
-        apply(() =>
-          placeCard(life, at.day, at.slot, next, at.placement.packPills),
-        );
+        apply(() => placeCard(life, at.day, at.slot, next));
       }
       // A placed card stays placed; only an unplaced one becomes the pick.
-      pending = at ? NO_PENDING : selectActivity(pending, b);
-      draw();
-    },
-    onPills: (base, on) => {
-      clearBanner();
-      const b = base as HandCardId;
-      packed = on;
-      const at = placed(b);
-      if (at && at.day >= life.day)
-        apply(() => setPackPills(life, at.day, at.slot, on));
       pending = at ? NO_PENDING : selectActivity(pending, b);
       draw();
     },
@@ -658,7 +621,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         banner,
         bookNote,
         chosen: [...chosen],
-        packed,
       });
       document.getElementById("app")?.classList.remove("life");
       help.dispose();

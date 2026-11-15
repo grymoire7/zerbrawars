@@ -2,8 +2,8 @@ import type { PathogenKindId } from "../pathogens";
 import { PARAMS } from "../params";
 import { chargesFor } from "../battle/setup";
 import type { MedCharges } from "../types";
-import { cardDef, exposureKind, placementCost } from "./cards";
-import { frictionFor, medForecast, weekOver } from "./calendar";
+import { cardDef, exposureKind } from "./cards";
+import { medForecast, weekOver, type DoseRisk } from "./calendar";
 import type { CardId, LifeState } from "./types";
 
 export interface CardPreview {
@@ -26,9 +26,7 @@ export interface CardPreview {
   /** The other version of the same hand card, if any. */
   readonly otherVersion: CardId | null;
   readonly smarter: boolean;
-  /** Overnight cards: what packing the pills costs, and that the next dose is lost otherwise. */
-  readonly friction: { readonly packPillsEnergy: number } | null;
-  /** A late-night card: the chance that day's evening pills slip. Null for every other card. */
+  /** A late-night card: the chance that evening's pills slip; an overnight card: that they are left behind. Null otherwise. */
   readonly doseRisk: { readonly chance: number; readonly text: string } | null;
 }
 
@@ -54,15 +52,17 @@ export function cardPreview(_life: LifeState, card: CardId): CardPreview {
     expectedPathogens: d.exposure.chance * d.exposure.count,
     otherVersion: other,
     smarter: d.id !== base.id,
-    friction: d.overnight
-      ? { packPillsEnergy: placementCost(card, true) - d.energy }
-      : null,
     doseRisk: d.lateNight
       ? {
           chance: PARAMS.life.meds.slip.lateNight,
           text: `late night: ${Math.round(PARAMS.life.meds.slip.lateNight * 100)}% the pills slip`,
         }
-      : null,
+      : d.overnight
+        ? {
+            chance: PARAMS.life.meds.slip.sleepover,
+            text: `${Math.round(PARAMS.life.meds.slip.sleepover * 100)}% the pills get left at home`,
+          }
+        : null,
   };
 }
 
@@ -85,16 +85,11 @@ export interface WeekPreview {
   readonly chanceBattle: number;
   readonly expectedPathogens: Readonly<Record<PathogenKindId, number>>;
   readonly points: { readonly planned: number; readonly target: number };
-  /** Med level at week end if the defaults hold (friction included), and its charges. */
+  /** Med level at week end if every dose is taken (risks not counted), and its charges. */
   readonly medLevel: number;
   readonly charges: MedCharges;
-  /** Days whose morning dose is planned to be lost to friction. */
-  readonly frictionDays: readonly number[];
-  /** Days whose dose has a chance to slip (a late-night card), with that chance. */
-  readonly slipDays: readonly {
-    readonly day: number;
-    readonly chance: number;
-  }[];
+  /** What could still break a day's dose, with its chance; the outcome is never shown. */
+  readonly doseRisks: readonly (DoseRisk & { readonly day: number })[];
 }
 
 /** The whole week's odds and consequences as the calendar stands. */
@@ -126,12 +121,8 @@ export function exposurePreview(life: LifeState): WeekPreview {
   const medLevel = weekOver(life)
     ? life.medLevel
     : forecast[forecast.length - 1].level;
-  const frictionDays: number[] = [];
-  for (let day = Math.max(1, life.day); day < PARAMS.life.days; day++) {
-    if (frictionFor(life, day)) frictionDays.push(day);
-  }
-  const slipDays = forecast.flatMap((f) =>
-    f.chance === null ? [] : [{ day: f.day, chance: f.chance }],
+  const doseRisks = forecast.flatMap((f) =>
+    f.risks.map((r) => ({ ...r, day: f.day })),
   );
   return {
     pending,
@@ -142,7 +133,6 @@ export function exposurePreview(life: LifeState): WeekPreview {
     points: { planned, target: life.goal.target },
     medLevel,
     charges: chargesFor(medLevel, life.flags.doctorVisit),
-    frictionDays,
-    slipDays,
+    doseRisks,
   };
 }

@@ -38,8 +38,7 @@ const put = (
   d: number,
   s: number,
   c: Parameters<typeof placeCard>[3],
-  p = false,
-) => placeCard(l, d, s, c, p).state;
+) => placeCard(l, d, s, c).state;
 
 describe("oddsText", () => {
   it("states the chance in words", () => {
@@ -75,8 +74,8 @@ describe("placementCheck", () => {
   it("lets a planned card move, and blocks a sleepover on the last day", () => {
     let l = createLife({ seed: 1 });
     l = put(l, 0, 0, "band");
-    expect(placementCheck(l, 1, 0, "band", false).ok).toBe(true);
-    const bad = placementCheck(l, 2, 1, "sleepover", false);
+    expect(placementCheck(l, 1, 0, "band").ok).toBe(true);
+    const bad = placementCheck(l, 2, 1, "sleepover");
     expect(bad.ok).toBe(false);
     expect(bad.reasons[0]).toMatch(/sleepover/i);
   });
@@ -93,18 +92,21 @@ describe("the Medication status cell", () => {
     expect(c.explain).not.toMatch(/late night|at home/);
   });
 
-  it("names the day whose dose will be missed after an unpacked sleepover, in red", () => {
-    const l = put(createLife({ seed: 1 }), 0, 1, "sleepover", false);
-    const c = med(l);
+  it("gives a sleepover's chance of the pills left behind, and shades the bar by it", () => {
+    const c = med(put(createLife({ seed: 1 }), 0, 1, "sleepover"));
     expect(c.explain).toContain(
-      "Day 2's dose will be missed: the pills are at home after the sleepover.",
+      "Day 2: 30% the pills get left at home after the sleepover.",
     );
-    expect(c.value).toBe("2/3");
-    expect(c.barTone).toBe("#ff6a5a");
-    // Packing the pills restores the routine and the green.
-    const packed = med(put(createLife({ seed: 1 }), 0, 1, "sleepover", true));
-    expect(packed.value).toBe("3/3");
-    expect(packed.explain).not.toMatch(/at home/);
+    expect(c.value).toBe("3/3");
+    expect(c.barTone).toBe(medTone(0.7));
+    // Both risks on one evening multiply: 0.7 * 0.5 = 0.35, nearly red.
+    const both = put(
+      put(createLife({ seed: 1 }), 0, 1, "sleepover"),
+      1,
+      1,
+      "game",
+    );
+    expect(med(both).barTone).toBe(medTone(0.35));
   });
 
   it("gives a late night's chance, shades the bar by it, and never says the outcome", () => {
@@ -663,30 +665,25 @@ describe("game night in the UI model", () => {
   });
 
   it("refuses game night in the daytime with a clear message", () => {
-    const c = placementCheck(createLife({ seed: 1 }), 1, 0, "game", false);
+    const c = placementCheck(createLife({ seed: 1 }), 1, 0, "game");
     expect(c.ok).toBe(false);
     expect(c.reasons[0]).toBe("Game night is only in the evening");
   });
 });
 
 describe("energy hint", () => {
-  const fill = (
-    ...xs: [number, number, Parameters<typeof placeCard>[3], boolean?][]
-  ) =>
-    xs.reduce(
-      (l, [d, s, c, p]) => put(l, d, s, c, p ?? false),
-      createLife({ seed: 1 }),
-    );
+  const fill = (...xs: [number, number, Parameters<typeof placeCard>[3]][]) =>
+    xs.reduce((l, [d, s, c]) => put(l, d, s, c), createLife({ seed: 1 }));
 
   it("names the cheapest card to drop for the plan to fit", () => {
     // 5 energy: yard (2), sleepover packed (2), band (1) and game night (1) leave no room, and no free slot suits the lake.
     const l = fill(
       [0, 0, "yard"],
-      [0, 1, "sleepover", true],
+      [0, 1, "sleepover"],
       [1, 0, "band"],
       [2, 1, "game"],
     );
-    const c = placementCheck(l, 2, 0, "lake", false);
+    const c = placementCheck(l, 2, 0, "lake");
     expect(c.ok).toBe(false);
     expect(c.reasons[0]).toBe(
       "Not enough energy. Drop Band practice (2 points) to fit The lake with Jordan, or rest a slot first.",
@@ -694,33 +691,30 @@ describe("energy hint", () => {
   });
 
   it("offers a slot where it fits when a later one works", () => {
-    const l = fill([0, 0, "yard"], [0, 1, "sleepover", true]);
-    expect(energyAdvice(l, 1, 0, "lake", false)).toBe(
+    const l = fill([0, 0, "yard"], [0, 1, "sleepover"]);
+    expect(energyAdvice(l, 1, 0, "lake")).toBe(
       "Not enough energy. It fits in the evening on Day 2.",
     );
   });
 
   it("falls back to a plain line when nothing single helps", () => {
     const l = createLife({ seed: 1, energy: 0 });
-    expect(energyAdvice(l, 0, 0, "lake", false)).toMatch(
-      /^Not enough energy\./,
-    );
+    expect(energyAdvice(l, 0, 0, "lake")).toMatch(/^Not enough energy\./);
   });
 
   it("with the full hand, the plan really does not fit and each refusal says what to drop", () => {
     let l = createLife({ seed: 1 });
-    const order: [number, number, Parameters<typeof placeCard>[3], boolean][] =
-      [
-        [0, 0, "yard", false],
-        [0, 1, "sleepover", true],
-        [1, 1, "lake", false],
-        [2, 1, "game", false],
-        [2, 0, "band", false],
-      ];
+    const order: [number, number, Parameters<typeof placeCard>[3]][] = [
+      [0, 0, "yard"],
+      [0, 1, "sleepover"],
+      [1, 1, "lake"],
+      [2, 1, "game"],
+      [2, 0, "band"],
+    ];
     const refused: string[] = [];
-    for (const [d, s, c, p] of order) {
-      const chk = placementCheck(l, d, s, c, p);
-      if (chk.ok) l = put(l, d, s, c, p);
+    for (const [d, s, c] of order) {
+      const chk = placementCheck(l, d, s, c);
+      if (chk.ok) l = put(l, d, s, c);
       else refused.push(chk.reasons[0]);
     }
     expect(refused.length).toBeGreaterThan(0);

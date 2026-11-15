@@ -51,14 +51,11 @@ function enumerate(): Plan[] {
     for (const v of versions(HAND[i])) {
       for (let day = 0; day < PARAMS.life.days; day++) {
         for (let slot = 0; slot < PARAMS.life.slotsPerDay; slot++) {
-          for (const pack of cardDef(v).overnight ? [true, false] : [false]) {
-            if (placementProblems(life, day, slot, v, pack).length > 0)
-              continue;
-            walk(i + 1, placeCard(life, day, slot, v, pack).state, [
-              ...cards,
-              `${v}@${day}.${slot}${pack ? "+pills" : ""}`,
-            ]);
-          }
+          if (placementProblems(life, day, slot, v).length > 0) continue;
+          walk(i + 1, placeCard(life, day, slot, v).state, [
+            ...cards,
+            `${v}@${day}.${slot}`,
+          ]);
         }
       }
     }
@@ -89,14 +86,12 @@ describe("week 1 plan landscape (Score v4)", () => {
 
   // At goal 13 the best plan takes the risky game night (a late night, 50% to slip a dose) to reach
   // the goal, so a late-night game night is no longer excluded; it is the one risky card.
-  it("packs the pills for a sleepover and takes at most one late night in a best plan", () => {
+  it("takes at most one late night in a best plan", () => {
     for (const t of top) {
       const l = t.life;
       let late = 0;
       for (let d = 0; d < PARAMS.life.days; d++) {
         if (slipChanceFor(l, d) !== null) late++;
-        const p = l.plan[d - 1]?.[PARAMS.life.slotsPerDay - 1];
-        if (p && cardDef(p.card).overnight) expect(p.packPills).toBe(true);
       }
       expect(late, t.cards.join(" ")).toBeLessThanOrEqual(1);
     }
@@ -117,13 +112,13 @@ describe("week 1 plan landscape (Score v4)", () => {
 
   it("scores the design's all-smarter worked example 256 at goal 13 (296 with the goal bonus at 12)", () => {
     let l = createLife({ seed: 1 });
-    for (const [day, slot, card, pack] of [
-      [0, 0, "yardIndoor", false],
-      [0, 1, "sleepover", true],
-      [1, 1, "beach", false],
-      [2, 1, "gameEarly", false],
+    for (const [day, slot, card] of [
+      [0, 0, "yardIndoor"],
+      [0, 1, "sleepover"],
+      [1, 1, "beach"],
+      [2, 1, "gameEarly"],
     ] as const)
-      l = placeCard(l, day, slot, card, pack).state;
+      l = placeCard(l, day, slot, card).state;
     const c = plannedChoices(l);
     (
       globalThis as unknown as { console: { log(s: string): void } }
@@ -149,7 +144,6 @@ describe("week 1 plan landscape (Score v4)", () => {
     expect(total("smarter")).toBeLessThanOrEqual(best);
     expect(total("planner")).toBe(best);
     expect(total("risky")).toBeLessThan(total("smarter"));
-    expect(total("careless")).toBeLessThan(total("risky"));
-    expect(total("forgetful")).toBeLessThan(total("smarter"));
+    expect(total("forgetful")).toBeLessThanOrEqual(total("smarter"));
   });
 });

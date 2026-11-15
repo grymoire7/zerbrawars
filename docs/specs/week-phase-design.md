@@ -1,5 +1,7 @@
 # Week phase: design pass
 
+> Update 2026-11-15: "Pack the pills" is gone. After a sleepover there is a 30% chance (`PARAMS.life.meds.slip.sleepover`) the pills are left behind and the next morning's dose is missed, rolled once per seed, week and day when the day is played. The `careless`, `riskyNoPack` and `smarterNoPack` bots went with it (they only differed by packing). References to packing below describe the earlier design.
+>
 > Status: built (all questions answered yes). Slices, commits and schedule are tracked in `../plans/beta-plan.md`, not here; the slice lists below are the original proposal.
 
 Design-only pass after Tracy's playtest of week 2 ("still trivial to play and win"; "odd that taking

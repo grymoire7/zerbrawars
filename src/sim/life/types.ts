@@ -21,10 +21,9 @@ export type CardId =
 export type HandCardId =
   "yard" | "lake" | "band" | "sleepover" | "game" | "doctor";
 
-/** A card on the calendar. `packPills` only matters on an overnight card. */
+/** A card on the calendar. */
 export interface Placement {
   readonly card: CardId;
-  readonly packPills: boolean;
 }
 
 /** One day's dose. Days before the week (pre-filled as taken) have week = this week - 1. */

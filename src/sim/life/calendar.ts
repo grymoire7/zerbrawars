@@ -35,8 +35,9 @@ import type {
 const L = PARAMS.life;
 const C = PARAMS.campaign;
 const EVENING = L.slotsPerDay - 1;
-/** bodyRoll index for the late-night slip; reservoirs use small indices. */
+/** bodyRoll indices for the late-night slip and the pills left behind; reservoirs use small indices. */
 const SLIP_ROLL = 100;
+const FORGET_ROLL = 101;
 
 export interface LifeOptions {
   readonly seed: number;
@@ -160,11 +161,9 @@ export function findPlaced(
   return null;
 }
 
-/** Energy a planned slot costs: the card's (pills included), or the doctor's for that day. */
+/** Energy a planned slot costs: the card's, or the doctor's for that day. */
 export function slotCost(life: LifeState, day: number, p: Placement): number {
-  return cardDef(p.card).doctor
-    ? doctorCost(life, day)
-    : placementCost(p.card, p.packPills);
+  return cardDef(p.card).doctor ? doctorCost(life, day) : placementCost(p.card);
 }
 
 /**
@@ -226,7 +225,6 @@ export function placementProblems(
   day: number,
   slot: number,
   card: CardId,
-  packPills = false,
 ): string[] {
   const s = slotProblem(life, day, slot);
   if (s) return [s];
@@ -244,7 +242,7 @@ export function placementProblems(
   if (def.eveningOnly && slot !== EVENING) {
     problems.push("game night is only in the evening");
   }
-  const plan = withPlacement(life, day, slot, { card, packPills });
+  const plan = withPlacement(life, day, slot, { card });
   if (energyPlan(life, plan).some((row) => row.some((e) => e < 0))) {
     problems.push("not enough energy");
   }
@@ -257,9 +255,8 @@ export function placeCard(
   day: number,
   slot: number,
   card: CardId,
-  packPills = false,
 ): LifeStep {
-  const problems = placementProblems(life, day, slot, card, packPills);
+  const problems = placementProblems(life, day, slot, card);
   if (problems.length > 0) throw new Error(problems.join("; "));
   const old = life.plan[day][slot];
   const events: LifeEvent[] = [];
@@ -268,10 +265,7 @@ export function placeCard(
   return {
     state: {
       ...life,
-      plan: withPlacement(life, day, slot, {
-        card,
-        packPills: packPills && !!cardDef(card).overnight,
-      }),
+      plan: withPlacement(life, day, slot, { card }),
     },
     events,
   };
@@ -290,20 +284,6 @@ export function unplaceCard(
     state: { ...life, plan: withPlacement(life, day, slot, null) },
     events: [{ type: "CardRemoved", day, slot, card: old.card }],
   };
-}
-
-/** Packs (or unpacks) the pills for an overnight card already on the calendar. */
-export function setPackPills(
-  life: LifeState,
-  day: number,
-  slot: number,
-  on: boolean,
-): LifeStep {
-  const p = life.plan[day]?.[slot];
-  if (!p || !cardDef(p.card).overnight) {
-    throw new Error("no overnight card in that slot");
-  }
-  return placeCard(life, day, slot, p.card, on);
 }
 
 /** Today's dose, once it is decided (tapped, skipped or lost to friction). */
@@ -350,21 +330,19 @@ function doseProblem(life: LifeState, day: number): string | null {
   if (day === life.day && todayDose(life)?.cause === "friction") {
     return "the pills are at home";
   }
-  if (frictionFor(life, day)) return "the pills are at home";
   return null;
 }
 
 /**
  * DEBUG AND TEST ONLY: the player UI offers no way to skip a dose (doses are taken by routine; a
- * miss arises from life, like an unpacked sleepover). The debug panel's "force a missed dose"
+ * miss arises from life, like pills left behind at a sleepover). The debug panel's "force a missed dose"
  * and the test bots call this.
  *
  * Sets the planned dose for `day`, any day of the current week not yet played: true taken, false
  * skipped. It can be called again to change the choice, as often as wanted, until the day is
  * played. Today's choice lands in the dose history at once (and moves the med level); a later
- * day's waits in `planned` until that day starts. A day whose pills are in the other bag (an
- * unpacked sleepover the night before) is locked and throws. A day left undecided is taken when
- * it is played.
+ * day's waits in `planned` until that day starts. Today's dose, once the pills were left behind at
+ * a sleepover, is locked and throws. A day left undecided is taken when it is played.
  */
 export function setDose(
   life: LifeState,
@@ -405,10 +383,20 @@ export function slipRoll(seed: number, week: number, day: number): number {
   return bodyRoll(seed, week, day, SLIP_ROLL);
 }
 
-/** The overnight card on the evening before `day` that left the pills at home, if any. */
-export function frictionFor(life: LifeState, day: number): CardId | null {
+/** The overnight card on the evening before `day`, if any: the pills may be left behind there. */
+export function overnightBefore(life: LifeState, day: number): CardId | null {
   const p = day > 0 ? life.plan[day - 1][EVENING] : null;
-  return p && cardDef(p.card).overnight && !p.packPills ? p.card : null;
+  return p && cardDef(p.card).overnight ? p.card : null;
+}
+
+/** Chance the pills are left behind for `day`'s morning dose, from the overnight card before it, or null. */
+export function forgetChanceFor(life: LifeState, day: number): number | null {
+  return overnightBefore(life, day) ? L.meds.slip.sleepover : null;
+}
+
+/** The fixed roll behind the pills left behind: per seed, week and day, never per card or slot. */
+export function forgetRoll(seed: number, week: number, day: number): number {
+  return bodyRoll(seed, week, day, FORGET_ROLL);
 }
 
 /**
@@ -416,9 +404,9 @@ export function frictionFor(life: LifeState, day: number): CardId | null {
  * (points and energy for a card, a refund for a rest, the visit for the doctor), then one roll per
  * slot decides each card's exposure. Then the body: an untreated reservoir at the end of its early
  * window grows, and each unflared one rolls its flare (both stop once the doctor is seen). The
- * next day then starts: its symptoms show (the first puts the doctor in hand), and a sleepover the
- * night before without the pills packed fires the friction event and that morning's dose is
- * missed. After the last day, WeekEnded.
+ * next day then starts: its symptoms show (the first puts the doctor in hand), and after a
+ * sleepover the night before the pills may be left behind (a fixed roll against
+ * PARAMS.life.meds.slip.sleepover), which fires the friction event and misses that morning's dose. After the last day, WeekEnded.
  */
 export function advanceDay(life: LifeState): LifeStep {
   if (weekOver(life)) throw new Error("the week is over");
@@ -472,7 +460,7 @@ export function advanceDay(life: LifeState): LifeStep {
       );
     } else {
       const def = cardDef(p.card);
-      energy -= placementCost(p.card, p.packPills);
+      energy -= placementCost(p.card);
       points += def.points;
       events.push(
         { type: "CardPlayed", day, slot, card: p.card },
@@ -592,7 +580,11 @@ export function advanceDay(life: LifeState): LifeStep {
     for (const symptom of today)
       events.push({ type: "SymptomAppeared", symptom });
   }
-  const away = frictionFor(s, s.day);
+  const forget = forgetChanceFor(s, s.day);
+  const away =
+    forget !== null && forgetRoll(s.seed, s.week, s.day) < forget
+      ? overnightBefore(s, s.day)
+      : null;
   if (away) {
     events.push({ type: "FrictionEvent", day: s.day, card: away });
     const r = recordDose(s, {
@@ -644,24 +636,30 @@ export function aftermathKind(seed: number, week: number): Aftermath["kind"] {
   return bodyRoll(seed, week, -2, 0) < 0.5 ? "wornOut" : "flareUp";
 }
 
+export interface DoseRisk {
+  readonly kind: "lateNight" | "sleepover";
+  readonly chance: number;
+}
+
 export interface DoseForecast {
   readonly day: number;
   readonly taken: boolean;
   readonly cause: Dose["cause"];
   /**
-   * Chance this day's dose slips (a late-night card in its evening), or null. The forecast still
-   * counts the dose as taken: the roll is only made when the day is played.
+   * What could still break this day's dose (a late-night card in its evening; an overnight card the
+   * evening before). The forecast still counts the dose as taken: the rolls are only made when the
+   * day is played, and are never shown.
    */
-  readonly chance: number | null;
+  readonly risks: readonly DoseRisk[];
   /** Med level once this day's dose is in. */
   readonly level: number;
 }
 
 /**
  * The dose and med level for each day from today to the week's end if the player keeps the
- * default: decided doses as they are, friction where an unpacked sleepover is planned, the
- * player's planned choice for a later day, taken otherwise (a late-night day is taken too, with its
- * slip chance listed). The last entry's level is what the battle gets.
+ * default: decided doses as they are, the player's planned choice for a later day, taken
+ * otherwise (a risky day is taken too, with its risks listed). The last entry's level is what the
+ * battle gets.
  */
 export function medForecast(life: LifeState): DoseForecast[] {
   const out: DoseForecast[] = [];
@@ -671,25 +669,28 @@ export function medForecast(life: LifeState): DoseForecast[] {
     const choice = life.planned[day];
     const dose: Dose =
       decided ??
-      (frictionFor(life, day)
-        ? { week: life.week, day, taken: false, cause: "friction" }
-        : choice === null
-          ? { week: life.week, day, taken: true, cause: "default" }
-          : {
-              week: life.week,
-              day,
-              taken: choice,
-              cause: choice ? "tapped" : "skipped",
-            });
+      (choice === null
+        ? { week: life.week, day, taken: true, cause: "default" }
+        : {
+            week: life.week,
+            day,
+            taken: choice,
+            cause: choice ? "tapped" : "skipped",
+          });
     if (!decided) doses = [...doses, dose];
+    const risks: DoseRisk[] = [];
+    if (!decided && dose.taken) {
+      const late = slipChanceFor(life, day);
+      if (late !== null) risks.push({ kind: "lateNight", chance: late });
+      // Today's morning roll is already made; only later mornings are still ahead.
+      const left = day > life.day ? forgetChanceFor(life, day) : null;
+      if (left !== null) risks.push({ kind: "sleepover", chance: left });
+    }
     out.push({
       day,
       taken: dose.taken,
       cause: dose.cause,
-      chance:
-        decided || !dose.taken || dose.cause === "skipped"
-          ? null
-          : slipChanceFor(life, day),
+      risks,
       level: medLevelOf(doses),
     });
   }

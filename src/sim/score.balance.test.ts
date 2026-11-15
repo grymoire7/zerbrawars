@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { campaignSummary } from "./campaign";
-import {
-  CAMPAIGN_BOTS,
-  careless,
-  playCampaign,
-  type CampaignBot,
-} from "./campaignBots";
+import { CAMPAIGN_BOTS, playCampaign, type CampaignBot } from "./campaignBots";
 import type { CycleRecord } from "./campaign";
 
 // Re-measures the ranges in docs/specs/b1a-design.md section 1.3 with the existing bots over a few
@@ -17,7 +12,6 @@ const PART_MAX: Record<string, number> = {};
 
 const BOTS: Record<string, CampaignBot> = {
   home: CAMPAIGN_BOTS.home,
-  careless,
   mixed: CAMPAIGN_BOTS.mixed,
   risky: CAMPAIGN_BOTS.risky,
   skipMeds: CAMPAIGN_BOTS.skipMeds,
@@ -78,8 +72,9 @@ function survey(bot: CampaignBot): Row {
       expect(h.score.outcome.clear).toBeLessThanOrEqual(20);
     }
     expect(s.total).toBe(s.choices + s.outcome);
-    // Best reachable: about 283 + 20 per week at 0.5; at 0.7 odds pushed the planner scores 803.
-    expect(s.total).toBeLessThanOrEqual(840);
+    // Best reachable: about 283 + 20 per week at 0.5; at 0.7 odds pushed the planner scores about
+    // 790, and up to about 850 on a lucky seed now that the sleepover costs no energy for its pills.
+    expect(s.total).toBeLessThanOrEqual(870);
     r.choices += s.choices / SEEDS;
     r.outcome += s.outcome / SEEDS;
     r.total += s.total / SEEDS;
@@ -118,18 +113,18 @@ describe("score ranges", () => {
 
   const t = (n: string) => rows[n].total;
 
-  // Measured at 200 seeds (Score v4, odds pushed 0.7, goal 13): home 391, skipMeds 528, careless 596,
-  // risky 674, mixed 724, forgetful 744, smarter 785, planner 785. Bands are about +-30.
+  // Measured at 200 seeds (Score v4, odds pushed 0.7, goal 13, pills left behind by a 30% roll):
+  // home 391, skipMeds 575, risky 668, mixed 736, forgetful 787, smarter 792, planner 792. Bands are
+  // about +-30.
   it("keeps each bot near its measured range", () => {
     const bands: Record<string, [number, number]> = {
       home: [380, 405],
-      careless: [560, 640],
-      skipMeds: [495, 565],
-      risky: [645, 705],
-      mixed: [695, 755],
-      forgetful: [710, 780],
-      smarter: [755, 825],
-      planner: [755, 825],
+      skipMeds: [545, 605],
+      risky: [640, 700],
+      mixed: [705, 765],
+      forgetful: [755, 820],
+      smarter: [760, 825],
+      planner: [760, 825],
     };
     for (const [n, [lo, hi]] of Object.entries(bands)) {
       expect(t(n), n).toBeGreaterThanOrEqual(lo);
@@ -138,30 +133,29 @@ describe("score ranges", () => {
     expect(rows.home.choices).toBeLessThanOrEqual(200);
   });
 
-  it("spreads the strategies: home, careless, risky, mixed, smarter, planner", () => {
-    // Measured gaps at goal 13: 205, 78, 50, 61, 0 (smarter plays the planner's plan).
-    expect(t("careless") - t("home")).toBeGreaterThanOrEqual(150);
-    expect(t("risky") - t("careless")).toBeGreaterThanOrEqual(60);
-    expect(t("mixed") - t("risky")).toBeGreaterThanOrEqual(30);
+  it("spreads the strategies: home, risky, mixed, smarter, planner", () => {
+    // Measured gaps: 277 (risky over home), 68, 56, 0 (smarter plays the planner's plan).
+    expect(t("risky") - t("home")).toBeGreaterThanOrEqual(200);
+    expect(t("mixed") - t("risky")).toBeGreaterThanOrEqual(40);
     expect(t("smarter") - t("mixed")).toBeGreaterThanOrEqual(40);
     expect(t("planner")).toBeGreaterThanOrEqual(t("smarter"));
-    expect(t("smarter") - t("forgetful")).toBeGreaterThanOrEqual(40);
+    expect(t("smarter") - t("forgetful")).toBeGreaterThanOrEqual(0);
     expect(t("smarter") - t("skipMeds")).toBeGreaterThanOrEqual(150);
   });
 
   it("meets the goal with any plan that plays cards, never when staying home", () => {
     // Plans are luck-free, so a bot's goal rate is its plan's, not a dice outcome. Measured at goal
-    // 13: careless 100%, forgetful 100%, smarter and planner 95%, mixed 86%, risky 75% (its energy
-    // cannot always stretch to four risky cards), skipMeds 0% (all-smarter scores 12), home 0%.
+    // 13: forgetful 100%, smarter and planner 95%, mixed 91%, risky 86%, skipMeds 41% (all-smarter
+    // scored 12 and reached the goal 0% of the time while the sleepover's pills cost 1 energy; with
+    // that gone a safe plan fits a fifth card when energy carries over), home 0%.
     expect(rows.home.goal).toBe(0);
-    expect(rows.skipMeds.goal).toBeLessThanOrEqual(0.05);
-    for (const n of ["careless", "forgetful"])
-      expect(rows[n].goal, n).toBeGreaterThanOrEqual(0.95);
+    expect(rows.skipMeds.goal).toBeLessThanOrEqual(0.5);
+    expect(rows.forgetful.goal).toBeGreaterThanOrEqual(0.95);
     for (const n of ["smarter", "planner"])
       expect(rows[n].goal, n).toBeGreaterThanOrEqual(0.9);
-    expect(rows.mixed.goal).toBeGreaterThanOrEqual(0.78);
-    expect(rows.risky.goal).toBeGreaterThanOrEqual(0.65);
-    expect(rows.risky.goal).toBeLessThanOrEqual(0.85);
+    expect(rows.mixed.goal).toBeGreaterThanOrEqual(0.8);
+    expect(rows.risky.goal).toBeGreaterThanOrEqual(0.75);
+    expect(rows.risky.goal).toBeLessThanOrEqual(0.95);
   });
 
   it("makes the planner and smarter the best on Choices", () => {

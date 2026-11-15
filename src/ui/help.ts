@@ -90,11 +90,11 @@ export const LIFE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Medication",
-    "Doses follow your routine. Your medication level is your doses over the last three days, and it shows as the green glow. A missed dose dims the glow for a few days. The Medication strip shows each day's dose and its chance. A late-night game night has a 50% chance the evening pills slip.",
+    "Doses follow your routine. Your medication level is your doses over the last three days, and it shows as the green glow. A missed dose dims the glow for a few days. The Medication meter shades from green to red as a full set of doses gets less likely, and tapping it names the days at risk. A late-night game night has a 50% chance the evening pills slip.",
   ],
   [
     "Sleepovers",
-    "Your pills end up in the other bag. Pack them (costs a little energy) or the next dose is missed. The Medication strip shows which day.",
+    "After a sleepover the pills may be left in the other bag (about a 30% chance), and then the next morning's dose is missed. Tap the Medication meter to see which day is at risk.",
   ],
   [
     "Energy",

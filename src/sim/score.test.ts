@@ -118,7 +118,7 @@ describe("Choices", () => {
 
   it("counts a late night's dose at one minus its slip chance, slipped or not", () => {
     let l = createLife({ seed: 1 });
-    l = placeCard(l, 1, 1, "game", false).state;
+    l = placeCard(l, 1, 1, "game").state;
     const taken = {
       ...l,
       doses: [dose(0, true), dose(1, true), dose(2, true)],
@@ -271,7 +271,7 @@ describe("plannedChoices", () => {
 
   it("adds placed cards: points and the odds a smarter version pushes", () => {
     let l = createLife({ seed: 1 });
-    l = placeCard(l, 0, 0, "yardIndoor", false).state;
+    l = placeCard(l, 0, 0, "yardIndoor").state;
     const p = plannedChoices(l);
     expect(p.living).toBe(PARAMS.score.perPoint * cardDef("yardIndoor").points);
     expect(p.dodged).toBe(25);

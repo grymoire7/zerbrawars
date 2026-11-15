@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BOTS, playBattle } from "./battle/bots";
-import {
-  CAMPAIGN_BOTS,
-  careless,
-  playCampaign,
-  type CampaignBot,
-} from "./campaignBots";
+import { CAMPAIGN_BOTS, playCampaign, type CampaignBot } from "./campaignBots";
 import { PARAMS } from "./params";
 import type { BattleKind, BattleOutcome } from "./types";
 
@@ -16,7 +11,7 @@ import type { BattleKind, BattleOutcome } from "./types";
 
 const SEEDS = 300;
 
-const PLAYERS: Record<string, CampaignBot> = { ...CAMPAIGN_BOTS, careless };
+const PLAYERS: Record<string, CampaignBot> = { ...CAMPAIGN_BOTS };
 
 interface Acc {
   n: number;
@@ -141,13 +136,13 @@ describe("battle depth survey", () => {
     "risky",
     "mixed",
     "skipMeds",
-    "careless",
   ];
 
-  // Section 5 targets that hold. Misses, measured at 300 seeds (week-phase slice 4): smarter loses
-  // about 0.1 per full battle (target 0.5-3); risky needs backup in about 13% of full battles
-  // (target 0-8%); careless in about 51% (target 10-25%, the one the week cannot fix: it needs a
-  // battle knob, e.g. the size per missed dose or the carried bonus); skipMeds in about 11%.
+  // Section 5 targets that hold. Measured at 300 seeds (pills left behind at a sleepover by a 30%
+  // roll, not by an unpacked box): smarter loses about 0.5 per full battle (target 0.5-3); risky
+  // needs backup in about 21% of full battles (target 0-8%, the cost of a risky week now that the
+  // sleepover pills can be left behind); the same week without the doctor in about 31%; skipMeds in
+  // about 12%.
   it("runs full battles at least 3.5 turns and skirmishes 3-4 turns", () => {
     for (const n of FULL_PLAYERS) {
       expect(mean(rows[n].full, "turns"), n).toBeGreaterThanOrEqual(3.5);
@@ -177,27 +172,30 @@ describe("battle depth survey", () => {
       expect(mean(rows[n].skirmish, "cleared"), n).toBeGreaterThanOrEqual(0.85);
   });
 
-  it("keeps the risky weeks off the cliff, careless included (loosely)", () => {
-    expect(mean(rows.risky.full, "backup")).toBeLessThanOrEqual(0.16);
-    expect(mean(rows.mixed.full, "backup")).toBeLessThanOrEqual(0.11);
+  it("keeps the risky weeks off the cliff, the no-doctor one included (loosely)", () => {
+    expect(mean(rows.risky.full, "backup")).toBeLessThanOrEqual(0.26);
+    expect(mean(rows.mixed.full, "backup")).toBeLessThanOrEqual(0.13);
     expect(mean(rows.forgetful.full, "backup")).toBeLessThanOrEqual(0.08);
     expect(mean(rows.skipMeds.full, "backup")).toBeLessThanOrEqual(0.14);
-    expect(mean(rows.careless.full, "backup")).toBeLessThanOrEqual(0.6);
+    expect(mean(rows.riskyNoDoctor.full, "backup")).toBeLessThanOrEqual(0.4);
   });
 
   it("orders the weeks by what they cost in full battles", () => {
     const lost = (n: string) => mean(rows[n].full, "lost");
-    expect(lost("careless")).toBeGreaterThan(lost("risky") + 3);
+    expect(lost("riskyNoDoctor")).toBeGreaterThan(lost("risky") + 1);
     expect(lost("risky")).toBeGreaterThan(lost("forgetful") + 1);
     expect(lost("mixed")).toBeGreaterThan(lost("forgetful"));
-    // Measured at goal 13: forgetful 1.44, smarter 0.90 (the thoughtful week now takes a late game night too).
-    expect(lost("forgetful")).toBeGreaterThan(lost("smarter") + 0.4);
+    // Measured: forgetful 0.87, smarter 0.51 (the thoughtful week takes a late game night too).
+    expect(lost("forgetful")).toBeGreaterThan(lost("smarter") + 0.25);
     expect(lost("planner")).toBeLessThanOrEqual(lost("smarter") + 0.1);
-    // Within a battle's worth of noise: no bot ever needs more backup than careless.
-    for (const n of ["risky", "mixed", "forgetful", "smarter", "planner"])
-      expect(mean(rows.careless.full, "backup")).toBeGreaterThan(
-        mean(rows[n].full, "backup") + 0.25,
+    // Within a battle's worth of noise: no bot needs more backup than the no-doctor risky week.
+    for (const n of ["mixed", "forgetful", "smarter", "planner"])
+      expect(mean(rows.riskyNoDoctor.full, "backup")).toBeGreaterThan(
+        mean(rows[n].full, "backup") + 0.15,
       );
+    expect(mean(rows.riskyNoDoctor.full, "backup")).toBeGreaterThan(
+      mean(rows.risky.full, "backup") + 0.05,
+    );
   });
 
   it("still fails when you do nothing", () => {
@@ -228,9 +226,9 @@ describe("battle depth survey", () => {
   it("lets a broken routine reach the battle: forgetful does worse than smarter on matched seeds", () => {
     const m = matched("forgetful");
     expect(m.n).toBeGreaterThan(100);
-    // Measured at goal 13: +0.56 tissue lost, 9% fewer cleared.
-    expect(m.lost).toBeGreaterThanOrEqual(0.4);
-    expect(m.cleared).toBeGreaterThanOrEqual(0.05);
+    // Measured: +0.37 tissue lost, 3% fewer cleared (the pills are left behind 30% of the time).
+    expect(m.lost).toBeGreaterThanOrEqual(0.25);
+    expect(m.cleared).toBeGreaterThanOrEqual(0.02);
   });
 
   it("lets skipped doses reach the battle: skipMeds does worse than smarter on matched seeds", () => {

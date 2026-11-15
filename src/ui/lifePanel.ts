@@ -18,7 +18,7 @@ export interface LifeCardModel {
   readonly facts: string;
   readonly odds: string;
   readonly chance: number;
-  /** A late-night card: its risk to that day's pills, in words. Null otherwise. */
+  /** A late-night or overnight card: its risk to the pills, in words. Null otherwise. */
   readonly doseRisk: string | null;
   /** The other version, offered as an easy swap. */
   readonly alt: {
@@ -27,8 +27,6 @@ export interface LifeCardModel {
     /** Odds, then the same facts line as the card face. */
     readonly odds: string;
   } | null;
-  /** Overnight cards: what leaving or packing the pills means. */
-  readonly pills: { readonly packed: boolean; readonly extra: number } | null;
   readonly placedAt: string | null;
   /** The doctor card's body; replaces the odds, since a visit brings nothing in. */
   readonly doctor: readonly string[] | null;
@@ -44,7 +42,6 @@ export interface LifeSlotModel {
     readonly version: string;
     readonly label: string;
     readonly points: number;
-    readonly pills: "packed" | "left" | null;
   } | null;
   readonly played: boolean;
   readonly today: boolean;
@@ -111,7 +108,6 @@ export interface LifePanelHandlers {
   onPickCard(base: string): void;
   onPickRest(): void;
   onSwap(base: string): void;
-  onPills(base: string, packed: boolean): void;
   onSlot(day: number, slot: number): void;
   /** Plays the rest of the week, stopping on a symptom or when the week ends. */
   onPlay(): void;
@@ -418,17 +414,6 @@ export function createLifePanel(
             ),
             el("span", "opacity:0.8;", `+${s.card.points} pts`),
           );
-          if (s.card.pills) {
-            b.append(
-              el(
-                "span",
-                "opacity:0.8;",
-                s.card.pills === "packed"
-                  ? "pills packed"
-                  : "pills left behind",
-              ),
-            );
-          }
         } else if (s.pending) {
           b.append(el("span", "font-weight:700;", "Chosen"));
         } else {
@@ -541,25 +526,6 @@ export function createLifePanel(
         );
         alt.addEventListener("pointerleave", () => h.onPreview(null));
         box.append(alt);
-      }
-      if (c.pills && !c.played) {
-        const row = el(
-          "label",
-          "display:flex;gap:8px;align-items:center;min-height:44px;font-size:13px;line-height:1.3;",
-        );
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = c.pills.packed;
-        cb.dataset.key = `pills-${c.base}`;
-        cb.style.cssText = "width:22px;height:22px;margin:0;flex:none;";
-        cb.addEventListener("change", () => h.onPills(c.base, cb.checked));
-        row.append(
-          cb,
-          c.pills.packed
-            ? `Pills packed (-${c.pills.extra} energy)`
-            : `Pack the pills (-${c.pills.extra} energy), or tomorrow's dose is missed`,
-        );
-        box.append(row);
       }
       handBox.append(box);
     }

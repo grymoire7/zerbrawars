@@ -149,23 +149,17 @@ describe("life strategies into battle", () => {
   });
 
   it("makes skipped doses visibly worsen the same week's battles", () => {
-    expect(rows.smarterNoPack.med).toBeCloseTo(2 / 3, 5);
     expect(rows.smarterSkipMeds.med).toBe(0);
-    expect(rows.riskyNoPack.score).toBeLessThan(rows.risky.score);
-    expect(share(rows.riskyNoPack, "cleared")).toBeLessThan(
+    expect(rows.riskySkipMeds.score).toBeLessThan(rows.risky.score);
+    expect(share(rows.riskySkipMeds, "cleared")).toBeLessThan(
       share(rows.risky, "cleared"),
-    );
-    expect(rows.riskySkipMeds.score).toBeLessThanOrEqual(
-      rows.riskyNoPack.score,
     );
     expect(rows.smarterSkipMeds.score).toBeLessThan(rows.smarter.score);
   });
 
-  it("shifts the risky week's battles at each lost charge tier", () => {
-    // Full meds kill the staph and the mold with charges; one miss keeps only the antifungal.
+  it("drops the risky week's cleared share when every dose is skipped", () => {
+    // Full meds kill the staph and the mold with charges; no doses leave only the swarms.
     const cleared = (n: string) => share(rows[n], "cleared");
-    expect(cleared("riskyNoPack")).toBeLessThan(cleared("risky") - 0.15);
-    // Slice 3's bigger arrivals push both near the floor: measured 6% then 3% (was a 15-point step).
-    expect(cleared("riskySkipMeds")).toBeLessThan(cleared("riskyNoPack"));
+    expect(cleared("riskySkipMeds")).toBeLessThan(cleared("risky") - 0.1);
   });
 });

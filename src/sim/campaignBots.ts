@@ -70,9 +70,6 @@ export const CAMPAIGN_BOTS: Record<string, CampaignBot> = {
   riskyNoDoctor: withDoctor("risky", "never"),
 };
 
-/** Risky versions, pills left, game night at Alex's, never the doctor. Kept out of CAMPAIGN_BOTS. */
-export const careless: CampaignBot = withDoctor("careless", "never");
-
 const RANK: Record<BattleGrade, number> = {
   cleared: 2,
   contained: 1,
