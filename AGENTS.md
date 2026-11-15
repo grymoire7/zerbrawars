@@ -22,3 +22,8 @@ Production (the DreamHost site a remote reviewer plays) only changes when a vers
 2. Commit, then `git tag vX.Y.Z` and `git push origin main vX.Y.Z`.
 
 The repo needs four Actions secrets: `DREAMHOST_HOST`, `DREAMHOST_USERNAME`, `DREAMHOST_PASSWORD` and `DREAMHOST_REMOTE_PATH` (the folder on the host the site is served from, for example `/home/USER/zebrawars.example.com/`). The build uses relative asset URLs (`base: "./"` in `vite.config.ts`), so it works from any folder. The upload deletes remote files that are no longer in `dist/`, so point the path at a folder this site owns.
+
+## UI rules
+
+- No screen is ever monochrome (black, white and grey only). Every full-screen card built with `createMenu` sets `scene: { wordmark: false }` (the title scene) or sits over the board (`overBoard`). A new menu, intro, question or ending card that omits both renders on a black page.
+- Player-facing text says "disease", not "character". "Character" stays only as an internal term (identifiers, per-character parameters in code and clinical docs).
