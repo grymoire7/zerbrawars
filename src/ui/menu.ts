@@ -223,15 +223,15 @@ export function createMenu(root: HTMLElement): Menu {
         title.className = "zs-title";
       }
       const kids: HTMLElement[] = [title];
-      if (m.tagline)
-        kids.push(
-          el(
-            "p",
-            sceneOn ? "" : "margin:0;font-size:17px;opacity:0.9;",
-            m.tagline,
-          ),
+      if (m.tagline) {
+        const tag = el(
+          "p",
+          sceneOn ? "" : "margin:0;font-size:17px;opacity:0.9;",
+          m.tagline,
         );
-      if (sceneOn) kids[kids.length - 1]!.className = "zs-tag";
+        if (sceneOn) tag.className = "zs-tag";
+        kids.push(tag);
+      }
       for (const p of m.paragraphs ?? [])
         kids.push(el("p", "margin:0;white-space:pre-line;", p));
       if (m.heading)
