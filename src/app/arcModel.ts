@@ -18,7 +18,7 @@ import { parseTutorialPart, type TutorialPart } from "./tutorialModel";
 
 export const TITLE = "Zebra Wars";
 export const TAGLINE = "Fight infections from the inside, one turn at a time.";
-export const VARIANT_HEADING = "Choose your character";
+export const VARIANT_HEADING = "Choose your disease";
 export const WILSON = {
   label: "Wilson's disease",
   note: "A separate game, coming later",
@@ -159,7 +159,7 @@ export interface CompleteButton {
 
 /**
  * How an arc ends, the same for every arc: Replay (the same game, with `seed` when it has one),
- * New game (arcs that play a seeded campaign), Choose another arc, Change character.
+ * New game (arcs that play a seeded campaign), Choose another arc, Change disease.
  */
 export const completeButtons = (
   arc: ArcId,
@@ -199,7 +199,7 @@ export const completeButtons = (
         ]
       : []),
     { label: "Choose another arc", to: { mode: "arcs", variant } },
-    { label: "Change character", to: { mode: "title" } },
+    { label: "Change disease", to: { mode: "title" } },
   ];
 };
 

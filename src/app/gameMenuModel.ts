@@ -40,13 +40,13 @@ export const MENU_LABELS: Record<MenuItem, string> = {
   restartFight: "Start this fight over",
   restartSummer: "Start this summer over",
   chooseArc: "Choose another arc",
-  changeCharacter: "Change character",
+  changeCharacter: "Change disease",
 };
 
 /**
  * Which items the menu offers. A fight can be started over only on a battle screen and only while
  * it is on; a summer can be started over only in Arc 2. Choosing another arc and changing
- * character are always offered: neither asks anything, since a summer is held.
+ * disease are always offered: neither asks anything, since a summer is held.
  */
 export function menuItems(c: {
   readonly arc: ArcId;

@@ -38,7 +38,7 @@ The Mac stays awake while the demo runs. Leave the Terminal window open.
 - Keyboard shortcuts in a battle: Enter ends the turn, Space skips the replay,
   Escape clears a pick (or opens the menu), W walls off.
 - The menu button (top left) has How to play, Start this fight over, Start this
-  summer over, Choose another arc and Change character.
+  summer over, Choose another arc and Change disease.
 
 ## Next person
 

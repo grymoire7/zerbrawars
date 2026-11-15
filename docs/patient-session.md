@@ -43,18 +43,18 @@ to check it. Don't treat either as a verdict.
   facilitator" block to the in-game **Menu** (the button in the top left corner
   of the life and battle screens), and it is read once when the page loads. If
   you add it to a page that is already open, reload the page.
-  - The Menu doesn't exist on the title screen, so choose a character, pick **Arc
+  - The Menu doesn't exist on the title screen, so choose a disease, pick **Arc
   2**, press Begin, and open the Menu there. Scroll to **For the facilitator**
   and choose **Reset for a new player**. That clears best scores, first-time help
   and any held summer, so the next screens look new.
-- After the reset, start again the way the tester will: character, then Arc 1.
+- After the reset, start again the way the tester will: disease, then Arc 1.
   Open the Menu once more and set the switches: tick **Prediction probe on turns
   2, 4 and 6** (it starts off). **Show what you brought in** starts on, which is
   right for the first run. (Untick it for a second run if you want to see whether
   they link life to battle without the hint.) Check that both switches still look
   the way you set them before the tester sits down.
 - Close the Menu with Keep playing, then go back to the title (Choose another
-  arc or Change character in the Menu) and leave the laptop there for the tester.
+  arc or Change disease in the Menu) and leave the laptop there for the tester.
 - Have a notepad. Don't record names or anything that identifies them. The log
   collects none, and your notes shouldn't either.
 
@@ -69,7 +69,7 @@ to check it. Don't treat either as a verdict.
 Then one sentence, and only this one: **"You're the immune system. The arrows
 show what the germs will do next."**
 
-Choose a character (X-linked or autosomal recessive) the way they would in real
+Choose a disease (X-linked or autosomal recessive) the way they would in real
 life, or let them pick. Note which.
 
 ## During the play

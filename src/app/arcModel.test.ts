@@ -100,7 +100,7 @@ describe("completeButtons", () => {
       "Replay",
       "New game",
       "Choose another arc",
-      "Change character",
+      "Change disease",
     ]);
     expect(b[0]!.to).toEqual({
       mode: "arcPlay",
@@ -120,7 +120,7 @@ describe("completeButtons", () => {
     expect(b.map((x) => x.label)).toEqual([
       "Replay",
       "Choose another arc",
-      "Change character",
+      "Change disease",
     ]);
     expect(b[0]!.to).toEqual({
       mode: "arcPlay",

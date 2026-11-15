@@ -90,7 +90,7 @@ function button(label: string, css: string, onClick: () => void) {
 /**
  * The in-game menu: a corner button and the dialog it opens (Keep playing, then the items the
  * screen offers). Starting a fight or a summer over asks first, in the card itself; choosing
- * another arc or changing character asks nothing, since the run waits. The button is the first
+ * another arc or changing disease asks nothing, since the run waits. The button is the first
  * child of `root` so it leads the tab order, and it sits above
  * the screen overlays (outcome, interlude, brought strip) but under the dialogs (help, probe, this
  * menu). While the menu is open it owns the keyboard: Escape closes it and Tab cycles inside.

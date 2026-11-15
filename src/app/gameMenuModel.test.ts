@@ -9,7 +9,7 @@ import {
 } from "./gameMenuModel";
 
 describe("whereLines", () => {
-  it("names the arc, the week and the character", () => {
+  it("names the arc, the week and the disease", () => {
     expect(
       whereLines({
         arc: "summer",

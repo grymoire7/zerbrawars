@@ -36,7 +36,7 @@ obvious control, and needs leaving to be safe: nothing scary, nothing lost by ac
 | --- | --- | --- |
 | Keep playing (close the menu) | player | The safe default of every menu and confirm. |
 | How to play | player | Already exists; stays on "?" and is also in the menu. |
-| Back to the title | player | "I want out". Also how to switch character or arc. |
+| Back to the title | player | "I want out". Also how to switch disease or arc. |
 | Continue (from the title) | player | Makes leaving safe: the run waits while the page stays open. |
 | Start this fight over | player | Already exists as Reset; moves into the menu with a confirm. |
 | Start this summer over | player | Same as the summary's Replay, reachable mid-run. |
@@ -145,7 +145,7 @@ Per screen:
 | Title, picker, arc-complete | no Menu button: these screens are the menu |
 
 Title, when a summer is held (section 4): a **Continue** item first, "Continue your summer: week 2,
-CGD X-linked", then the characters. The picker keeps Back.
+CGD X-linked", then the diseases. The picker keeps Back.
 
 Endings: the Arc 2 summary gets the arc-complete button set, so both arcs end the same way: **Play
 again** (same summer, primary), **A new summer** (Arc 2 only), **Choose an arc**, **Back to the
