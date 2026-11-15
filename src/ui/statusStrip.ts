@@ -39,6 +39,8 @@ export interface StatusCell {
   readonly showState?: boolean;
   readonly bar: StatusBar | null;
   readonly color: PaletteName;
+  /** A bar colour (a hex string) that replaces `color`'s, for a bar that shades with risk. */
+  readonly barTone?: string;
   /** One plain sentence, shown when the cell is tapped and read as the accessible label. */
   readonly explain: string;
 }
@@ -58,11 +60,15 @@ const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 export const cellLabel = (c: StatusCell): string =>
   `${c.label}: ${c.value}, ${c.state}. ${c.explain}`;
 
-function buildBar(bar: StatusBar, color: PaletteName): HTMLElement {
+function buildBar(
+  bar: StatusBar,
+  color: PaletteName,
+  barTone?: string,
+): HTMLElement {
   const track = document.createElement("div");
   track.className = `zw-bar zw-bar-${bar.kind}`;
   track.setAttribute("aria-hidden", "true");
-  const tone = `var(--zw-${color})`;
+  const tone = barTone ?? `var(--zw-${color})`;
   if (bar.kind === "fill") {
     const ghost = document.createElement("div");
     ghost.className = "zw-bar-ghost";
@@ -116,7 +122,7 @@ function fillCell(btn: HTMLButtonElement, c: StatusCell, open: boolean): void {
     value.append(" ", state);
   }
   btn.replaceChildren(label, value);
-  if (c.bar) btn.append(buildBar(c.bar, c.color));
+  if (c.bar) btn.append(buildBar(c.bar, c.color, c.barTone));
   btn.setAttribute("aria-label", cellLabel(c));
   btn.setAttribute("aria-pressed", String(open));
 }

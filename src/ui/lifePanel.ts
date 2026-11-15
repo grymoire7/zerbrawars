@@ -1,4 +1,3 @@
-import type { DoseCell } from "../app/lifeModel";
 import type { HudMounts } from "./hud";
 import { cardAccent, cardBadge, cardTint } from "./cardStyle";
 import { createInfoTips } from "./infoTip";
@@ -72,12 +71,6 @@ export interface LifeSummaryModel {
 export interface LifePanelModel {
   readonly title: string;
   readonly over: boolean;
-  readonly meds: {
-    readonly level: number;
-    readonly streak: number;
-    readonly strip: readonly DoseCell[];
-    readonly note: string;
-  };
   /** What to do next while something is picked, or why a move was refused; empty when idle. */
   readonly hint: string;
   /** How the planner works, behind the (?) beside "Your week". */
@@ -183,10 +176,6 @@ export function createLifePanel(
   help.title = "How to play";
   top.append(title, help);
 
-  const medsBox = el(
-    "div",
-    PANEL + "padding:8px 10px;display:flex;flex-direction:column;gap:6px;",
-  );
   const calBox = el(
     "div",
     PANEL + "padding:8px 10px;display:flex;flex-direction:column;gap:6px;",
@@ -286,7 +275,6 @@ export function createLifePanel(
     top,
     aftermathBox,
     feelBox,
-    medsBox,
     calBox,
     handBox,
     beatsBox,
@@ -341,47 +329,6 @@ export function createLifePanel(
 
   const activeKey = () =>
     (document.activeElement as HTMLElement | null)?.dataset?.key ?? null;
-
-  function renderMeds(m: LifePanelModel) {
-    const { meds } = m;
-    const head = el(
-      "div",
-      "display:flex;justify-content:space-between;font-weight:600;font-size:14px;",
-    );
-    head.append(
-      el("span", "", "Medication"),
-      el("span", "font:12px monospace;", `streak ${meds.streak}`),
-    );
-    const strip = el("div", "display:flex;gap:6px;");
-    // Read-only forecast cells: no handler can skip a dose, the routine either holds or life
-    // breaks it (see doseStrip).
-    for (const c of meds.strip) {
-      const css =
-        `flex:1 1 0;min-width:0;border-radius:6px;padding:4px 6px;font-size:12px;line-height:1.25;box-sizing:border-box;` +
-        `text-align:left;min-height:44px;` +
-        (c.taken
-          ? `border:1px solid ${MINT};background:rgba(91,227,198,${c.decided ? 0.18 : 0.06});`
-          : "border:1px dashed var(--zw-notice);background:rgba(217,163,92,0.14);");
-      const cell = el("div", css);
-      const mark = c.glyph === "check" ? "✓" : c.glyph === "alert" ? "!" : "✗";
-      const word =
-        c.chance === null ? c.why : `${c.why} ${Math.round(c.chance * 100)}%`;
-      cell.append(
-        el("div", "font-weight:600;", `Day ${c.day + 1} ${mark}`),
-        el("div", "opacity:0.85;", word),
-        el("div", "opacity:0.7;", `${Math.round(c.level * 100)}%`),
-      );
-      cell.setAttribute("role", "group");
-      cell.setAttribute("aria-label", c.label);
-      strip.append(cell);
-    }
-    medsBox.replaceChildren(head, strip);
-    if (meds.note) {
-      medsBox.append(
-        el("div", "font-size:12px;opacity:0.85;line-height:1.3;", meds.note),
-      );
-    }
-  }
 
   function renderCalendar(m: LifePanelModel) {
     // Phone portrait with something picked: the calendar pins itself to the top of the scroll
@@ -714,7 +661,6 @@ export function createLifePanel(
           buttons,
         );
       } else bannerBox.replaceChildren();
-      renderMeds(m);
       renderCalendar(m);
       if (m.over && m.summary) renderSummary(m.summary);
       else renderHand(m);

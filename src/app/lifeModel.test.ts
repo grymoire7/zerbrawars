@@ -1,16 +1,10 @@
 import panel from "../ui/lifePanel.ts?raw";
 import screen from "./lifeScreen.ts?raw";
 import { describe, expect, it } from "vitest";
-import {
-  advanceDay,
-  createLife,
-  placeCard,
-  setDose,
-} from "../sim/life/calendar";
+import { advanceDay, createLife, placeCard } from "../sim/life/calendar";
 import { slipRoll } from "../sim/life/calendar";
 import type { LifeState } from "../sim/life/types";
 import {
-  doseStrip,
   friendlyProblem,
   lifeBeats,
   NO_PENDING,
@@ -36,6 +30,7 @@ import {
   lifeStatusModel,
   chargesText,
   medStateWord,
+  medTone,
 } from "./lifeModel";
 
 const put = (
@@ -87,72 +82,44 @@ describe("placementCheck", () => {
   });
 });
 
-describe("doseStrip", () => {
-  it("forecasts routine for every day of a fresh week, as read-only cells", () => {
-    const strip = doseStrip(createLife({ seed: 1 }));
-    expect(strip).toHaveLength(3);
-    for (const c of strip) {
-      expect(c).toMatchObject({
-        taken: true,
-        why: "routine",
-        glyph: "check",
-        chance: null,
-      });
-      expect(c.label).toBe(
-        `Day ${c.day + 1} meds: routine, medication 100 percent.`,
-      );
-      expect(c).not.toHaveProperty("toggle");
-    }
+describe("the Medication status cell", () => {
+  const med = (l: LifeState) =>
+    lifeStatusModel(l).cells.find((c) => c.id === "medication")!;
+
+  it("is green and quiet with nothing at risk", () => {
+    const c = med(createLife({ seed: 1 }));
+    expect(c.value).toBe("3/3");
+    expect(c.barTone).toBe("#5be3c6");
+    expect(c.explain).not.toMatch(/late night|at home/);
   });
 
-  it("shows pills at home the day after an unpacked sleepover, with a warning glyph", () => {
-    let l = createLife({ seed: 1 });
-    l = put(l, 0, 1, "sleepover", false);
-    const strip = doseStrip(l);
-    expect(strip[1]).toMatchObject({
-      taken: false,
-      why: "pills at home",
-      glyph: "alert",
-    });
-    expect(strip[1].label).toContain("pills are at home");
-    expect(strip[2].level).toBeLessThan(1);
-    expect(strip.map((c) => c.glyph)).toEqual(["check", "alert", "check"]);
-    // Packing the pills restores the routine.
-    l = put(createLife({ seed: 1 }), 0, 1, "sleepover", true);
-    expect(doseStrip(l).map((c) => c.why)).toEqual([
-      "routine",
-      "routine",
-      "routine",
-    ]);
-  });
-
-  it("shows a forced miss (the debug control) as a cross and a played day as taken", () => {
-    let l = createLife({ seed: 1 });
-    l = setDose(l, 2, false).state;
-    let strip = doseStrip(l);
-    expect(strip.map((c) => c.taken)).toEqual([true, true, false]);
-    expect(strip[2]).toMatchObject({ why: "missed", glyph: "cross" });
-    expect(strip[2].level).toBeCloseTo(2 / 3);
-    l = advanceDay(l).state;
-    strip = doseStrip(l);
-    expect(strip[0]).toMatchObject({ why: "taken", decided: true });
-  });
-
-  it("forces a missed dose on today through the same advance path", () => {
-    let l = createLife({ seed: 1 });
-    l = setDose(l, 0, false).state;
-    expect(doseStrip(l)[0]).toMatchObject({ taken: false, glyph: "cross" });
-    const r = advanceDay(l);
-    expect(r.state.doses.at(-1)).toMatchObject({ day: 0, taken: false });
-  });
-
-  it("never preaches in its words", () => {
+  it("names the day whose dose will be missed after an unpacked sleepover, in red", () => {
     const l = put(createLife({ seed: 1 }), 0, 1, "sleepover", false);
-    for (const c of doseStrip(l)) {
-      expect(c.why + c.label).not.toMatch(/should|skip|forgot|fault/i);
-    }
+    const c = med(l);
+    expect(c.explain).toContain(
+      "Day 2's dose will be missed: the pills are at home after the sleepover.",
+    );
+    expect(c.value).toBe("2/3");
+    expect(c.barTone).toBe("#ff6a5a");
+    // Packing the pills restores the routine and the green.
+    const packed = med(put(createLife({ seed: 1 }), 0, 1, "sleepover", true));
+    expect(packed.value).toBe("3/3");
+    expect(packed.explain).not.toMatch(/at home/);
   });
 
+  it("gives a late night's chance, shades the bar by it, and never says the outcome", () => {
+    const l = put(createLife({ seed: 1 }), 1, 1, "game");
+    const c = med(l);
+    expect(c.explain).toContain("Day 2: late night, 50% the pills slip.");
+    expect(c.value).toBe("3/3");
+    expect(c.barTone).toBe(medTone(0.5));
+    expect(med(put(createLife({ seed: 1 }), 1, 1, "gameEarly")).barTone).toBe(
+      "#5be3c6",
+    );
+  });
+});
+
+describe("the life screen", () => {
   it("offers the player no way to skip a dose", () => {
     expect(panel).not.toMatch(/onSetDose|setDose|skipMeds/);
     expect(screen).not.toMatch(/onSetDose/);
@@ -162,6 +129,17 @@ describe("doseStrip", () => {
     expect(screen.indexOf("setDose(life")).toBeGreaterThan(
       screen.indexOf("forceMiss"),
     );
+  });
+});
+
+describe("medTone", () => {
+  it("fades green to yellow to orange to red at the chance steps", () => {
+    expect(medTone(1)).toBe("#5be3c6");
+    expect(medTone(0.75)).toBe("#ffd23f");
+    expect(medTone(0.5)).toBe("#ff9a3c");
+    expect(medTone(0.3)).toBe("#ff6a5a");
+    expect(medTone(0)).toBe("#ff6a5a");
+    expect(medTone(0.9)).not.toBe(medTone(1));
   });
 });
 
@@ -667,24 +645,6 @@ describe("earliestDoctorSlot", () => {
 });
 
 describe("game night in the UI model", () => {
-  it("shows the slip on the day chip before play: glyph, word and percent", () => {
-    const l = put(createLife({ seed: 1 }), 1, 1, "game");
-    const c = doseStrip(l)[1];
-    expect(c).toMatchObject({
-      taken: true,
-      why: "late night",
-      glyph: "alert",
-      chance: 0.5,
-    });
-    expect(c.label).toBe(
-      "Day 2 meds: late night, 50 percent chance the pills slip, medication 100 percent.",
-    );
-    expect(doseStrip(l)[0].chance).toBeNull();
-    expect(
-      doseStrip(put(createLife({ seed: 1 }), 1, 1, "gameEarly"))[1].glyph,
-    ).toBe("check");
-  });
-
   it("tells the slip without blame, and shows the missed chip afterwards", () => {
     expect(
       lifeBeats([{ type: "MedsSkipped", day: 1, cause: "slipped" }]),
@@ -696,14 +656,10 @@ describe("game night in the UI model", () => {
       l = put(createLife({ seed }), 1, 1, "game");
     }
     l = advanceDay(advanceDay(l).state).state;
-    const c = doseStrip(l)[1];
-    expect(c).toMatchObject({
+    expect(l.doses.find((d) => d.week === 1 && d.day === 1)).toMatchObject({
       taken: false,
-      why: "pills slipped",
-      glyph: "cross",
+      cause: "slipped",
     });
-    expect(c.label).toMatch(/game night ran late/);
-    expect(c.label).not.toMatch(/skip/i);
   });
 
   it("refuses game night in the daytime with a clear message", () => {

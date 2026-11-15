@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 60 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,700 tokens. **Saves ~19,900 tokens per conversation.**
-> **Last scanned:** 2026-11-15 22:53 — re-run after significant changes
+> **Last scanned:** 2026-11-15 23:23 — re-run after significant changes
 
 ---
 
@@ -349,9 +349,9 @@
 - `src/sim/scenarios.ts` — imported by **20** files
 - `src/sim/battle/setup.ts` — imported by **20** files
 - `src/sim/battle/intents.ts` — imported by **18** files
+- `src/theme/palette.ts` — imported by **18** files
 - `src/sim/board.ts` — imported by **18** files
 - `src/sim/rng.ts` — imported by **18** files
-- `src/theme/palette.ts` — imported by **17** files
 - `src/sim/battle/outcome.ts` — imported by **16** files
 - `src/sim/life/loadout.ts` — imported by **16** files
 - `src/sim/battle/resolve.ts` — imported by **16** files
@@ -372,9 +372,9 @@
 - `src/sim/scenarios.ts` ← `src/app/arcs.ts`, `src/app/arrivalModel.test.ts`, `src/app/coachModel.test.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +15 more
 - `src/sim/battle/setup.ts` ← `src/app/arrivalModel.test.ts`, `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts` +15 more
 - `src/sim/battle/intents.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/controller.ts`, `src/app/info.test.ts` +13 more
+- `src/theme/palette.ts` ← `src/app/boot.ts`, `src/app/lifeModel.ts`, `src/app/main.ts`, `src/render/boardView.ts`, `src/render/granulomaView.ts` +13 more
 - `src/sim/board.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/render/boardView.ts`, `src/render/orderView.ts`, `src/sim/battle/arrivals.test.ts` +13 more
 - `src/sim/rng.ts` ← `src/sim/battle/bots.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/intents.ts`, `src/sim/battle/orders.test.ts` +13 more
-- `src/theme/palette.ts` ← `src/app/boot.ts`, `src/app/main.ts`, `src/render/boardView.ts`, `src/render/granulomaView.ts`, `src/render/insetView.ts` +12 more
 - `src/sim/battle/outcome.ts` ← `src/app/battleScreen.ts`, `src/app/controller.ts`, `src/render/playback.test.ts`, `src/sim/battle/arrivals.test.ts`, `src/sim/battle/bots.ts` +11 more
 
 ---

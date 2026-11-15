@@ -11,7 +11,7 @@ import {
 import { doctorPreview } from "../sim/life/body";
 import { cardDef, versionsOf } from "../sim/life/cards";
 import { battleDue, loadoutFromLife } from "../sim/life/loadout";
-import { cardPreview, exposurePreview } from "../sim/life/preview";
+import { cardPreview } from "../sim/life/preview";
 import type {
   CardId,
   HandCardId,
@@ -53,7 +53,6 @@ import {
   luckLine,
   weekEndText,
   weekOdds,
-  doseStrip,
   lifeBeats,
   lifeStatusModel,
   exposureShift,
@@ -242,22 +241,7 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
 
   const model = (): LifePanelModel => {
     const sel = selOf();
-    const week = exposurePreview(life);
     const over = weekOver(life);
-    const strip = doseStrip(life);
-    const lost = week.frictionDays;
-    const noteParts: string[] = [];
-    if (lost.length > 0) {
-      noteParts.push(
-        `Day ${lost.map((d) => d + 1).join(", ")}'s dose will be missed: pills at home. ` +
-          `Level ends at ${pct(week.medLevel)}.`,
-      );
-    }
-    for (const s of week.slipDays) {
-      noteParts.push(
-        `Day ${s.day + 1}: late night, ${pct(s.chance)} the pills slip. "Game night, home by 11" removes it.`,
-      );
-    }
     const grid = Array.from({ length: L.days }, (_, day) =>
       Array.from({ length: L.slotsPerDay }, (_, slot): LifeSlotModel => {
         const p = life.plan[day][slot];
@@ -361,12 +345,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
         ? `Week ${life.week} is done`
         : `Week ${life.week} · Day ${life.day + 1} of ${L.days}`,
       over,
-      meds: {
-        level: life.medLevel,
-        streak: life.streak,
-        strip,
-        note: noteParts.join(" "),
-      },
       hint: message ? `Can't do that: ${message}` : hintBase,
       help: "Tap an activity, then a time slot. Or tap a time slot first. Tap a planned activity to take it off.",
       restSelected: sel === "rest",

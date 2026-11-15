@@ -1,4 +1,3 @@
-import { medLevelOf } from "../sim/life/meds";
 import { exposurePreview } from "../sim/life/preview";
 import { plannedChoices } from "../sim/score";
 import type { MedCharges } from "../sim/types";
@@ -6,7 +5,6 @@ import type { StatusCell, StatusModel } from "../ui/statusStrip";
 import {
   energyPlan,
   findPlaced,
-  medForecast,
   placementProblems,
   unplaceCard,
 } from "../sim/life/calendar";
@@ -14,13 +12,13 @@ import { cardDef } from "../sim/life/cards";
 import type {
   BattleReason,
   CardId,
-  Dose,
   LifeEvent,
   LifeState,
 } from "../sim/life/types";
 import type { BattleGrade, BattleKind } from "../sim/types";
 import { bodyBeats } from "./campaignModel";
 import { PARAMS } from "../sim/params";
+import { PALETTE } from "../theme/palette";
 import { organismList, organismName } from "../sim/organisms";
 import type { PathogenKindId } from "../sim/pathogens";
 
@@ -175,113 +173,6 @@ export function placementCheck(
         : friendlyProblem(r),
   );
   return { day, slot, ok: reasons.length === 0, reasons };
-}
-
-/** The chip glyph: a check, "!" for a dose the plan puts at risk, a cross for a missed one. */
-export type DoseGlyph = "check" | "alert" | "cross";
-
-/**
- * One day's dose as a read-only forecast cell. Nothing here is a control: doses are taken by
- * routine, and a miss arises from life (an unpacked sleepover), never from a tap.
- */
-export interface DoseCell {
-  readonly day: number;
-  readonly taken: boolean;
-  /** Already decided (taken, defaulted or lost) rather than a forecast. */
-  readonly decided: boolean;
-  readonly level: number;
-  /** The state in plain words: "routine", "taken", "pills at home" or "missed". */
-  readonly why: string;
-  readonly glyph: DoseGlyph;
-  /** Chance this dose slips (0..1) for the percentage on the chip, or null when none applies. */
-  readonly chance: number | null;
-  /** The whole cell in one sentence, for the accessible name. */
-  readonly label: string;
-}
-
-const WORD = {
-  tapped: "routine",
-  default: "routine",
-  skipped: "missed",
-  friction: "pills at home",
-  slipped: "pills slipped",
-} as const;
-
-const DONE_WORD = { ...WORD, tapped: "taken", default: "taken" } as const;
-
-function doseCell(
-  day: number,
-  d: Dose,
-  decided: boolean,
-  level: number,
-  chance: number | null,
-): DoseCell {
-  const risk = d.taken && chance !== null;
-  const why = risk ? "late night" : (decided ? DONE_WORD : WORD)[d.cause];
-  const glyph: DoseGlyph = risk
-    ? "alert"
-    : d.taken
-      ? "check"
-      : d.cause === "friction"
-        ? "alert"
-        : "cross";
-  const detail =
-    d.cause === "friction"
-      ? "the pills are at home after the sleepover"
-      : d.cause === "slipped"
-        ? "game night ran late and the evening pills slipped"
-        : why;
-  const pctText =
-    chance === null
-      ? ""
-      : `, ${Math.round(chance * 100)} percent chance the pills slip`;
-  return {
-    day,
-    taken: d.taken,
-    decided,
-    level,
-    why,
-    glyph,
-    chance,
-    label: `Day ${day + 1} meds: ${detail}${pctText}, medication ${Math.round(level * 100)} percent.`,
-  };
-}
-
-/** Every day of the week: the dose as it stands (or is forecast) and the med level after it. */
-export function doseStrip(life: LifeState): DoseCell[] {
-  const cells: DoseCell[] = [];
-  for (let day = 0; day < Math.min(life.day, L.days); day++) {
-    const i = life.doses.findIndex(
-      (d) => d.week === life.week && d.day === day,
-    );
-    if (i < 0) continue;
-    cells.push(
-      doseCell(
-        day,
-        life.doses[i],
-        true,
-        medLevelOf(life.doses.slice(0, i + 1)),
-        null,
-      ),
-    );
-  }
-  if (life.day < L.days) {
-    for (const f of medForecast(life)) {
-      const decided = life.doses.some(
-        (d) => d.week === life.week && d.day === f.day,
-      );
-      cells.push(
-        doseCell(
-          f.day,
-          { week: life.week, day: f.day, taken: f.taken, cause: f.cause },
-          decided,
-          f.level,
-          f.chance,
-        ),
-      );
-    }
-  }
-  return cells;
 }
 
 const labelOf = (card: CardId) => cardDef(card).label;
@@ -772,6 +663,36 @@ export function chargesText(c: MedCharges): string {
 }
 
 /** The state word for a medication level made of `doses` of `window` doses. */
+const lerpHex = (a: string, b: string, t: number): string => {
+  const ch = (h: string, i: number) =>
+    parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  const mix = (i: number) =>
+    Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${mix(0)}${mix(1)}${mix(2)}`;
+};
+
+/**
+ * The Medication bar's colour for the chance that every dose in the window is taken: green when it
+ * is sure, fading to yellow at 75%, orange at 50% and red at 30% and below.
+ */
+export function medTone(chance: number): string {
+  const stops: readonly (readonly [number, string])[] = [
+    [1, PALETTE.med],
+    [0.75, PALETTE.spread],
+    [0.5, PALETTE.heat],
+    [0.3, PALETTE["warn-line"]],
+  ];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const [hi, from] = stops[i];
+    const [lo, to] = stops[i + 1];
+    if (chance >= lo)
+      return lerpHex(from, to, (hi - Math.min(chance, hi)) / (hi - lo));
+  }
+  return stops[stops.length - 1][1].toLowerCase();
+}
+
 export function medStateWord(doses: number, window: number): string {
   if (doses >= window) return "full";
   if (doses <= 0) return "none";
@@ -844,6 +765,19 @@ export function lifeStatusModel(
         ? `Energy is a game-only resource. Activities cost it, rest gives it back. You have ${life.energy} now and ${endEnergy} after your plan.`
         : "Energy is a game-only resource. Activities cost it, rest gives it back.",
   };
+  // The chance a full window of doses is taken: nil once a dose is lost or certain to be.
+  const fullChance =
+    doses < window ? 0 : week.slipDays.reduce((p, s) => p * (1 - s.chance), 1);
+  const medNotes = [
+    ...week.frictionDays.map(
+      (d) =>
+        `Day ${d + 1}'s dose will be missed: the pills are at home after the sleepover.`,
+    ),
+    ...week.slipDays.map(
+      (s) =>
+        `Day ${s.day + 1}: late night, ${Math.round(s.chance * 100)}% the pills slip. "Game night, home by 11" removes it.`,
+    ),
+  ];
   const medCell: StatusCell = {
     id: "medication",
     label: "Medication",
@@ -853,7 +787,12 @@ export function lifeStatusModel(
     showState: doses < window,
     bar: { kind: "segments", count: window, solid: doses, ghost: doses },
     color: "med",
-    explain: `Doses taken over the last ${window} days, as planned: ${doses} of ${window}. That gives ${chargesText(week.charges)} in the fight. Fewer doses means a weaker aura and fewer charges.`,
+    barTone: medTone(fullChance),
+    explain:
+      `Doses taken over the last ${window} days, as planned: ${doses} of ${window}. That gives ${chargesText(week.charges)} in the fight. Fewer doses means a weaker aura and fewer charges.` +
+      (medNotes.length
+        ? ` ${medNotes.join(" ")} The bar shades from green to red as a full set of doses gets less likely.`
+        : ""),
   };
   const odds = weekOdds(life);
   const next = pick ? weekOddsWith(life, pick) : odds;
