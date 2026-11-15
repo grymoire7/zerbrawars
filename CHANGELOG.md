@@ -5,6 +5,28 @@ All notable changes to Zebra Wars are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **A new title screen.** The plain text menu is now a bright, glossy
+  cartoon scene: Zoreo the zebra pops out of a hole in the board with a
+  toy water gun and fires a volley of blue immune cells at three grumpy
+  germs, while the menu sits on a solid dark card in the middle. It shows
+  on the title and the arc picker, and fits laptop, phone portrait and
+  phone landscape. With reduced motion (or `?still=1`) it is a still
+  picture.
+- **Zoreo in the corner of the game.** A small Zoreo sits at the board's
+  upper right and looks where you should: at the side panel when it is
+  time to plan your week, and at the board when it is time to move
+  swarms. In phone portrait he slides to the board's lower right to look
+  down at the panel. He blinks now and then, and is hidden on summaries.
+
+### Changed
+
+- The brought-items strip on a fight now stops short of the corner Zoreo,
+  and uses the real side panel width in the wide layout.
+
 ## [0.1.1] - 2026-11-14
 
 ### Added

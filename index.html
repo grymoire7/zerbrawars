@@ -406,6 +406,43 @@
           font-size: 15px !important;
         }
       }
+      /* Zoreo's corner head: the board's upper right; where he looks shows the phase. */
+      #zoreo-corner {
+        position: absolute;
+        z-index: 1;
+        top: 6px;
+        right: 6px;
+        width: 68px;
+        height: 76px;
+        display: none;
+        pointer-events: none;
+        transition: top 0.4s ease-in-out;
+      }
+      #zoreo-corner[data-gaze] {
+        display: block;
+      }
+      #zoreo-corner svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        transition: transform 0.3s ease-in-out;
+      }
+      /* Portrait: the panel is below the board, so no flip; he slides down to the lower right. */
+      #zoreo-corner[data-gaze="panel"] {
+        top: calc(100% - 76px - 6px);
+      }
+      #zoreo-corner .zo-lid {
+        transition: transform 0.08s linear;
+      }
+      #zoreo-corner.blink .zo-lid {
+        transform: none;
+      }
+      #zoreo-corner[data-calm],
+      #zoreo-corner[data-calm] svg,
+      #zoreo-corner[data-calm] .zo-lid {
+        transition: none;
+      }
       /* Wide or landscape: board left, fixed side panel right. */
       @media (min-width: 900px), (min-aspect-ratio: 5/4) {
         #app {
@@ -416,10 +453,416 @@
           flex: 1 1 0;
           min-height: 0;
         }
+        /* Wide: he stays in the upper right and turns to face the panel on the right. */
+        #zoreo-corner,
+        #zoreo-corner[data-gaze="panel"] {
+          top: 8px;
+          width: 100px;
+          height: 112px;
+        }
+        #zoreo-corner[data-gaze="panel"] svg {
+          transform: scaleX(-1);
+        }
         #side {
           flex: 0 0 clamp(340px, 45vw, 480px);
           border-top: 0;
           border-left: 1px solid var(--zw-line, #3a4150);
+        }
+      }
+      /* Title scene (src/ui/titleScene.ts): a bright decorative layer behind a solid dark card.
+         The card's own layout is inline in menu.ts, so the few rules that fight it use !important. */
+      .zs-scene {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        background: radial-gradient(
+          120% 80% at 70% 0%,
+          #c9fff4 0%,
+          #7fe0d2 35%,
+          #36b3ae 70%,
+          #1f8c8f 100%
+        );
+      }
+      .zs-scene svg {
+        display: block;
+      }
+      .zs-rays {
+        position: absolute;
+        inset: 0;
+        background: repeating-conic-gradient(
+          from 200deg at 78% -10%,
+          rgba(255, 255, 255, 0.16) 0 6deg,
+          rgba(255, 255, 255, 0) 6deg 14deg
+        );
+        -webkit-mask: linear-gradient(#000, transparent 60%);
+        mask: linear-gradient(#000, transparent 60%);
+      }
+      .zs-bokeh {
+        position: absolute;
+        inset: 0 0 auto 0;
+        width: 100%;
+        height: 62%;
+      }
+      .zs-island {
+        position: absolute;
+        left: -4%;
+        width: 108%;
+        bottom: -2%;
+        height: 60%;
+      }
+      .zs-hero {
+        position: absolute;
+        right: 1vw;
+        top: 3vh;
+        height: 66vh;
+        width: auto;
+        overflow: visible;
+      }
+      .zs-germ {
+        position: absolute;
+        height: auto;
+      }
+      .zs-g-asp {
+        left: 14vw;
+        top: 44vh;
+        width: 10.5vw;
+      }
+      .zs-g-orange {
+        left: 1.5vw;
+        top: 50vh;
+        width: 12vw;
+      }
+      .zs-g-teal {
+        left: 11vw;
+        top: 65vh;
+        width: 12.5vw;
+      }
+      .zs-menu {
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        padding: 25vh 16px 24px 28vw !important;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif !important;
+      }
+      .zs-card {
+        --zs-card-w: 450px;
+        position: relative;
+        width: min(100%, var(--zs-card-w)) !important;
+        margin: 0 0 auto !important;
+        flex-shrink: 0;
+        gap: 10px !important;
+        padding: 14px 26px 24px;
+        border-radius: 30px;
+        background: var(--zw-card);
+        box-shadow:
+          0 0 0 4px var(--zw-card-rim),
+          0 0 0 8px rgba(255, 255, 255, 0.55),
+          0 14px 0 4px rgba(20, 30, 60, 0.22),
+          0 22px 40px rgba(20, 30, 60, 0.35);
+      }
+      .zs-card > * {
+        flex-shrink: 0;
+      }
+      .zs-card::before {
+        content: "";
+        position: absolute;
+        inset: 6px 14px auto;
+        height: 40px;
+        border-radius: 24px 24px 60% 60% / 24px 24px 30px 30px;
+        background: linear-gradient(
+          rgba(255, 255, 255, 0.07),
+          rgba(255, 255, 255, 0)
+        );
+        pointer-events: none;
+      }
+      .zs-wm {
+        margin: -6px -6px 0;
+        line-height: 0;
+      }
+      .zs-wm svg {
+        width: 100%;
+        height: auto;
+      }
+      .zs-sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      .zs-title {
+        margin: 0;
+        font:
+          700 26px/1.2 system-ui,
+          sans-serif;
+        overflow-wrap: anywhere;
+        text-align: center;
+      }
+      .zs-tag {
+        margin: -4px 0 4px;
+        font-size: 16px;
+        line-height: 1.35;
+        text-align: center;
+      }
+      .zs-card h2 {
+        margin: 8px 2px 0;
+        font:
+          700 15px system-ui,
+          sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--zw-text-muted);
+      }
+      .zs-btn {
+        all: unset;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-height: 56px;
+        padding: 11px 18px;
+        border-radius: 18px;
+        cursor: pointer;
+        background: linear-gradient(#353c4b, #2d3340);
+        color: var(--zw-text);
+        box-shadow:
+          inset 0 2px 0 rgba(255, 255, 255, 0.08),
+          0 0 0 2px #4a5263,
+          0 5px 0 2px #10131a;
+      }
+      .zs-btn .zs-l {
+        font:
+          700 18px/1.2 system-ui,
+          sans-serif;
+        overflow-wrap: anywhere;
+      }
+      .zs-btn .zs-s {
+        font-size: 14px;
+        line-height: 1.3;
+        color: var(--zw-text-muted);
+        overflow-wrap: anywhere;
+      }
+      .zs-btn.zs-primary {
+        background: linear-gradient(#cff0ff, var(--zw-primary) 55%, #86c9e8);
+        color: var(--zw-primary-ink);
+        box-shadow:
+          inset 0 3px 0 rgba(255, 255, 255, 0.7),
+          0 0 0 2px #2f6a8c,
+          0 6px 0 2px #2f6a8c;
+      }
+      .zs-btn.zs-primary .zs-l {
+        font-size: 20px;
+      }
+      .zs-btn.zs-primary .zs-s {
+        color: #1d3a4c;
+      }
+      .zs-btn.zs-small {
+        min-height: 44px;
+        padding: 8px 16px;
+        background: none;
+        box-shadow: inset 0 0 0 2px #4a5263;
+      }
+      .zs-btn.zs-small .zs-l {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .zs-btn.zs-small .zs-s {
+        font-size: 13px;
+      }
+      .zs-btn.zs-off {
+        cursor: default;
+        background: none;
+        box-shadow: none;
+        border: 2px dashed #4a5263;
+      }
+      .zs-btn.zs-off .zs-l {
+        color: var(--zw-text-muted);
+        font-weight: 600;
+      }
+      .zs-btn:focus-visible {
+        outline: 3px solid var(--zw-focus);
+        outline-offset: 4px;
+      }
+      /* The title's opening beat and blink (src/ui/titleScene.ts); the still final frame is the default. */
+      @keyframes zs-rise {
+        from {
+          transform: translateY(230px);
+        }
+        to {
+          transform: none;
+        }
+      }
+      @keyframes zs-pop {
+        from {
+          opacity: 0;
+          transform: scale(0.3);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes zs-fade {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .zs-lid {
+        transition: transform 0.08s linear;
+      }
+      .zs-blink .zs-lid {
+        transform: none;
+      }
+      .zs-play .zs-zoreo {
+        animation: zs-rise 0.75s cubic-bezier(0.3, 1.25, 0.5, 1) both;
+      }
+      .zs-play .zs-buddies {
+        animation: zs-fade 0.4s 0.45s both;
+      }
+      .zs-play .zs-trail {
+        animation: zs-fade 0.5s 0.8s both;
+      }
+      .zs-play .zs-v {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: zs-pop 0.22s ease-out both;
+      }
+      .zs-play .zs-v1 {
+        animation-delay: 0.8s;
+      }
+      .zs-play .zs-v2 {
+        animation-delay: 0.87s;
+      }
+      .zs-play .zs-v3 {
+        animation-delay: 0.94s;
+      }
+      .zs-play .zs-v4 {
+        animation-delay: 1.01s;
+      }
+      .zs-play .zs-v5 {
+        animation-delay: 1.08s;
+      }
+      .zs-play .zs-v6 {
+        animation-delay: 1.15s;
+      }
+      .zs-play .zs-v7 {
+        animation-delay: 1.22s;
+      }
+      .zs-play .zs-v8 {
+        animation-delay: 1.29s;
+      }
+      .zs-play .zs-v9 {
+        animation-delay: 1.36s;
+      }
+      /* Phone portrait: the scene is a strip above the card; companions and far volley clumps go. */
+      @media (max-aspect-ratio: 1/1) {
+        .zs-island {
+          left: -70%;
+          width: 240%;
+          top: 15vh;
+          bottom: auto;
+          height: auto;
+          aspect-ratio: 1600/640;
+        }
+        .zs-bokeh {
+          height: 24%;
+        }
+        .zs-hero {
+          height: 28vh;
+          top: 2vh;
+          right: -10px;
+        }
+        .zs-g-asp {
+          left: 20vw;
+          top: 12vh;
+          width: 16vw;
+        }
+        .zs-g-orange {
+          left: 2vw;
+          top: 15vh;
+          width: 19vw;
+        }
+        .zs-g-teal,
+        .zs-buddies,
+        .zs-v6,
+        .zs-v7,
+        .zs-v8,
+        .zs-v9 {
+          display: none;
+        }
+        .zs-menu {
+          padding: 30vh 16px 16px !important;
+        }
+        .zs-card {
+          margin: 0 auto auto !important;
+        }
+      }
+      /* Phone landscape: companions go first, then most of the volley, then the staph germ. */
+      @media (min-aspect-ratio: 1/1) and (max-height: 520px) {
+        .zs-hero {
+          height: 84vh;
+          top: 6vh;
+          right: -14px;
+        }
+        .zs-buddies,
+        .zs-v2,
+        .zs-v3,
+        .zs-v4,
+        .zs-v5,
+        .zs-v6,
+        .zs-v7,
+        .zs-v8,
+        .zs-v9,
+        .zs-trail,
+        .zs-g-teal {
+          display: none;
+        }
+        .zs-g-asp {
+          left: 9vw;
+          top: 34vh;
+          width: 11vw;
+        }
+        .zs-g-orange {
+          left: 1vw;
+          top: 50vh;
+          width: 12vw;
+        }
+        .zs-island {
+          height: 66%;
+        }
+        .zs-menu {
+          padding: 12px 16px 12px 25vw !important;
+        }
+        .zs-card {
+          --zs-card-w: 370px;
+          margin: 0 !important;
+          padding: 8px 18px 16px;
+          gap: 8px !important;
+        }
+        .zs-wm {
+          margin: -2px 30px 0;
+        }
+        .zs-tag {
+          font-size: 14px;
+        }
+        .zs-btn {
+          min-height: 48px;
+          padding: 8px 14px;
+        }
+        .zs-btn .zs-l {
+          font-size: 16px;
+        }
+        .zs-btn.zs-primary .zs-l {
+          font-size: 17px;
         }
       }
     </style>

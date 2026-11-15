@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 58 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,700 tokens. Without it, AI exploration would cost ~24,200 tokens. **Saves ~19,400 tokens per conversation.**
-> **Last scanned:** 2026-11-15 01:48 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 60 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,700 tokens. **Saves ~19,900 tokens per conversation.**
+> **Last scanned:** 2026-11-15 02:15 — re-run after significant changes
 
 ---
 
@@ -322,6 +322,11 @@
   - interface StatusModel
   - interface StatusStrip
   - type StatusBar
+- `src/ui/titleScene.ts`
+  - function wordmarkMarkup: () => string
+  - function createTitleScene: (root, before) => TitleScene
+  - interface TitleScene
+- `src/ui/zoreoCorner.ts` — function createZoreoCorner: (board) => ZoreoCorner, interface ZoreoCorner
 
 ---
 
@@ -352,10 +357,10 @@
 - `src/sim/battle/resolve.ts` — imported by **16** files
 - `src/sim/life/types.ts` — imported by **16** files
 - `src/sim/validate.ts` — imported by **16** files
+- `src/app/arcs.ts` — imported by **15** files
 - `src/sim/campaign.ts` — imported by **15** files
 - `src/sim/organisms.ts` — imported by **15** files
-- `src/app/arcs.ts` — imported by **13** files
-- `src/app/run.ts` — imported by **11** files
+- `src/app/run.ts` — imported by **12** files
 - `src/sim/life/cards.ts` — imported by **11** files
 - `src/sim/battle/bots.ts` — imported by **10** files
 
@@ -377,7 +382,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 51 test files found
+> 52 test files found
 
 ---
 

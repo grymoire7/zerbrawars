@@ -1,3 +1,9 @@
+import {
+  createTitleScene,
+  wordmarkMarkup,
+  type TitleScene,
+} from "./titleScene";
+
 /** One choice on a menu card: a big button with a small line under it, or a greyed note. */
 export interface MenuItem {
   readonly label: string;
@@ -8,6 +14,8 @@ export interface MenuItem {
   readonly onClick?: () => string | void;
   /** A small item: plain weight and smaller type, for a facilitator's side action. */
   readonly small?: boolean;
+  /** The main choice on a scene card (the bright button). */
+  readonly primary?: boolean;
 }
 
 export interface MenuModel {
@@ -26,6 +34,11 @@ export interface MenuModel {
    * a `show` tab to bring it back.
    */
   readonly overBoard?: { readonly look: string; readonly show: string };
+  /**
+   * Show the bright title scene behind the card and style the card and buttons to match; with
+   * `wordmark` the title is drawn as the game's logo (the heading keeps the text for readers).
+   */
+  readonly scene?: { readonly wordmark: boolean };
   readonly buttons?: readonly {
     readonly label: string;
     readonly primary?: boolean;
@@ -63,10 +76,12 @@ export function createMenu(root: HTMLElement): Menu {
       "padding:16px;box-sizing:border-box;background:var(--zw-bg);pointer-events:auto;overflow:auto;" +
       "font:15px sans-serif;color:var(--zw-text);",
   );
-  const card = el(
-    "div",
-    "width:min(100%,480px);margin:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;line-height:1.4;outline:none;",
-  );
+  const CARD_BASE =
+    "width:min(100%,480px);margin:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;line-height:1.4;outline:none;";
+  const card = el("div", CARD_BASE);
+  // The bright title scene behind the card, and the styling that goes with it (see `zs-` in index.html).
+  let scene: TitleScene | null = null;
+  let sceneOn = false;
   card.setAttribute("role", "dialog");
   card.setAttribute("aria-modal", "true");
   card.setAttribute("aria-labelledby", "menu-title");
@@ -95,10 +110,13 @@ export function createMenu(root: HTMLElement): Menu {
   ) => {
     const b = el(
       "button",
-      "min-height:44px;min-width:44px;padding:0 16px;font:inherit;" +
-        (primary ? "font-weight:700;" : ""),
+      sceneOn
+        ? ""
+        : "min-height:44px;min-width:44px;padding:0 16px;font:inherit;" +
+            (primary ? "font-weight:700;" : ""),
       label,
     );
+    if (sceneOn) b.className = "zs-btn" + (primary ? " zs-primary" : "");
     b.type = "button";
     b.addEventListener("click", () => {
       const line = onClick();
@@ -112,27 +130,37 @@ export function createMenu(root: HTMLElement): Menu {
     const note = el("div", "font-size:14px;padding:0 4px;");
     note.setAttribute("role", "status");
     const text = (parent: HTMLElement) => {
-      parent.append(
-        el(
-          "span",
-          (it.small ? "" : "font-weight:700;") + "overflow-wrap:anywhere;",
-          it.label,
-        ),
+      const label = el(
+        "span",
+        sceneOn
+          ? ""
+          : (it.small ? "" : "font-weight:700;") + "overflow-wrap:anywhere;",
+        it.label,
       );
-      if (it.sub)
-        parent.append(
-          el(
-            "span",
-            "font-size:14px;opacity:0.85;overflow-wrap:anywhere;",
-            it.sub,
-          ),
+      if (sceneOn) label.className = "zs-l";
+      parent.append(label);
+      if (it.sub) {
+        const sub = el(
+          "span",
+          sceneOn ? "" : "font-size:14px;opacity:0.85;overflow-wrap:anywhere;",
+          it.sub,
         );
+        if (sceneOn) sub.className = "zs-s";
+        parent.append(sub);
+      }
     };
     if (it.onClick) {
       const b = el(
         "button",
-        "min-height:44px;padding:10px 16px;font:inherit;text-align:left;display:flex;flex-direction:column;gap:2px;",
+        sceneOn
+          ? ""
+          : "min-height:44px;padding:10px 16px;font:inherit;text-align:left;display:flex;flex-direction:column;gap:2px;",
       );
+      if (sceneOn)
+        b.className =
+          "zs-btn" +
+          (it.primary ? " zs-primary" : "") +
+          (it.small ? " zs-small" : "");
       b.type = "button";
       text(b);
       const run = it.onClick;
@@ -140,14 +168,17 @@ export function createMenu(root: HTMLElement): Menu {
         const line = run();
         if (typeof line === "string") note.textContent = line;
       });
-      if (it.small) b.style.fontSize = "14px";
+      if (it.small && !sceneOn) b.style.fontSize = "14px";
       box.append(b, note);
     } else {
       const g = el(
         "div",
-        "min-height:44px;padding:10px 16px;box-sizing:border-box;border-radius:6px;border:1px dashed var(--zw-line);" +
-          "opacity:0.55;display:flex;flex-direction:column;gap:2px;",
+        sceneOn
+          ? ""
+          : "min-height:44px;padding:10px 16px;box-sizing:border-box;border-radius:6px;border:1px dashed var(--zw-line);" +
+              "opacity:0.55;display:flex;flex-direction:column;gap:2px;",
       );
+      if (sceneOn) g.className = "zs-btn zs-off";
       g.setAttribute("aria-disabled", "true");
       text(g);
       box.append(g);
@@ -167,20 +198,49 @@ export function createMenu(root: HTMLElement): Menu {
 
   return {
     show(m) {
+      sceneOn = !!m.scene;
+      if (sceneOn && !scene) scene = createTitleScene(root, backdrop);
+      if (!sceneOn && scene) {
+        scene.dispose();
+        scene = null;
+      }
+      backdrop.classList.toggle("zs-menu", sceneOn);
+      card.classList.toggle("zs-card", sceneOn);
       const title = el(
         "h1",
-        "margin:0;font:700 32px sans-serif;overflow-wrap:anywhere;",
+        sceneOn
+          ? ""
+          : "margin:0;font:700 32px sans-serif;overflow-wrap:anywhere;",
         m.title,
       );
       title.id = "menu-title";
+      if (m.scene?.wordmark) {
+        // The logo is a picture; the heading keeps the words for screen readers.
+        title.className = "zs-wm";
+        title.innerHTML = `<span class="zs-sr"></span>${wordmarkMarkup()}`;
+        (title.firstElementChild as HTMLElement).textContent = m.title;
+      } else if (sceneOn) {
+        title.className = "zs-title";
+      }
       const kids: HTMLElement[] = [title];
-      if (m.tagline)
-        kids.push(el("p", "margin:0;font-size:17px;opacity:0.9;", m.tagline));
+      if (m.tagline) {
+        const tag = el(
+          "p",
+          sceneOn ? "" : "margin:0;font-size:17px;opacity:0.9;",
+          m.tagline,
+        );
+        if (sceneOn) tag.className = "zs-tag";
+        kids.push(tag);
+      }
       for (const p of m.paragraphs ?? [])
         kids.push(el("p", "margin:0;white-space:pre-line;", p));
       if (m.heading)
         kids.push(
-          el("h2", "margin:8px 0 0;font:600 17px sans-serif;", m.heading),
+          el(
+            "h2",
+            sceneOn ? "" : "margin:8px 0 0;font:600 17px sans-serif;",
+            m.heading,
+          ),
         );
       kids.push(...(m.items ?? []).map(itemView));
       const buttons = [
@@ -211,13 +271,20 @@ export function createMenu(root: HTMLElement): Menu {
         row.append(report);
         kids.push(row);
       }
-      backdrop.style.background = m.overBoard
-        ? "color-mix(in srgb, var(--zw-bg) 60%, transparent)"
-        : "var(--zw-bg)";
-      card.style.cssText += m.overBoard
-        ? "background:var(--zw-raised);border:1px solid var(--zw-line-strong);border-radius:10px;padding:18px 20px;max-height:100%;overflow:auto;"
-        : "background:none;border:none;border-radius:0;padding:0;max-height:none;overflow:visible;";
-      title.style.fontSize = m.overBoard ? "26px" : "32px";
+      backdrop.style.background = sceneOn
+        ? "transparent"
+        : m.overBoard
+          ? "color-mix(in srgb, var(--zw-bg) 60%, transparent)"
+          : "var(--zw-bg)";
+      // Rebuilt from the base each time so styles from an earlier model never pile up.
+      card.style.cssText =
+        CARD_BASE +
+        (sceneOn
+          ? ""
+          : m.overBoard
+            ? "background:var(--zw-raised);border:1px solid var(--zw-line-strong);border-radius:10px;padding:18px 20px;max-height:100%;overflow:auto;"
+            : "background:none;border:none;border-radius:0;padding:0;max-height:none;overflow:visible;");
+      if (!sceneOn) title.style.fontSize = m.overBoard ? "26px" : "32px";
       tab.textContent = m.overBoard?.show ?? "";
       card.replaceChildren(...kids);
       tab.style.display = "none";
@@ -230,6 +297,8 @@ export function createMenu(root: HTMLElement): Menu {
       tab.style.display = "none";
     },
     dispose() {
+      scene?.dispose();
+      scene = null;
       backdrop.remove();
       tab.remove();
     },
