@@ -312,3 +312,4 @@
   - interface StatusModel
   - interface StatusStrip
   - type StatusBar
+- `src/ui/zoreoCorner.ts` — function createZoreoCorner: (board) => ZoreoCorner, interface ZoreoCorner

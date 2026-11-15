@@ -33,12 +33,17 @@ import {
   shouldWarnOnLeave,
 } from "./navGuardModel";
 import { applyCssTokens } from "../theme/palette";
+import { createZoreoCorner } from "../ui/zoreoCorner";
+import { gazeFor, screenKindFor } from "./zoreoModel";
 
 applyCssTokens(document.documentElement);
 
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
 const panels = getPanels();
+const corner = createZoreoCorner(
+  document.getElementById("board") as HTMLElement,
+);
 const params = new URLSearchParams(window.location.search);
 // Facilitator mode and the developer-start check are read once here and kept for the page session.
 initFacilitator(params);
@@ -154,6 +159,8 @@ function mount(req: ScreenRequest) {
   if (req.mode === "epilogue" && !epilogue.on)
     return mount({ mode: "summary", run: req.run });
   arcFightInPlay = false;
+  // Zoreo looks where the player should: the panel in life, the board in a fight, nowhere else.
+  corner.set(gazeFor(screenKindFor(req, (a) => arcById(a).play.kind)));
   screen?.dispose();
   if (root) ctx.scene.remove(root);
   root = new THREE.Scene();

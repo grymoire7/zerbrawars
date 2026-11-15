@@ -406,6 +406,43 @@
           font-size: 15px !important;
         }
       }
+      /* Zoreo's corner head: the board's upper right; where he looks shows the phase. */
+      #zoreo-corner {
+        position: absolute;
+        z-index: 1;
+        top: 6px;
+        right: 6px;
+        width: 68px;
+        height: 76px;
+        display: none;
+        pointer-events: none;
+        transition: top 0.4s ease-in-out;
+      }
+      #zoreo-corner[data-gaze] {
+        display: block;
+      }
+      #zoreo-corner svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        transition: transform 0.3s ease-in-out;
+      }
+      /* Portrait: the panel is below the board, so no flip; he slides down to the lower right. */
+      #zoreo-corner[data-gaze="panel"] {
+        top: calc(100% - 76px - 6px);
+      }
+      #zoreo-corner .zo-lid {
+        transition: transform 0.08s linear;
+      }
+      #zoreo-corner.blink .zo-lid {
+        transform: none;
+      }
+      #zoreo-corner[data-calm],
+      #zoreo-corner[data-calm] svg,
+      #zoreo-corner[data-calm] .zo-lid {
+        transition: none;
+      }
       /* Wide or landscape: board left, fixed side panel right. */
       @media (min-width: 900px), (min-aspect-ratio: 5/4) {
         #app {
@@ -415,6 +452,16 @@
         #app.life #board {
           flex: 1 1 0;
           min-height: 0;
+        }
+        /* Wide: he stays in the upper right and turns to face the panel on the right. */
+        #zoreo-corner,
+        #zoreo-corner[data-gaze="panel"] {
+          top: 8px;
+          width: 100px;
+          height: 112px;
+        }
+        #zoreo-corner[data-gaze="panel"] svg {
+          transform: scaleX(-1);
         }
         #side {
           flex: 0 0 clamp(340px, 45vw, 480px);
