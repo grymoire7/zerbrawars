@@ -1,3 +1,4 @@
+import { PARAMS } from "../sim/params";
 import type { ScenarioName } from "../sim/scenarios";
 
 /** Which form of CGD the player's character has. It picks per-character parameters, not mechanics. */
@@ -108,7 +109,7 @@ export const ARCS: readonly ArcDef[] = [
     play: {
       kind: "campaign",
       introMore: [
-        "Say yes to the people who ask. Reach 13 living points in a week and that week's goal is met. You get a Goals met count for each of the two weeks.",
+        `Say yes to the people who ask. Reach ${PARAMS.life.goalTarget} living points in a week and that week's goal is met. You get a Goals met count for each of the two weeks.`,
         "Some plans give something a better chance of coming home with you. The Exposure meter shows the odds. Your choices change them, but luck matters too.",
         "If something does come home, your body defends itself in a fight afterwards. Your medicine and your routine help.",
       ],

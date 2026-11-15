@@ -2,7 +2,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/sim/params.ts` — imported by **54** files
+- `src/sim/params.ts` — imported by **55** files
 - `src/sim/types.ts` — imported by **53** files
 - `src/sim/pathogens.ts` — imported by **28** files
 - `src/sim/scenarios.ts` — imported by **20** files
@@ -25,7 +25,7 @@
 
 ## Import Map (who imports what)
 
-- `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/arcModel.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts`, `src/app/campaignModel.test.ts` +49 more
+- `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/arcModel.ts`, `src/app/arcs.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts` +50 more
 - `src/sim/types.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts` +48 more
 - `src/sim/pathogens.ts` ← `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/coachModel.ts`, `src/app/info.ts`, `src/app/lifeModel.ts` +23 more
 - `src/sim/scenarios.ts` ← `src/app/arcs.ts`, `src/app/arrivalModel.test.ts`, `src/app/coachModel.test.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +15 more
