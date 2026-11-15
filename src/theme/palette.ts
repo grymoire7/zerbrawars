@@ -14,6 +14,12 @@ export const PALETTE = {
   text: "#E8EAF0",
   "text-muted": "#A9B0BD",
   focus: "#9FD8F0",
+  // Title scene: the solid card over the bright scene and its buttons (docs/specs/title-zoreo-design.md).
+  card: "#1C1F2A",
+  "card-rim": "#5E9A8C",
+  primary: "#9FD8F0",
+  "primary-lip": "#3F8DB3",
+  "primary-ink": "#15171C",
   order: "#EBA0FF",
   warn: "#FFB4AA",
   "warn-line": "#FF6A5A",

@@ -56,6 +56,18 @@ describe("palette", () => {
     expect(contrast("incoming", "mark-halo")).toBeGreaterThanOrEqual(3);
   });
 
+  it("text on card meets 4.5:1", () => {
+    expect(contrast("text", "card")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("text-muted on card meets 4.5:1", () => {
+    expect(contrast("text-muted", "card")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("primary-ink on primary meets 4.5:1", () => {
+    expect(contrast("primary-ink", "primary")).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("order on bg and text on control meet 4.5:1", () => {
     expect(contrast("order", "bg")).toBeGreaterThanOrEqual(4.5);
     expect(contrast("text", "control")).toBeGreaterThanOrEqual(4.5);
