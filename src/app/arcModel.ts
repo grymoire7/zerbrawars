@@ -17,7 +17,7 @@ import { parseTutorialPart, type TutorialPart } from "./tutorialModel";
 // choice leads to, and the text. The screens in menuScreens.ts only draw it.
 
 export const TITLE = "Zebra Wars";
-export const TAGLINE = "Fight infections from the inside, one turn at a time.";
+export const TAGLINE = "Live your life, manage your disease, win the day.";
 export const VARIANT_HEADING = "Choose your disease";
 export const WILSON = {
   label: "Wilson's disease",
