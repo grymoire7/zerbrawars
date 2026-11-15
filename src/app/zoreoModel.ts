@@ -48,15 +48,16 @@ export function gazeFor(kind: ScreenKind): Gaze | null {
 }
 
 /**
- * Makes an inline copy of the Zoreo SVG safe to share a page with another copy: the art's `zo-`
- * id prefix becomes `<prefix>-` in ids and in the `url(#…)` and `href="#…"` that point at them.
- * Class names (`zo-lid`) are left alone so one CSS rule reaches every copy.
+ * Makes an inline copy of an SVG safe to share a page with another copy: the art's id prefix
+ * (`zo-` for Zoreo, `zs-` for the title scene pieces) becomes `<prefix>-` in ids and in the
+ * `url(#…)` and `href="#…"` that point at them. Class names (`zo-lid`) are left alone so one CSS
+ * rule reaches every copy.
  */
-export function uniquifyIds(svg: string, prefix: string): string {
+export function uniquifyIds(svg: string, prefix: string, from = "zo-"): string {
   return svg
-    .replace(/id="zo-/g, `id="${prefix}-`)
-    .replace(/url\(#zo-/g, `url(#${prefix}-`)
-    .replace(/href="#zo-/g, `href="#${prefix}-`);
+    .replaceAll(`id="${from}`, `id="${prefix}-`)
+    .replaceAll(`url(#${from}`, `url(#${prefix}-`)
+    .replaceAll(`href="#${from}`, `href="#${prefix}-`);
 }
 
 /** Time to the next idle blink, 2.5 to 6 seconds; `rand` is in [0, 1). */

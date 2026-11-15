@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 59 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,400 tokens. **Saves ~19,700 tokens per conversation.**
-> **Last scanned:** 2026-11-15 02:00 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 60 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,700 tokens. **Saves ~19,900 tokens per conversation.**
+> **Last scanned:** 2026-11-15 02:04 — re-run after significant changes
 
 ---
 
@@ -322,6 +322,10 @@
   - interface StatusModel
   - interface StatusStrip
   - type StatusBar
+- `src/ui/titleScene.ts`
+  - function wordmarkMarkup: () => string
+  - function createTitleScene: (root, before) => TitleScene
+  - interface TitleScene
 - `src/ui/zoreoCorner.ts` — function createZoreoCorner: (board) => ZoreoCorner, interface ZoreoCorner
 
 ---

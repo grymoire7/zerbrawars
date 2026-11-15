@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**59 library files** across 4 modules
+**60 library files** across 4 modules
 
 ## Sim (25 files)
 
@@ -32,7 +32,7 @@
 - `src/sim/validate.ts` — maxTurnsOf, validateBattle, validateLife, validateCampaign
 - `src/sim/battle/setup.ts` — chargesFor, medStateFor, battleFromLoadout
 
-## Ui (17 files)
+## Ui (18 files)
 
 - `src/ui/hud.ts` — createHud, HudOrder, HudMedication, HudCharge, HudSupport, HudSupportCard, …
 - `src/ui/outcome.ts` — outcomeHeading, createOutcomeOverlay, OutcomeHandlers, OutcomeExtra, CompareRow, ArcCard, …
@@ -46,6 +46,7 @@
 - `src/ui/menu.ts` — createMenu, MenuItem, MenuModel, Menu
 - `src/ui/broughtStrip.ts` — createBroughtStrip, BroughtView, BroughtStrip
 - `src/ui/infoTip.ts` — createInfoTips, InfoTip, InfoTipFactory
+- `src/ui/titleScene.ts` — wordmarkMarkup, createTitleScene, TitleScene
 - `src/ui/coachStrip.ts` — createCoachStrip, CoachStrip
 - `src/ui/download.ts` — downloadText, copyText
 - `src/ui/index.ts` — getUiRoot, getPanels

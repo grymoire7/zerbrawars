@@ -56,12 +56,14 @@ function modelFor(
         title: TITLE,
         tagline: TAGLINE,
         heading: VARIANT_HEADING,
+        scene: { wordmark: true },
         items: [
           ...(cont
             ? [
                 {
                   label: cont.label,
                   sub: cont.sub,
+                  primary: true,
                   onClick: () => cont.to && go(cont.to),
                 },
               ]
@@ -81,6 +83,7 @@ function modelFor(
       return {
         title: variantById(req.variant).label,
         heading: "Choose an arc",
+        scene: { wordmark: false },
         items: pickerChoices(
           req.variant,
           held && { campaign: held.campaign(), variant: held.variant },

@@ -312,4 +312,8 @@
   - interface StatusModel
   - interface StatusStrip
   - type StatusBar
+- `src/ui/titleScene.ts`
+  - function wordmarkMarkup: () => string
+  - function createTitleScene: (root, before) => TitleScene
+  - interface TitleScene
 - `src/ui/zoreoCorner.ts` — function createZoreoCorner: (board) => ZoreoCorner, interface ZoreoCorner

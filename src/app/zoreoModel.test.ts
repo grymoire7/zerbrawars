@@ -91,6 +91,17 @@ describe("uniquifyIds", () => {
   });
 });
 
+describe("uniquifyIds with another source prefix", () => {
+  it("rewrites the given prefix in ids and references only", () => {
+    const svg =
+      '<svg><g id="zs-a"/><path fill="url(#zs-a)"/><g class="zs-v1"/></svg>';
+    const out = uniquifyIds(svg, "isl", "zs-");
+    expect(out).toContain('id="isl-a"');
+    expect(out).toContain("url(#isl-a)");
+    expect(out).toContain('class="zs-v1"');
+  });
+});
+
 describe("nextBlinkDelayMs", () => {
   it("stays between 2500 and 6000 ms across the whole range of rand", () => {
     for (const r of [0, 0.5, 0.999999]) {
