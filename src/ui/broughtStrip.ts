@@ -25,9 +25,10 @@ export function createBroughtStrip(
       "position:absolute;left:8px;top:60px;display:none;flex-direction:column;gap:6px;" +
       "pointer-events:auto;box-sizing:border-box;padding:8px 10px;border-radius:8px;" +
       "background:rgba(35,38,46,0.94);border:1px solid var(--zw-line-strong);font:13px sans-serif;color:var(--zw-text);" +
+      // Stops short of Zoreo's corner head (index.html #zoreo-corner) and, wide, at the board's edge.
       (wide.matches
-        ? "right:calc(clamp(300px,28vw,360px) + 8px);"
-        : "right:8px;") +
+        ? "right:calc(clamp(340px,45vw,480px) + 124px);"
+        : "right:84px;") +
       "max-height:calc(46% - 52px);overflow:auto;";
   };
   place();
