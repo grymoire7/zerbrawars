@@ -78,16 +78,16 @@ export const ARCS: readonly ArcDef[] = [
     title: "First infection",
     blurb: "Two short fights, before and after a diagnosis.",
     intro:
-      "Some people remember the time before they knew they had CGD. Some were too little to remember. Either way, it often goes something like this.",
+      "Some people remember a time before they knew they had CGD. Some were too little to remember. Either way, it often goes something like this.",
     completion:
       "That is how it started. From here on, medicine is part of your routine, and the fights are yours to plan.",
     play: {
       kind: "tutorial",
       partA: "tutorial-a",
       partB: "tutorial-b",
-      introTitle: "Before anyone knew",
+      introTitle: "Before you knew it",
       introMore: [
-        "A germ got into your lungs, and your cells rushed in to deal with it.",
+        "Some germs attacked and you got a lung infection, and your cells rushed in to deal with it. Then...",
       ],
       begin: "Begin",
       skip: "Skip to after the diagnosis",

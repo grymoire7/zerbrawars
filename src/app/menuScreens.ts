@@ -9,7 +9,7 @@ import {
 } from "./facilitatorModel";
 import { createMenu, type Menu, type MenuModel } from "../ui/menu";
 import { heldRun } from "./heldRun";
-import { arcById, variantById } from "./arcs";
+import { arcById, variantById, type VariantId } from "./arcs";
 import {
   TAGLINE,
   REPLACE_CONFIRM,
@@ -26,6 +26,11 @@ import {
 import { introCardFor, partAfterIntro } from "./tutorialModel";
 import type { Run } from "./run";
 import type { Screen, ScreenEnv, ScreenRequest } from "./screen";
+
+const arcsRequest = (variant: VariantId): ScreenRequest => ({
+  mode: "arcs",
+  variant,
+});
 
 type MenuRequest = Extract<
   ScreenRequest,
@@ -124,11 +129,13 @@ function modelFor(
       return {
         title: card.title,
         paragraphs: card.paragraphs,
+        scene: { wordmark: false },
         buttons: [
           { label: card.begin, primary: true, onClick: () => start("begin") },
           ...(card.skip
             ? [{ label: card.skip, onClick: () => start("skip") }]
             : []),
+          { label: "Back", onClick: () => go(arcsRequest(req.variant)) },
         ],
       };
     }
@@ -144,10 +151,15 @@ function saveLog(run: Run): string {
 /** The title, arc picker and arc-complete screens: a menu card over an empty board. */
 export function mountMenu(env: ScreenEnv, req: MenuRequest): Screen {
   const menu = createMenu(env.ui);
-  const show = () => menu.show(modelFor(req, env.go, pick));
+  let confirming = false;
+  const show = () => {
+    confirming = false;
+    menu.show(modelFor(req, env.go, pick));
+  };
   const pick = (to: ScreenRequest | undefined) => {
     if (!to) return;
     if (needsReplaceConfirm(to, heldRun() !== null)) {
+      confirming = true;
       confirmReplace(menu, to, env.go, show);
       return;
     }
@@ -157,6 +169,22 @@ export function mountMenu(env: ScreenEnv, req: MenuRequest): Screen {
   return {
     tick: () => {},
     setStats: () => {},
+    // Browser Back steps up one screen: the question to the card it came from, the intro and the
+    // arc-complete card to the picker, the picker to the title. The title has none, so Back there
+    // is the browser's own.
+    ...(req.mode === "title"
+      ? {}
+      : {
+          back() {
+            if (confirming) show();
+            else
+              env.go(
+                req.mode === "arcs"
+                  ? { mode: "title" }
+                  : arcsRequest(req.variant),
+              );
+          },
+        }),
     dispose() {
       menu.dispose();
       env.ui.replaceChildren();

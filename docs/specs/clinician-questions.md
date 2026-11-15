@@ -46,7 +46,7 @@ C = deferred / low priority.
 |---|----------|--------------------|----------|
 | 18 | Age scaling: how does infection frequency and speed change with age? | Not modeled | C |
 | 19 | Vaccines: any to avoid? | Out of scope. The user has never been told to avoid any | C |
-| 20 | Diagnosis experience: how varied is it (XL often early, AR sometimes much later), and how should the undiagnosed prologue arc be framed? | "Before anyone knew", second person, skippable. Raised to A: it is the first thing a demo visitor plays. | A |
+| 20 | Diagnosis experience: how varied is it (XL often early, AR sometimes much later), and how should the undiagnosed prologue arc be framed? | "Before you knew it", second person, skippable. Raised to A: it is the first thing a demo visitor plays. | A |
 
 ## Arc 1 tutorial
 

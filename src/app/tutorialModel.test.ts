@@ -22,7 +22,7 @@ describe("the intro card", () => {
   it("shows the arc intro, then the story setup, with Begin and a skip", () => {
     const arc = ARCS[0]!;
     const card = introCardFor(arc);
-    expect(card.title).toBe("Before anyone knew");
+    expect(card.title).toBe("Before you knew it");
     expect(card.paragraphs[0]).toBe(arc.intro);
     expect(card.paragraphs.length).toBeGreaterThan(1);
     expect(card.begin).toBe("Begin");
@@ -60,10 +60,10 @@ describe("the intro card", () => {
   });
   it("Arc 1's card is unchanged", () => {
     expect(introCardFor(ARCS[0]!)).toEqual({
-      title: "Before anyone knew",
+      title: "Before you knew it",
       paragraphs: [
-        "Some people remember the time before they knew they had CGD. Some were too little to remember. Either way, it often goes something like this.",
-        "A germ got into your lungs, and your cells rushed in to deal with it.",
+        "Some people remember a time before they knew they had CGD. Some were too little to remember. Either way, it often goes something like this.",
+        "Some germs attacked and you got a lung infection, and your cells rushed in to deal with it. Then...",
       ],
       begin: "Begin",
       skip: "Skip to after the diagnosis",

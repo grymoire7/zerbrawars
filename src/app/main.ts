@@ -128,7 +128,8 @@ window.addEventListener("popstate", () => {
   }
   if (!armed) return;
   screen?.back?.();
-  pushGuard();
+  // A Back that changed screens has already set the guard up for the new one.
+  if (armed && !isGuardState(window.history.state)) pushGuard();
 });
 
 // A reload or tab close would lose the held summer or the arc fight in play.

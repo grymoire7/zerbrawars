@@ -207,7 +207,7 @@ May we name NK cells, T cells and antibodies, and no others?
 
 ## A9. How CGD is found: the opening
 
-**Our picture.** The tutorial opens with a flashback, "Before anyone knew", in the second person. The player can skip it. A germ gets into the lungs and the cells rush in but can't finish it.
+**Our picture.** The tutorial opens with a flashback, "Before you knew it", in the second person. The player can skip it. A germ gets into the lungs and the cells rush in but can't finish it.
 
 When is CGD usually diagnosed?
 

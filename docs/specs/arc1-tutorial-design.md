@@ -56,7 +56,7 @@ coach layer in Arc 2 for two marks, wall off and heat (section 5, nice-to-haves)
 
 ## 3. The two fights
 
-### 3.1 Framing: "Before anyone knew", not "a memory"
+### 3.1 Framing: "Before you knew it", not "a memory"
 
 Calling it "a memory" assumes the player remembers. Many X-linked patients are diagnosed as small
 children and do not. Some autosomal recessive patients are diagnosed in their teens. Clinician item
@@ -64,7 +64,7 @@ children and do not. Some autosomal recessive patients are diagnosed in their te
 the variety, as "how it usually goes". Do not present it as the player's own memory. Then it is
 true for everyone and asks nothing of them:
 
-> **Before anyone knew**
+> **Before you knew it**
 > Some people remember the time before they knew they had CGD. Some were too little to remember.
 > Either way, it often goes something like this.
 > A germ got into your lungs, and your cells rushed in to deal with it.
@@ -303,7 +303,7 @@ New numbers start at 23 (week-phase-design reserves 22).
 
 | # | Question | Working assumption | Priority |
 | - | -------- | ------------------ | -------- |
-| 20 (raise) | Diagnosis experience: how varied is it, and how should the before-diagnosis prologue be framed? | "Before anyone knew", second person, "it often goes something like this", skippable. Raise to **A**: it is the first thing a demo visitor plays. | A |
+| 20 (raise) | Diagnosis experience: how varied is it, and how should the before-diagnosis prologue be framed? | "Before you knew it", second person, "it often goes something like this", skippable. Raise to **A**: it is the first thing a demo visitor plays. | A |
 | 23 | Is a first serious lung infection, where the cells arrive and swallow germs but cannot finish a mold, a fair picture of how CGD is often found? The card says: "The doctors helped your body clear it, and ran some tests. The missing tool had a name: CGD." | Fair as one common story, told as not everyone's | A |
 | 24 | Is "CGD takes one tool away, not your whole defence" acceptable wording for a patient, given that macrophages and monocytes are also affected? | Yes, with no claim about which other cells are fine (see 9) | A |
 | 25 | Is Aspergillus a fair organism for the first lung infection in the tutorial (rather than Staphylococcus or Burkholderia), with Streptococcus as the germ the cells do finish? | Yes for the lung. Streptococcus stays the simplified "no shell" example (see 11) | B |
@@ -312,7 +312,7 @@ New numbers start at 23 (week-phase-design reserves 22).
 ## 7. Open questions for Tracy
 
 1. **Shape.** Two fights with the same seed and a story card between them (option 1)? Default: yes.
-2. **Framing.** "Before anyone knew" in the second person, open about the variety, instead of "a
+2. **Framing.** "Before you knew it" in the second person, open about the variety, instead of "a
    memory"? Default: yes.
 3. **Skip.** A secondary "Skip to after the diagnosis" on the intro card, with no stored state?
    Default: yes.
