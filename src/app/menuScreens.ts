@@ -106,6 +106,7 @@ function modelFor(
       return {
         title: arcCompleteTitle(arc),
         paragraphs: [arc.completion],
+        scene: { wordmark: false },
         buttons: completeButtons(req.arc, req.variant).map((b) => ({
           label: b.label,
           primary: b.primary,
@@ -206,6 +207,7 @@ function confirmReplace(
     title: REPLACE_CONFIRM.title,
     paragraphs: [REPLACE_CONFIRM.text, ...(first ? [first.line] : [])],
     focusFirstButton: true,
+    scene: { wordmark: false },
     buttons: [
       { label: REPLACE_CONFIRM.keep, primary: true, onClick: back },
       ...(first && held
