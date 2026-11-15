@@ -68,6 +68,8 @@ Layout alternatives considered: the reviewer proposed a vertical stack (wordmark
 - The part of the board a corner head covers is not usable in that phase, so covering it is fine.
 - Phone portrait (panel is below the board): no flip. In battle the head sits at the board's upper right, looking down and left into the board. In life it slides to the board's lower-left edge, same pose, looking down and left at the life panel below. A short slide also draws the eye.
 - Built as SVG with named groups, not a raster image.
+- **Look chosen (2026-11-14, after three Opus sketch rounds):** direction "H, Toy", a glossy toy-like zebra with real zebra anatomy (huge boxy brown snout with nostrils, round green-hazel eyes in white rings, tall brush mohawk, bold shaded stripes, shaded blue neck band, shoulders at the base of the neck). Reference images `tmp/zebra01-05` set the target. The mouth is a **closed, lined smile** (a single path in its own `mouth` group) so a later pass can animate it between smile, straight line, frown and open. SVG will not match a true 3D render; glossy vinyl toy is the accepted ceiling.
+- Zoreo wears a **strap around the neck holding the toy water gun** (zebras have subtle shoulders, so the strap carries it). The strap and gun are title-scene props drawn over the neck, not part of the head art.
 
 ## 6. My calls (check these)
 
