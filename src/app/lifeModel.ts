@@ -62,6 +62,10 @@ export function friendlyProblem(problem: string): string {
   if (problem === "the week is over") return "The week is over";
   if (problem === "game night is only in the evening")
     return "Game night is only in the evening";
+  if (problem === "the trip is only in the evening")
+    return "The trip leaves in the evening";
+  if (problem.startsWith("the trip leaves on the evening of day "))
+    return `The trip leaves on the evening of day ${problem.slice(problem.lastIndexOf(" ") + 1)}`;
   if (problem.startsWith("a sleepover needs"))
     return "A sleepover needs an evening with a day after it";
   const done = /is already on day (\d+)/.exec(problem);

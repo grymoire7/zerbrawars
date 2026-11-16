@@ -81,6 +81,28 @@ describe("placementCheck", () => {
   });
 });
 
+describe("placementCheck for the trip", () => {
+  const week2 = () => createLife({ seed: 1, week: 2 });
+  it("explains the trip on days 1 and 2 in its own words", () => {
+    const c = placementCheck(week2(), 0, 1, "trip");
+    expect(c.ok).toBe(false);
+    expect(c.reasons).toEqual(["The trip leaves on the evening of day 3"]);
+  });
+  it("says the trip leaves in the evening when day 3's day slot is tapped", () => {
+    const c = placementCheck(week2(), 2, 0, "trip");
+    expect(c.ok).toBe(false);
+    expect(c.reasons).toEqual(["The trip leaves in the evening"]);
+  });
+  it("accepts day 3's evening", () => {
+    expect(placementCheck(week2(), 2, 1, "trip").ok).toBe(true);
+  });
+  it("keeps game night's wording", () => {
+    expect(friendlyProblem("game night is only in the evening")).toBe(
+      "Game night is only in the evening",
+    );
+  });
+});
+
 describe("the Medication status cell", () => {
   const med = (l: LifeState) =>
     lifeStatusModel(l).cells.find((c) => c.id === "medication")!;
