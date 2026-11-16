@@ -40,6 +40,7 @@ import {
   loadoutFromLife,
   type CarriedReservoir,
 } from "./life/loadout";
+import { handFor } from "./life/cards";
 import type { LifeEvent, LifeState } from "./life/types";
 import { PARAMS } from "./params";
 import { wallOf } from "./pathogens";
@@ -375,6 +376,27 @@ describe("campaign transitions", () => {
       );
     }
     expect(found).toBeGreaterThan(0);
+  });
+
+  it("deals week 2 its own hand", () => {
+    for (let seed = 1; seed <= 400; seed++) {
+      let c = createCampaign({ seed }).state;
+      c = playLifeWeek(
+        c,
+        CAMPAIGN_BOTS.riskyNoDoctor(() => 0),
+      );
+      c = endWeek(c).state;
+      if (c.mode !== "battle") continue;
+      c = syncBattle(
+        c,
+        playBattle(BOTS.engulfAll, c.battle as BattleState, seed).final,
+      ).state;
+      c = nextCycle(c).state;
+      expect(c.life.week).toBe(2);
+      expect(c.life.hand).toEqual(handFor(2));
+      return;
+    }
+    throw new Error("no campaign reached week 2 in 400 seeds");
   });
 
   it("starts week 2's exposure battle with the carried reservoirs as hidden tokens", () => {

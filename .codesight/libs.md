@@ -152,12 +152,12 @@
   - _...22 more_
 - `src/sim/life/cards.ts`
   - function exposureKind: (card, i) => PathogenKindId
-  - function handFor: (_week) => readonly HandCardId[]
+  - function handFor: (week) => readonly HandCardId[]
   - function isCardId: (id) => id is CardId
   - function cardDef: (id) => CardDef
   - function versionsOf: (base) => CardId[]
   - function placementCost: (card) => number
-  - _...3 more_
+  - _...4 more_
 - `src/sim/life/loadout.ts`
   - function battleSeed: (life) => number
   - function skirmishExposures: (rng) => Exposure[]

@@ -15,13 +15,28 @@ export type CardId =
   | "sleepover"
   | "game"
   | "gameEarly"
+  | "wood"
+  | "woodDry"
+  | "crawl"
+  | "crawlRake"
+  | "flytrap"
+  | "flytrapGarage"
   | "trip"
   | "tripPlan"
   | "doctor";
 
-/** The five cards dealt each week, plus the doctor once a symptom shows. */
+/** The base cards a hand is dealt from (five a week, see handFor), plus the doctor once a symptom shows. */
 export type HandCardId =
-  "yard" | "lake" | "band" | "sleepover" | "game" | "trip" | "doctor";
+  | "yard"
+  | "lake"
+  | "band"
+  | "sleepover"
+  | "game"
+  | "wood"
+  | "crawl"
+  | "flytrap"
+  | "trip"
+  | "doctor";
 
 /** A card on the calendar. */
 export interface Placement {

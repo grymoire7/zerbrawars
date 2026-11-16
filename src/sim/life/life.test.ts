@@ -5,6 +5,7 @@ import { validateBattle } from "../validate";
 import { LIFE_BOTS, playWeek } from "./bots";
 import {
   advanceDay,
+  cardRoll,
   createLife,
   energyPlan,
   forgetRoll,
@@ -19,7 +20,14 @@ import {
   unplaceCard,
   weekOver,
 } from "./calendar";
-import { CARD_IDS, cardDef, exposureKind, handFor, versionsOf } from "./cards";
+import {
+  CARD_IDS,
+  POOL,
+  cardDef,
+  exposureKind,
+  handFor,
+  versionsOf,
+} from "./cards";
 import { battleDue, battleSeed, loadoutFromLife } from "./loadout";
 import { medLevelOf } from "./meds";
 import { cardPreview, exposurePreview } from "./preview";
@@ -66,7 +74,7 @@ describe("cards", () => {
   });
 
   it("pays more for the risky version, but keeps most of it in the smarter one", () => {
-    for (const base of HAND) {
+    for (const base of POOL) {
       const [risky, smarter] = versionsOf(base).map(cardDef);
       if (!smarter) continue;
       expect(risky.points).toBeGreaterThan(smarter.points);
@@ -98,6 +106,68 @@ describe("cards", () => {
       expect(d.exposure.at.length).toBeGreaterThan(0);
       expect(d.label && d.people && d.blurb).toBeTruthy();
     }
+  });
+
+  it("deals each week its own hand, repeating only band practice in week 2", () => {
+    expect(handFor(1)).toEqual(["yard", "lake", "band", "sleepover", "game"]);
+    expect(handFor(2)).toEqual(["band", "wood", "crawl", "flytrap", "trip"]);
+    expect(handFor(2).filter((c) => handFor(1).includes(c))).toEqual(["band"]);
+    expect(handFor(3)).toEqual(handFor(2));
+    expect(handFor(0)).toEqual(handFor(1));
+  });
+
+  it("lists every non-doctor hand card in the pool, with valid tiles, odds and kinds", () => {
+    expect([...POOL]).toEqual([
+      "yard",
+      "lake",
+      "band",
+      "sleepover",
+      "game",
+      "wood",
+      "crawl",
+      "flytrap",
+      "trip",
+    ]);
+    for (const w of [1, 2])
+      for (const c of handFor(w)) expect(POOL).toContain(c);
+    for (const id of CARD_IDS) {
+      const d = cardDef(id);
+      if (id === "doctor") {
+        expect(d.exposure.kinds).toEqual([]);
+        continue;
+      }
+      expect(d.exposure.chance).toBeGreaterThanOrEqual(0);
+      expect(d.exposure.chance).toBeLessThan(0.5);
+      expect(d.exposure.size).toBeGreaterThanOrEqual(1);
+      expect(d.exposure.kinds.length).toBeGreaterThan(0);
+      for (const t of d.exposure.at) {
+        expect(t.x).toBeGreaterThanOrEqual(0);
+        expect(t.y).toBeGreaterThanOrEqual(0);
+        expect(t.x).toBeLessThan(PARAMS.boardWidth);
+        expect(t.y).toBeLessThan(PARAMS.boardHeight);
+      }
+    }
+    for (const id of ["wood", "woodDry", "crawl", "crawlRake"] as const)
+      expect(cardDef(id).exposure.kinds).toEqual(["aspergillus"]);
+    expect(cardDef("flytrap").smarter).toBe("flytrapGarage");
+    expect(cardDef("flytrapGarage").exposure.kinds).toEqual(["aspergillus"]);
+  });
+
+  it("still plays a week-2 life that was saved with the week-1 hand", () => {
+    const life = createLife({ seed: 3, week: 2 });
+    const old = { ...life, hand: handFor(1) };
+    expect(() => finish(placeCard(old, 0, 0, "yard").state)).not.toThrow();
+  });
+
+  it("lets a week-2 life run to a battle that validates when the trip lands", () => {
+    let seed = 1;
+    while (cardRoll(seed, 2, "trip") >= cardDef("trip").exposure.chance) seed++;
+    const life = finish(
+      placeCard(createLife({ seed, week: 2 }), 2, 1, "trip").state,
+    );
+    const loadout = loadoutFromLife(life);
+    expect(loadout.exposures.some((p) => p.kind === "burkholderia")).toBe(true);
+    expect(validateBattle(battleFromLoadout(loadout))).toEqual([]);
   });
 
   it("gives honest odds: no card lands more often than not", () => {
@@ -560,9 +630,9 @@ describe("exposure", () => {
       }
       // The same card across weeks differs, and the version does not matter.
       const w2 = finish(
-        placeCard(createLife({ seed, week: 2 }), 0, 0, "lake").state,
+        placeCard(createLife({ seed, week: 2 }), 0, 0, "band").state,
       );
-      expect(w2.rolls[0].roll).not.toBe(rollsOf(0, 0, "lake")[0]);
+      expect(w2.rolls[0].roll).not.toBe(rollsOf(0, 0, "band")[0]);
     }
   });
 });
@@ -701,7 +771,7 @@ describe("game night at Alex's", () => {
 
   it("deals five cards to both weeks, game night evening only", () => {
     expect(handFor(1)).toHaveLength(5);
-    expect(handFor(2)).toEqual(handFor(1));
+    expect(handFor(2)).toHaveLength(5);
     const life = createLife({ seed: 1 });
     expect(life.hand).toContain("game");
     for (const card of ["game", "gameEarly"] as const) {

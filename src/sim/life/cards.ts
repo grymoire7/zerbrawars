@@ -94,6 +94,55 @@ const TEXT: Record<CardId, CardText> = {
     kinds: ["strep"],
     eveningOnly: true,
   },
+  wood: {
+    label: "Green woodworking with Dad",
+    people: "Dad is cutting fresh green wood and wants your help in the shop.",
+    blurb: `Damp sawdust and bark hold ${organismName("aspergillus")} spores, and sanding and sawing throw them into the air.`,
+    base: "wood",
+    smarter: "woodDry",
+    kinds: ["aspergillus"],
+  },
+  woodDry: {
+    label: "Dry wood, outside",
+    people: "Same project with Dad, but with dry boards, out in the open air.",
+    blurb: "Dry wood in fresh air gives the spores far less to grow on.",
+    base: "wood",
+    kinds: ["aspergillus"],
+  },
+  crawl: {
+    label: "Crawlspace for the ball",
+    people:
+      "A friend's soccer ball rolled under the house, and they ask you to crawl in after it.",
+    blurb: `The crawlspace is dark, damp and dusty, and ${organismName("aspergillus")} spores settle there.`,
+    base: "crawl",
+    smarter: "crawlRake",
+    kinds: ["aspergillus"],
+  },
+  crawlRake: {
+    label: "Hook the ball out with a rake",
+    people: "You still get the ball back for your friend, without going in.",
+    blurb: "Staying out of the crawlspace keeps you out of the dusty air.",
+    base: "crawl",
+    kinds: ["aspergillus"],
+  },
+  flytrap: {
+    label: "Keep the flytrap in your room",
+    people:
+      "Someone gave you a Venus flytrap as a gift, and it would look great on your desk.",
+    blurb: `It lives in damp potting soil and moss, and ${organismName("aspergillus")} grows there. Indoor plants in damp soil are not recommended for people with your disease.`,
+    base: "flytrap",
+    smarter: "flytrapGarage",
+    kinds: ["aspergillus"],
+  },
+  flytrapGarage: {
+    label: "Flytrap in the garage",
+    people:
+      "You keep the gift, and the person who gave it will be glad to see it doing well.",
+    blurb:
+      "The garage is out of the living space and beside Dad's wood pile, which you should stay away from anyway, so most of the risk fades.",
+    base: "flytrap",
+    kinds: ["aspergillus"],
+  },
   trip: {
     label: "Leave for Vietnam",
     people:
@@ -151,18 +200,28 @@ export function exposureKind(card: CardId, i: number): PathogenKindId {
   return kinds[i % kinds.length];
 }
 
-const HAND: readonly HandCardId[] = [
+/** Every non-doctor hand card, across all weeks. */
+export const POOL: readonly HandCardId[] = [
   "yard",
   "lake",
   "band",
   "sleepover",
   "game",
+  "wood",
+  "crawl",
+  "flytrap",
+  "trip",
 ];
 
-/** The five cards dealt in `week` (the same hand every week until week 2 gets its own); see DOCTOR_CARD. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- week 2 differs in slice 5
-export function handFor(_week: number): readonly HandCardId[] {
-  return HAND;
+/** The five cards dealt in each week; later weeks reuse the last entry. */
+const HANDS: Record<1 | 2, readonly HandCardId[]> = {
+  1: ["yard", "lake", "band", "sleepover", "game"],
+  2: ["band", "wood", "crawl", "flytrap", "trip"],
+};
+
+/** The five cards dealt in `week` (week 1's before week 1, week 2's from week 2 on); see DOCTOR_CARD. */
+export function handFor(week: number): readonly HandCardId[] {
+  return week <= 1 ? HANDS[1] : HANDS[2];
 }
 
 export function isCardId(id: string): id is CardId {
