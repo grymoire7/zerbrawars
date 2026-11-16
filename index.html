@@ -62,10 +62,10 @@
         box-sizing: border-box;
         padding: 6px 8px 9px;
         /* Clear of the sides and the panel below, so it reads as its own tray. */
-        margin: 0 8px max(8px, env(safe-area-inset-bottom));
+        margin: 0 12px max(12px, env(safe-area-inset-bottom));
         /* A teal tray, so the bar reads as part of the board rather than the side panel. */
         background: linear-gradient(#7fc0e0, #4a97bf);
-        border: 2px solid #fff7ee;
+        border: 2px solid #2f6a8c;
         border-radius: 18px;
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
         position: relative;
@@ -75,7 +75,7 @@
         border: 0;
         border-radius: 14px;
         font-weight: 600;
-        color: var(--zw-raised, #272c36);
+        color: #2f6a8c;
         background: linear-gradient(#f4f9fc, #cfe3ee);
         box-shadow: 0 3px 0 #1b4a66;
         transition: transform 0.06s;
@@ -112,7 +112,7 @@
         outline-offset: 1px;
       }
       #dock [role="status"] {
-        color: var(--zw-raised, #272c36);
+        color: #2f6a8c;
         font-weight: 600;
       }
       #dock:empty {
@@ -123,18 +123,21 @@
         #dock .zw-dockrow {
           flex-wrap: wrap;
         }
-        #dock .zw-dockrow > button {
+        #dock .zw-dockrow button {
           min-height: 44px !important;
-          font-size: 13px;
-          padding: 0 6px !important;
+          font-size: 12px;
+          padding: 0 4px !important;
           line-height: 1.15;
+        }
+        #dock .zw-dockrow .zw-b-med {
+          flex: 1.4 1 0 !important;
         }
         #dock .zw-dockrow > .zw-endturn {
           order: 9;
           flex: 1 1 100% !important;
         }
         #app:has(#dock:not(:empty)) #stage {
-          flex-basis: calc(48% + 84px);
+          flex-basis: calc(48% + 88px);
         }
       }
       /* Life phase: the calendar needs the room, so the body inset shrinks on a phone. */
@@ -493,7 +496,7 @@
           line-height: 1.2;
         }
         /* Bar buttons in one row: End Turn takes the most room, nothing drops under 44px. */
-        #dock .zw-dockrow > button {
+        #dock .zw-dockrow button {
           min-height: 44px !important;
           font-size: 11px;
           padding: 0 2px !important;
