@@ -154,6 +154,8 @@ export interface HudHandlers {
 export interface HudMounts {
   readonly scroll: HTMLElement;
   readonly bar: HTMLElement;
+  /** The battle bar docked under the board. */
+  readonly dock: HTMLElement;
 }
 
 const PANEL =
@@ -181,7 +183,7 @@ export function createHud(
   handlers: HudHandlers,
   options: HudOptions = {},
 ): Hud {
-  const { scroll, bar } = mounts;
+  const { scroll, dock } = mounts;
   const el = (tag: string, css = "", text = "") => {
     const e = document.createElement(tag);
     if (css) e.style.cssText = css;
@@ -232,13 +234,7 @@ export function createHud(
   const medTip = tip("battle-med", "", "medication");
   medHead.append(medLabel, medTip.button);
   const medNote = medTip.note;
-  const chipRow = el(
-    "div",
-    "display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;",
-  );
-  const chipHint = el("div", "font-size:12px;margin-top:4px;line-height:1.3;");
-  chipHint.setAttribute("aria-live", "polite");
-  medBox.append(medHead, medNote, chipRow, chipHint);
+  medBox.append(medHead, medNote);
 
   // Orders: how many swarms have one, and a status chip per swarm.
   const ordersBox = el("div", PANEL + "padding:8px 10px;");
@@ -307,10 +303,18 @@ export function createHud(
   );
 
   // Pinned controls.
+  const prompt = el(
+    "div",
+    "min-height:18px;font-size:13px;line-height:18px;margin-bottom:4px;" +
+      "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;",
+  );
+  prompt.setAttribute("role", "status");
+  prompt.setAttribute("aria-live", "polite");
+  const chipRow = el("div", "display:contents;");
   const endTurn = button(
     "",
     handlers.onEndTurn,
-    "min-height:52px;flex:1 1 100%;",
+    "min-height:52px;flex:3 1 0;min-width:0;",
   );
   endTurn.className = "zw-endturn";
   endTurn.style.fontWeight = "700";
@@ -322,23 +326,28 @@ export function createHud(
   const endLabel = el("span", "font-size:16px;", "End Turn");
   const endHint = el("span", "font-size:12px;font-weight:400;opacity:0.7;");
   endTurn.append(endLabel, endHint);
-  const row = el("div", "display:flex;gap:6px;flex-wrap:wrap;");
-  const wallOff = button("Wall off (W)", handlers.onWallOff, "flex:1 1 auto;");
-  const x1 = button("1x", () => handlers.onSpeed(1), "flex:1 1 auto;");
-  const x2 = button("2x", () => handlers.onSpeed(2), "flex:1 1 auto;");
-  const skip = button("Skip", handlers.onSkip, "flex:2 1 auto;");
+  const row = el("div", "display:flex;gap:6px;");
+  row.className = "zw-dockrow";
+  const wallOff = button(
+    "Wall off (W)",
+    handlers.onWallOff,
+    "flex:1 1 0;min-width:0;",
+  );
+  const x1 = button("1x", () => handlers.onSpeed(1), "flex:1 1 0;");
+  const x2 = button("2x", () => handlers.onSpeed(2), "flex:1 1 0;");
+  const skip = button("Skip", handlers.onSkip, "flex:2 1 0;");
   skip.title = "Skip to the end of the turn (Enter or Space)";
   const replay = button(
     "Replay last turn",
     handlers.onReplay,
-    "flex:2 1 auto;",
+    "flex:1 1 0;min-width:0;",
   );
   const onReset = handlers.onReset;
-  const reset = onReset ? button("Reset", onReset, "flex:1 1 auto;") : null;
-  row.append(endTurn, x1, x2, skip, replay);
-  if (!options.tutorial) row.insertBefore(wallOff, x1);
+  const reset = onReset ? button("Reset", onReset, "flex:1 1 0;") : null;
+  row.append(chipRow, replay, x1, x2, skip, endTurn);
+  if (!options.tutorial) row.insertBefore(wallOff, endTurn);
   if (reset) row.append(reset);
-  bar.append(row);
+  dock.append(prompt, row);
 
   const swatch = (css: string) => {
     const sw = el(
@@ -640,13 +649,12 @@ export function createHud(
             ? " Pick a charge to use one this turn (one per turn)."
             : ""),
       );
-      chipRow.style.display = m.charges.length > 0 ? "flex" : "none";
       chipRow.replaceChildren(
         ...m.charges.map((c) => {
           const b = button(
             `${c.label} x${c.count}`,
             () => handlers.onPickCharge(c.charge),
-            "flex:1 1 auto;" +
+            "flex:1 1 0;min-width:0;" +
               (c.selected
                 ? "outline:2px solid var(--zw-med);font-weight:700;"
                 : ""),
@@ -657,13 +665,20 @@ export function createHud(
           return b;
         }),
       );
+      const w = m.wall;
       const picked = m.charges.some((c) => c.selected);
-      chipHint.textContent = picked
-        ? m.noTargets
-          ? "Nothing this charge can hit right now."
-          : "Tap a green diamond on the board."
-        : "";
-      chipHint.style.color = picked && m.noTargets ? "var(--zw-warn)" : "";
+      const wallBlocked = w && !w.queued && w.reason !== null ? w.reason : "";
+      const promptText = pb.playing
+        ? ""
+        : picked
+          ? m.noTargets
+            ? "Nothing this charge can hit right now."
+            : "Tap a green diamond on the board."
+          : wallBlocked
+            ? `Cannot wall off: ${wallBlocked}.`
+            : "";
+      if (prompt.textContent !== promptText) prompt.textContent = promptText;
+      prompt.style.color = picked && m.noTargets ? "var(--zw-warn)" : "";
       problems.style.display = m.problems.length > 0 ? "block" : "none";
       problems.replaceChildren(...m.problems.map((t) => line(t)));
 
@@ -679,7 +694,6 @@ export function createHud(
           : []),
       );
 
-      const w = m.wall;
       const f = m.forecast;
       const cards: HTMLElement[] = [
         ...(m.supportCard ? [supportCardEl(m.supportCard)] : []),

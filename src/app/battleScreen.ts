@@ -825,6 +825,7 @@ export function mountBattle(
       coachStrip?.clear();
       panels.scroll.replaceChildren();
       panels.bar.replaceChildren();
+      panels.dock.replaceChildren();
       ui.replaceChildren();
     },
   };

@@ -39,14 +39,52 @@
         height: 100%;
         height: 100dvh;
       }
-      #board {
-        position: relative;
+      /* The stage is the board plus the battle bar docked under it (the bar is empty outside battle). */
+      #stage {
         flex: 0 0 48%;
         min-height: 300px;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      #board {
+        position: relative;
+        flex: 1 1 0;
+        min-height: 0;
+        min-width: 0;
+      }
+      /* Battle bar: fixed height so the board never jumps as buttons change. */
+      #dock {
+        flex: none;
+        box-sizing: border-box;
+        padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+        background: var(--zw-bg, #15171c);
+        border-top: 1px solid var(--zw-line, #3a4150);
+      }
+      #dock:empty {
+        display: none;
+      }
+      /* Narrow portrait: secondary buttons on one row, End Turn full width under them. */
+      @media (max-width: 600px) and (min-height: 501px) {
+        #dock .zw-dockrow {
+          flex-wrap: wrap;
+        }
+        #dock .zw-dockrow > button {
+          min-height: 44px !important;
+          font-size: 13px;
+          padding: 0 6px !important;
+          line-height: 1.15;
+        }
+        #dock .zw-dockrow > .zw-endturn {
+          order: 9;
+          flex: 1 1 100% !important;
+        }
+        #app:has(#dock:not(:empty)) #stage {
+          flex-basis: calc(48% + 72px);
+        }
       }
       /* Life phase: the calendar needs the room, so the body inset shrinks on a phone. */
-      #app.life #board {
+      #app.life #stage {
         flex-basis: 30%;
         min-height: 190px;
       }
@@ -344,6 +382,9 @@
           opacity: 0;
         }
       }
+      #bar:empty {
+        display: none;
+      }
       #bar {
         flex: none;
         padding: 8px 8px max(8px, env(safe-area-inset-bottom));
@@ -398,11 +439,17 @@
           line-height: 1.2;
         }
         /* Bar buttons in one row: End Turn takes the most room, nothing drops under 44px. */
-        #bar .zw-endturn {
-          flex: 3 1 150px !important;
+        #dock .zw-dockrow > button {
+          min-height: 44px !important;
+          font-size: 12px;
+          padding: 0 4px !important;
+          line-height: 1.1;
+        }
+        #dock .zw-endturn {
+          flex: 2 1 0 !important;
           min-height: 44px !important;
         }
-        #bar .zw-endturn span:first-child {
+        #dock .zw-endturn span:first-child {
           font-size: 15px !important;
         }
       }
@@ -448,8 +495,8 @@
         #app {
           flex-direction: row;
         }
-        #board,
-        #app.life #board {
+        #stage,
+        #app.life #stage {
           flex: 1 1 0;
           min-height: 0;
         }
@@ -871,7 +918,10 @@
     <!-- Before #app so the Menu button (the first thing in #ui) leads the tab order; #ui is fixed. -->
     <div id="ui"></div>
     <div id="app">
-      <div id="board"><canvas id="scene"></canvas></div>
+      <div id="stage">
+        <div id="board"><canvas id="scene"></canvas></div>
+        <div id="dock" role="group" aria-label="Battle controls"></div>
+      </div>
       <aside id="side" aria-label="Orders and information">
         <div
           id="coach"

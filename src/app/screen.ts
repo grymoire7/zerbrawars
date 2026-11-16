@@ -15,6 +15,7 @@ export interface ScreenEnv {
     readonly status: HTMLElement;
     readonly scroll: HTMLElement;
     readonly bar: HTMLElement;
+    readonly dock: HTMLElement;
   };
   /** Full-window overlay for modals. */
   readonly ui: HTMLElement;
