@@ -58,8 +58,56 @@
         flex: none;
         box-sizing: border-box;
         padding: 6px 8px max(6px, env(safe-area-inset-bottom));
-        background: var(--zw-bg, #15171c);
-        border-top: 1px solid var(--zw-line, #3a4150);
+        /* A teal tray, so the bar reads as part of the board rather than the side panel. */
+        background: linear-gradient(#2fa8a6, #1b7f83);
+        border-top: 3px solid #7fe0d2;
+        border-radius: 18px 18px 0 0;
+        box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.35);
+        position: relative;
+      }
+      /* Chunky, rounded buttons with a darker lip, like the title screen's. */
+      #dock button {
+        border: 0;
+        border-radius: 14px;
+        font-weight: 600;
+        color: #15171c;
+        background: linear-gradient(#e3f4f1, #b9d9d4);
+        box-shadow: 0 3px 0 #0f5a5e;
+        transition: transform 0.06s;
+      }
+      #dock button:active:not(:disabled) {
+        transform: translateY(2px);
+        box-shadow: 0 1px 0 #0f5a5e;
+      }
+      #dock button:disabled {
+        opacity: 0.55;
+        box-shadow: 0 3px 0 #0f5a5e;
+      }
+      #dock .zw-b-go {
+        background: linear-gradient(#b8e6f8, #7cc4e6);
+        box-shadow: 0 3px 0 #2c6f93;
+        font-weight: 700;
+      }
+      #dock .zw-b-med {
+        background: linear-gradient(#9af2de, #52d6b8);
+        box-shadow: 0 3px 0 #1d7d6c;
+      }
+      #dock .zw-b-wall {
+        background: linear-gradient(#f4c6ff, #dd96f2);
+        box-shadow: 0 3px 0 #8a4a9c;
+      }
+      #dock .zw-picked {
+        outline: 3px solid #fff;
+        outline-offset: 1px;
+        font-weight: 700;
+      }
+      #dock [aria-pressed="true"]:not(.zw-b-med) {
+        outline: 3px solid #fff;
+        outline-offset: 1px;
+      }
+      #dock [role="status"] {
+        color: #fff;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
       }
       #dock:empty {
         display: none;
@@ -441,12 +489,12 @@
         /* Bar buttons in one row: End Turn takes the most room, nothing drops under 44px. */
         #dock .zw-dockrow > button {
           min-height: 44px !important;
-          font-size: 12px;
-          padding: 0 4px !important;
+          font-size: 11px;
+          padding: 0 2px !important;
           line-height: 1.1;
         }
         #dock .zw-endturn {
-          flex: 2 1 0 !important;
+          flex: 1.5 1 0 !important;
           min-height: 44px !important;
         }
         #dock .zw-endturn span:first-child {

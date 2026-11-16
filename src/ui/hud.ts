@@ -290,7 +290,7 @@ export function createHud(
     handlers.onEndTurn,
     "min-height:52px;flex:3 1 0;min-width:0;",
   );
-  endTurn.className = "zw-endturn";
+  endTurn.className = "zw-endturn zw-b-go";
   endTurn.style.fontWeight = "700";
   endTurn.style.display = "flex";
   endTurn.style.flexDirection = "column";
@@ -309,6 +309,7 @@ export function createHud(
   );
   const x1 = button("1x", () => handlers.onSpeed(1), "flex:1 1 0;");
   const x2 = button("2x", () => handlers.onSpeed(2), "flex:1 1 0;");
+  wallOff.classList.add("zw-b-wall");
   const skip = button("Skip", handlers.onSkip, "flex:3 1 0;");
   skip.title = "Skip to the end of the turn (Enter or Space)";
   const replay = button(
@@ -625,6 +626,7 @@ export function createHud(
           handlers.onClearSupport,
           "flex:2 1 0;min-width:0;",
         );
+        b.classList.add("zw-b-med", "zw-picked");
         b.dataset.key = "dose-clear";
         chips.push(b);
       } else {
@@ -637,11 +639,10 @@ export function createHud(
                 : `${label} x${c.count}`
               : `${label} used`,
             () => handlers.onPickCharge(charge),
-            "flex:1 1 0;min-width:0;" +
-              (c?.selected
-                ? "outline:2px solid var(--zw-med);font-weight:700;"
-                : ""),
+            "flex:1 1 0;min-width:0;" + (c?.selected ? "font-weight:700;" : ""),
           );
+          b.classList.add("zw-b-med");
+          b.classList.toggle("zw-picked", !!c?.selected);
           b.disabled = !c;
           b.dataset.key = `charge-${charge}`;
           b.setAttribute("aria-pressed", String(c?.selected ?? false));
@@ -664,7 +665,7 @@ export function createHud(
             ? `Cannot wall off: ${wallBlocked}.`
             : "";
       if (prompt.textContent !== promptText) prompt.textContent = promptText;
-      prompt.style.color = picked && m.noTargets ? "var(--zw-warn)" : "";
+      prompt.style.color = picked && m.noTargets ? "#fff3b0" : "";
       problems.style.display = m.problems.length > 0 ? "block" : "none";
       problems.replaceChildren(...m.problems.map((t) => line(t)));
 
