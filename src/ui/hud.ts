@@ -656,14 +656,18 @@ export function createHud(
       const picked = m.charges.some((c) => c.selected);
       const wallBlocked = w && !w.queued && w.reason !== null ? w.reason : "";
       const promptText = pb.playing
-        ? ""
+        ? "Watch the turn play out."
         : picked
           ? m.noTargets
             ? "Nothing this charge can hit right now."
             : "Tap a green diamond on the board."
           : wallBlocked
             ? `Cannot wall off: ${wallBlocked}.`
-            : "";
+            : m.over
+              ? ""
+              : m.orders.some((o) => o.selected)
+                ? "Tap a tile to move, or a germ to engulf."
+                : "Tap a swarm to give it an order.";
       if (prompt.textContent !== promptText) prompt.textContent = promptText;
       prompt.style.color = picked && m.noTargets ? "#fff3b0" : "";
       problems.style.display = m.problems.length > 0 ? "block" : "none";

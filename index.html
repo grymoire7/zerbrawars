@@ -57,12 +57,14 @@
       #dock {
         flex: none;
         box-sizing: border-box;
-        padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+        padding: 6px 8px 9px;
+        /* Clear of the sides and the panel below, so it reads as its own tray. */
+        margin: 0 8px max(8px, env(safe-area-inset-bottom));
         /* A teal tray, so the bar reads as part of the board rather than the side panel. */
         background: linear-gradient(#2fa8a6, #1b7f83);
-        border-top: 3px solid #7fe0d2;
-        border-radius: 18px 18px 0 0;
-        box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.35);
+        border: 2px solid #7fe0d2;
+        border-radius: 18px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
         position: relative;
       }
       /* Chunky, rounded buttons with a darker lip, like the title screen's. */
@@ -128,7 +130,7 @@
           flex: 1 1 100% !important;
         }
         #app:has(#dock:not(:empty)) #stage {
-          flex-basis: calc(48% + 72px);
+          flex-basis: calc(48% + 84px);
         }
       }
       /* Life phase: the calendar needs the room, so the body inset shrinks on a phone. */
