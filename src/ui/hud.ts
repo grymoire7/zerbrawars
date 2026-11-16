@@ -116,7 +116,7 @@ export interface HudModel {
   readonly wall: HudWall | null;
   readonly forecast: HudForecast | null;
   readonly playback: HudPlayback;
-  /** The control the coach strip points at (End Turn or a charge), outlined and pulsing. */
+  /** The control the coach strip points at (Play Turn or a charge), outlined and pulsing. */
   readonly coachTarget?: string | null;
 }
 
@@ -297,7 +297,7 @@ export function createHud(
   endTurn.style.alignItems = "center";
   endTurn.style.justifyContent = "center";
   endTurn.style.lineHeight = "1.2";
-  const endLabel = el("span", "font-size:16px;", "End Turn");
+  const endLabel = el("span", "font-size:16px;", "Play Turn");
   const endHint = el("span", "font-size:12px;font-weight:400;opacity:0.7;");
   endTurn.append(endLabel, endHint);
   const row = el("div", "display:flex;gap:6px;");
@@ -319,7 +319,7 @@ export function createHud(
   );
   const onReset = handlers.onReset;
   const reset = onReset ? button("Reset", onReset, "flex:1 1 0;") : null;
-  // Skip sits on the far left, away from End Turn, so a double tap on End Turn cannot skip the animation.
+  // Skip sits on the far left, away from Play Turn, so a double tap on Play Turn cannot skip the animation.
   row.append(skip, chipRow, replay, x1, x2, endTurn);
   if (!options.tutorial) row.insertBefore(wallOff, endTurn);
   if (reset) row.append(reset);

@@ -21,7 +21,7 @@ to check it. Don't treat either as a verdict.
 
 ## What we want to learn
 
-1. **Can they read a turn?** Before they press End Turn, do they know roughly
+1. **Can they read a turn?** Before they press Play Turn, do they know roughly
    what will happen?
 2. **Is the week a real choice?** Do they pick between safer and riskier cards,
    or just grab the safest one every time?
@@ -81,7 +81,7 @@ Sit beside them, not in front. Say as little as you can.
 - If they get stuck for more than about 20 seconds, ask "What are you looking
   at?" before you help. Write down where they got stuck.
 - **Prediction probe:** on turns 2, 4 and 6 of a battle, a small box asks what
-  will happen when they end the turn. Let them answer in their own words. Don't
+  will happen when they play the turn. Let them answer in their own words. Don't
   react to the answer. The game doesn't score it, so jot down on your notepad
   what they said and whether it came true (right, wrong or partly).
 - If you need to leave a run or start over, use the menu. Because of the
@@ -98,7 +98,7 @@ Sit beside them, not in front. Say as little as you can.
 - Whether the week felt too easy, and whether they noticed missed doses,
   backup, or the Exposure cell at all.
 - Anything they say about how it matches or doesn't match their own life.
-- Any sign of the two bugs we couldn't reproduce: End Turn not clicking until
+- Any sign of the two bugs we couldn't reproduce: Play Turn not clicking until
   all swarms move, and a stray "the week is not over" error. Write down the exact
   steps if either shows up.
 

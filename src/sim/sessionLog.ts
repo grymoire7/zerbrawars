@@ -84,7 +84,7 @@ export type SessionEntry =
       readonly turn: number;
       readonly orders: readonly Order[];
       readonly support: SupportOrder | null;
-      /** From the telegraph appearing to End Turn. */
+      /** From the telegraph appearing to Play Turn. */
       readonly planningMs: number;
       /** Playback watched before it ended or was skipped. */
       readonly playbackMs: number;

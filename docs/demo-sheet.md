@@ -35,7 +35,7 @@ The Mac stays awake while the demo runs. Leave the Terminal window open.
   person.
 - **Arc 2, "A first summer"** is the full game: pick activities for the week,
   then fight what you caught.
-- Keyboard shortcuts in a battle: Enter ends the turn, Space skips the replay,
+- Keyboard shortcuts in a battle: Enter plays the turn, Space skips the replay,
   Escape clears a pick (or opens the menu), W walls off.
 - The menu button (top left) has How to play, Start this fight over, Start this
   summer over, Choose another arc and Change disease.

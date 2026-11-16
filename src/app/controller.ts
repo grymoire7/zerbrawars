@@ -440,7 +440,7 @@ export interface Controller {
   marks(): TelegraphMark[];
   /** Order list plus the selected swarm if it has no order yet. */
   pending(): PendingEntry[];
-  /** Why the last End Turn was refused; cleared by any order change. */
+  /** Why the last Play Turn was refused; cleared by any order change. */
   problems(): readonly string[];
   select(id: SwarmId | null): void;
   /** Tab: select the next (or previous) swarm. */

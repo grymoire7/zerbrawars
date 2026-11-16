@@ -29,7 +29,7 @@ export interface OrderView {
   ): void;
   /** Pulses the idle rings. */
   tick(dtSeconds: number): void;
-  /** A steady idle ring instead of a pulse (after the fight's first End Turn). */
+  /** A steady idle ring instead of a pulse (after the fight's first Play Turn). */
   setSteady(steady: boolean): void;
 }
 

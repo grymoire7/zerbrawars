@@ -27,7 +27,7 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ["Your goal", "Clear the germs from the board before the tissue wears out."],
   [
     "Orders",
-    "Each swarm gets one order per turn: move, engulf or wall off. A swarm with no order holds still. You can end the turn with any number of orders.",
+    "Each swarm gets one order per turn: move, engulf or wall off. A swarm with no order holds still. You can play the turn with any number of orders.",
   ],
   [
     "How to order",

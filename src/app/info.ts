@@ -89,7 +89,7 @@ export function orderCount(statuses: readonly SwarmStatus[]): {
   return { ordered, total: statuses.length, holding };
 }
 
-/** The quiet hint beside End Turn, or "" when every swarm has an order. */
+/** The quiet hint beside Play Turn, or "" when every swarm has an order. */
 export function endTurnHint(holding: number): string {
   if (holding <= 0) return "";
   return `(${holding} ${holding === 1 ? "swarm" : "swarms"} will hold)`;

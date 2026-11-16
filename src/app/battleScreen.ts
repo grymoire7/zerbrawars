@@ -490,7 +490,7 @@ export function mountBattle(
       playing || controller.over()
         ? []
         : statuses.filter((w) => w.status === "none").map((w) => w.swarmId);
-    // The ring nudges until the first End Turn, then stays steady: a swarm kept still on purpose
+    // The ring nudges until the first Play Turn, then stays steady: a swarm kept still on purpose
     // should not pulse for the rest of the fight.
     orderView.setSteady(s.turn > 1);
     orderView.update(

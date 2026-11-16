@@ -7,6 +7,10 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The battle button "End Turn" is now "Play Turn", since the turn plays out after you press it.
+
 ## [0.3.0] - 2026-11-15
 
 ### Changed

@@ -11,7 +11,7 @@ const CHOICES = [
   "Not sure",
 ] as const;
 
-/** The facilitator's prediction probe: a tiny question before End Turn. */
+/** The facilitator's prediction probe: a tiny question before Play Turn. */
 export function createProbe(root: HTMLElement): Probe {
   const backdrop = document.createElement("div");
   backdrop.style.cssText =
@@ -29,7 +29,7 @@ export function createProbe(root: HTMLElement): Probe {
   const title = document.createElement("h2");
   title.id = "probe-title";
   title.style.cssText = "margin:0;font:600 18px sans-serif;";
-  title.textContent = "What will happen when you end the turn?";
+  title.textContent = "What will happen when you play the turn?";
   const text = document.createElement("input");
   text.type = "text";
   text.placeholder = "A few words, if you like";
@@ -68,7 +68,7 @@ export function createProbe(root: HTMLElement): Probe {
   return {
     ask(turn, cb) {
       done = cb;
-      title.textContent = `Turn ${turn}: what will happen when you end the turn?`;
+      title.textContent = `Turn ${turn}: what will happen when you play the turn?`;
       text.value = "";
       backdrop.style.display = "flex";
       choiceBtns[0].focus();

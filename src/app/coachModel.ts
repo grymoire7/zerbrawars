@@ -29,7 +29,7 @@ export type CoachId =
   | "B4"
   | "B5";
 
-/** A control the strip should outline: End Turn, or a charge chip. */
+/** A control the strip should outline: Play Turn, or a charge chip. */
 export type CoachTarget = "endTurn" | ChargeKind;
 
 export interface CoachMark {
@@ -136,7 +136,7 @@ const RULES_A: readonly Rule[] = [
     hasOrder(i)
       ? {
           id: "A3",
-          text: "Give the others orders too, or press End Turn. Everything moves at once.",
+          text: "Give the others orders too, or press Play Turn. Everything moves at once.",
           target: "endTurn",
         }
       : null,

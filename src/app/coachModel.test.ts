@@ -135,12 +135,12 @@ describe("A2 and A2b", () => {
 
 describe("A3", () => {
   const s = doneState("A1", "A2");
-  it("shows when an order is queued, pointing at End Turn", () => {
+  it("shows when an order is queued, pointing at Play Turn", () => {
     const b = A();
     const m = coachMark(s, input("a", b, { orders: [engulfStrep(b)] }));
     expect(m).toEqual({
       id: "A3",
-      text: "Give the others orders too, or press End Turn. Everything moves at once.",
+      text: "Give the others orders too, or press Play Turn. Everything moves at once.",
       target: "endTurn",
     });
   });
