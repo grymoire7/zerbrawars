@@ -81,8 +81,8 @@ Koji is not built; the pool is the nine activities above plus the doctor.
 
 Each follows the existing pattern: a risky card and a smarter version, picked on the card, with
 points, energy, landing odds and an entry tile in `PARAMS.life.cards`. Ids follow the existing naming
-(`yard` and `yardIndoor`). Wording and the smarter versions are my proposal; the numbers are
-starting points for the builder to tune against the goal.
+(`yard` and `yardIndoor`). Wording and the smarter versions are my proposal; the numbers
+were starting points, tuned against the goal (the table shows what shipped).
 
 | Activity (id / smarter id)                         | Hazard and how it reaches you                   | Germ         | Start odds / points / energy (as built) |
 | -------------------------------------------------- | ----------------------------------------------- | ------------ | ---------------------------- |
@@ -93,7 +93,7 @@ starting points for the builder to tune against the goal.
 
 Smarter versions (odds 2% each; points 3, 3, 3 and 6; energy as the risky card): woodworking with dry wood outdoors; the crawlspace with a rake to
 hook the ball out; the flytrap moved to the garage next to Dad's wood pile, out of the living space (and next to a hazard the player should already avoid, so there is no reason to go near it; also the better social play if the person who gave it finds out). Re-gifting would also be safer than keeping it in the house, but the card UI, preview and bots assume exactly two versions of a card, so it is not built; the trip with a travel
-plan (closed shoes, no floodwater, bottled water; clinician item 36). Smarter odds are 2% and points a step lower, as the existing pairs are.
+plan (closed shoes, no floodwater, bottled water; clinician item 36). Smarter odds are 2% and points a step lower. The existing pairs' smarter odds are 10% and 15%, so the 2% was chosen for balance, not teaching (clinician item 44).
 
 ### The trip: last day, evening only
 

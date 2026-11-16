@@ -64,9 +64,9 @@ export const CARD_ICON: Readonly<Record<string, string>> = {
   rest: '<path d="M4 5h7L4 12h7"/><path d="M13 13h6l-6 7h6"/>',
   // A log, cut end showing its rings.
   wood: '<path d="M4 8v8a8 3 0 0 0 16 0V8"/><ellipse cx="12" cy="8" rx="8" ry="3"/><path d="M12 8h.01M9.5 8a2.5 1 0 0 1 5 0"/>',
-  // A log under a roof: the dry woodpile.
+  // A sun over a log: dry wood, out in the open.
   woodDry:
-    '<path d="M3 10 12 3l9 7"/><path d="M5 20v-8h14v8"/><path d="M5 16h14"/><path d="M9 14h.01M15 18h.01"/>',
+    '<circle cx="12" cy="7" r="3"/><path d="M12 1.5v1M5.5 4l.7.7M18.5 4l-.7.7M3 8h1M20 8h1"/><path d="M4 14h13v7H4z"/><ellipse cx="17" cy="17.5" rx="3" ry="3.5"/><path d="M17 17.5h.01"/>',
   // A ball and a low arch.
   crawl:
     '<circle cx="7" cy="16" r="3.5"/><path d="M3 21h18"/><path d="M12 21v-4a5 5 0 0 1 10 0v4"/>',
@@ -76,7 +76,7 @@ export const CARD_ICON: Readonly<Record<string, string>> = {
   // A leaf with a toothed edge.
   flytrap:
     '<path d="M3 12 6 7l2 3 4-5 2 4 3-3 2 4 2 0c0 6-5 10-10 10-3 0-5-1-7-3z"/><path d="M5 19 14 11"/>',
-  // A garage door: the trap kept indoors.
+  // A garage door: the trap kept out of the living space.
   flytrapGarage:
     '<path d="M3 20V9l9-5 9 5v11"/><path d="M7 20v-8h10v8"/><path d="M7 14.5h10M7 17h10"/>',
   // A suitcase.

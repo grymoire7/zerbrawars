@@ -47,13 +47,13 @@ export const KIND_COLOR: Record<PathogenKindId, number> = {
 const RIM_COLOR = hex("sealed-rim");
 const BADGE_HEIGHT = 0.34;
 
-// Fixed offsets (unit-ish sphere packing) so every bacterium cluster looks the same.
 // A rod: three beads in a straight line (drawn for kinds with look "rod").
 const ROD: readonly (readonly [number, number, number, number])[] = [
   [-0.2, 0.15, 0, 0.12],
   [0, 0.15, 0, 0.12],
   [0.2, 0.15, 0, 0.12],
 ];
+// Fixed offsets (unit-ish sphere packing) so every bacterium cluster looks the same.
 const CLUSTER: readonly (readonly [number, number, number, number])[] = [
   [0, 0.2, 0, 0.17],
   [0.17, 0.12, 0.05, 0.13],

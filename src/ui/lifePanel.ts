@@ -135,6 +135,16 @@ export interface LifePanel {
 
 const PANEL =
   "background:var(--zw-raised);border:1px solid var(--zw-line);border-radius:6px;";
+// Key order. A rank per kind, so adding a kind is a type error until it is placed.
+const KEY_RANK: Record<PathogenKindId, number> = {
+  strep: 0,
+  staph: 1,
+  aspergillus: 2,
+  burkholderia: 3,
+};
+const KEY_ORDER = (Object.keys(KEY_RANK) as PathogenKindId[]).sort(
+  (a, b) => KEY_RANK[a] - KEY_RANK[b],
+);
 const MINT = "var(--zw-med)";
 
 export function createLifePanel(
@@ -236,7 +246,7 @@ export function createLifePanel(
       dot(`border-radius:50%;background:${MINT};box-shadow:0 0 6px ${MINT};`),
       "Green glow: your medication",
     ),
-    ...(Object.keys(PATHOGEN_KINDS) as PathogenKindId[]).map((id) => {
+    ...KEY_ORDER.map((id) => {
       const def: PathogenKindDef = PATHOGEN_KINDS[id];
       const rod = def.look === "rod";
       const body =

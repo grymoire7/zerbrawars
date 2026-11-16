@@ -139,7 +139,7 @@ const TEXT: Record<CardId, CardText> = {
     people:
       "You keep the gift, and the person who gave it will be glad to see it doing well.",
     blurb:
-      "The garage is out of the living space and beside Dad's wood pile, which you should stay away from anyway, so most of the risk fades.",
+      "The garage is out of the living space and beside Dad's wood pile, which you'd steer clear of anyway, so most of the risk fades.",
     base: "flytrap",
     kinds: ["aspergillus"],
   },

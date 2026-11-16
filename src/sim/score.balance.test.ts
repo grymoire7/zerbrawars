@@ -153,10 +153,11 @@ describe("score ranges", () => {
     expect(t("smarter") - t("skipMeds")).toBeGreaterThanOrEqual(150);
   });
 
-  it("meets the week-1 goal with any plan that plays cards, never when staying home", () => {
+  it("meets the goal with any plan that plays cards, never when staying home", () => {
     // Plans are luck-free, so a bot's goal rate is its plan's, not a dice outcome. Measured at goal
-    // 13 (week 1 figures; across both weeks forgetful is about 50% and skipMeds 0% in week 2, which
-    // the goal1 assertions below separate): forgetful 100%, smarter and planner 95%, mixed 91%, risky 86%, skipMeds 41% (all-smarter
+    // 13 (week 1 figures; across both weeks forgetful is about 50% and skipMeds 0% in week 2, so
+    // forgetful and risky assert the week-1 rate goal1 below and the rest assert the both-weeks
+    // rate): forgetful 100%, smarter and planner 95%, mixed 91%, risky 86%, skipMeds 41% (all-smarter
     // scored 12 and reached the goal 0% of the time while the sleepover's pills cost 1 energy; with
     // that gone a safe plan fits a fifth card when energy carries over), home 0%.
     expect(rows.home.goal).toBe(0);

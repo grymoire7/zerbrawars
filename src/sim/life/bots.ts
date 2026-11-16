@@ -117,8 +117,9 @@ type Versions = "any" | "risky" | "smarter";
 /**
  * The legal plan with the highest planned Choices (ties: the lowest total landing chance), found by
  * trying every card version in every slot. `versions` limits the search to the risky or the
- * smarter version of each card ("any" tries both), or picks per card (unnamed cards: both). Memoized by what the search reads
- * (versions, hand, energy, doses), since the answer does not depend on the seed.
+ * smarter version of each card ("any" tries both), or picks one per card (unnamed cards: both).
+ * Memoized by what the search reads (versions, hand, energy, doses), since the answer does not
+ * depend on the seed.
  */
 export function bestPlacements(
   life: LifeState,
