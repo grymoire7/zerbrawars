@@ -1,21 +1,21 @@
 # Battle bar: design
 
-> Status: proposal for review, 2026-11-15. Nothing here is built. Written after a playtest question
-> ("what is the Orders card for?") that turned into a layout rule. For the game designer: the
-> decisions we need from you are in section 9.
+> Status: agreed to build on a feature branch, time-boxed to 2026-11-18. Revised 2026-11-15 after a
+> game-design review (section 11). Nothing here is built yet.
 
 ## 1. The rule
 
-Zebra Wars is Plan, Battle, Reflect. The player should never look back and forth between two
-areas of the screen to find the controls for the phase they are in.
+Zebra Wars is Plan, Battle, Reflect. **The player should never have to look back and forth between
+two areas of the screen to find the controls for the phase they are in.**
 
 - **The board area** (left on a wide screen, top on a phone in portrait) is where a battle is played
   and controlled.
 - **The side panel** (right, or below the board on a phone in portrait) is where life choices are
   made, and where the battle reports to the player: status, explanations, the log.
-- A battle control that lives in the side panel is a **mirror**, built for keyboard and
-  screen-reader users, and is never the only way to do something. A mirror card never holds a
-  control the board area does not also have.
+- The rule is about **controls**. Information cards (the info and odds card, the Key, the log) may
+  stay in the side panel and be consulted during a fight. That is ceded for now, mostly for space.
+- A battle control that also appears in the side panel is a **mirror**. It never holds the only copy
+  of a control, and the board area never lacks one the panel has.
 
 Today the game does not follow this rule. This document is the plan to get the battle there.
 
@@ -24,8 +24,10 @@ Today the game does not follow this rule. This document is the plan to get the b
 **Layout** (`index.html`): `#app` is a flex column with `#board` on top (48% of the height, 30% in
 the life phase) and `#side` below. At 900px wide, or an aspect ratio of 5:4 or more (laptops and
 phone landscape), `#app` becomes a row: the board on the left, `#side` fixed at 340 to 480px on
-the right. The Menu button sits at the board's top left, Zoreo at its top right. `#side` holds the
-status strip, the coach strip (Arc 1 only), a scrolling column, and a pinned control bar, `#bar`.
+the right. The canvas fills `#board` (`position: absolute; inset: 0`) and the camera frames itself to
+the canvas's parent (`scene.ts`), reframing whenever that parent changes size. The Menu button
+sits at the board's top left, Zoreo at its top right. `#side` holds the coach strip (Arc 1 only, at
+the very top), the status strip, a scrolling column, and a pinned control bar, `#bar`.
 
 **Battle controls and where they live:**
 
@@ -33,14 +35,14 @@ status strip, the coach strip (Arc 1 only), a scrolling column, and a pinned con
 | --- | --- | --- |
 | Select a swarm, move, engulf | the board (taps) | Valid tiles highlight on selection |
 | Hold / wall off by tapping your own tile | the board | Own tile: hold, then wall off for a loaded swarm, then clear. An unloaded swarm can only hold |
-| Charge chips (Antibacterial x1, Antifungal x2) | side panel, Medication card | Pick a charge, then tap a target on the board |
-| Swarm rows with status chip, a Clear button, and "-> 5,4" coordinates | side panel, Orders card | Select, clear, and read each swarm's status. Count "Orders: 0 of 3 swarms" |
-| End Turn "(3 swarms will hold)" | side panel, pinned `#bar` | |
-| Wall off (W) | side panel, pinned `#bar` | Appears only when the selected swarm can wall off; not taught in Arc 1 |
-| 1x, 2x, Skip | side panel, pinned `#bar` | Shown while a turn plays back |
-| Replay last turn | side panel, pinned `#bar` | |
+| Charge chips (Antibacterial x1, Antifungal x2) | side panel, Medication card | Only kinds with charges left show. Pick a charge, then tap a target on the board |
+| Swarm rows: status chip, a Clear button, "-> 5,4" coordinates; and a Dose row with its own Clear | side panel, Orders card | Select a swarm, clear an order, take back a queued dose. Count "Orders: 0 of 3 swarms" |
+| End Turn "(3 swarms will hold)" | side panel, pinned `#bar` | Hidden while a turn plays back |
+| Wall off (W) | side panel, pinned `#bar` | Shown when the selected swarm is loaded or has wall off queued; disabled, with the reason in the info card, when it cannot be done. Never created in Arc 1 |
+| 1x, 2x, Skip | side panel, pinned `#bar` | Shown while a turn plays back, in End Turn's place |
+| Replay last turn | side panel, pinned `#bar` | Disabled before the first turn |
 | Reset | side panel, pinned `#bar` | Debug battle only |
-| Keyboard | page | Tab cycles swarms, W wall off, Enter or Space ends the turn or skips, Escape deselects |
+| Keyboard | page | Tab is always captured and cycles swarms, so no button on the battle screen is keyboard-reachable today. W wall off; Enter ends the turn or skips playback; Space only skips; Escape deselects |
 
 So the battle's controls are in the side panel, and the board only takes taps. Wall off already
 exists as a contextual button; this proposal moves it, it does not add it.
@@ -48,78 +50,102 @@ exists as a contextual button; this proposal moves it, it does not add it.
 **What "hold" is.** The resolver treats a swarm with no order as holding, and a hold does nothing.
 The explicit hold order has three small jobs today: (1) it is the stepping stone in the own-tile
 tap cycle to wall off; (2) it stops the idle ring (a pulsing ring on swarms with no order) from
-nudging the player; (3) it cancels a queued move. A queued order can already be cleared by tapping
-the same tile again (a move, an engulf), but not a hold. Hence the Orders card's Clear button.
+nudging the player; (3) it cancels a queued move. A queued move, engulf or dose can already be
+cleared by tapping the same target again, but not a hold. Hence the Orders card's Clear button.
 
 ## 3. Proposal: a battle bar docked to the board
 
-A **battle bar**: one strip of buttons docked to the bottom edge of the board area, below the
-canvas, never over tiles (patient feedback: no overlays on the board). The buttons change with the
-state, so the bar only ever shows what makes sense.
+A **battle bar**: one strip of buttons the width of the board, docked under it, never over tiles
+(patient feedback: no overlays on the board). The buttons change with the state, so the bar only
+shows what makes sense.
+
+**Structure.** The bar is not inside `#board`: the canvas fills `#board`, and a bar inside it would
+cover the canvas and shift Zoreo's portrait position. Instead a wrapper holds `#board` and the bar,
+so the canvas keeps its own box and Zoreo and the Menu button are unaffected. The bar has a **fixed
+height** with stable slots. The camera reframes whenever the canvas's box changes, so a bar that
+adds or removes a row would make the board jump on every tap. Slots keep their place and only their
+text and enabled state change. One line is reserved for the prompt.
 
 | State | The bar shows |
 | --- | --- |
-| Planning, nothing selected | Charge buttons (only those with charges left), End Turn with its "(N swarms will hold)" caption, Replay last turn (once there is a turn to replay) |
-| A swarm is selected | The same, plus Wall off for a loaded swarm (not in Arc 1). Tapping the swarm's own tile no longer holds; it clears its order, or deselects if it has none |
-| A charge is picked | Cancel, and a one-line prompt such as "Tap a germ" |
-| A turn is playing | 1x, 2x, Skip |
+| Planning, nothing selected | A button per charge kind the fight started with (a spent one stays, disabled, labelled "used"; never a kind the fight started without), End Turn with "(N swarms will hold)", Replay last turn (disabled before the first turn) |
+| A swarm is selected | The same, plus Wall off for a loaded swarm (never in Arc 1), disabled with its reason in the prompt line when it cannot be done. Tapping the swarm's own tile clears its order, or deselects if it has none |
+| A charge is picked | The charge's button reads "Put back", and the prompt line says "Tap a green diamond on the board." |
+| A dose is queued | One button, "Dose set: Antifungal. Take it back", in place of the charge buttons |
+| A turn is playing | "Faster" (a toggle, replacing 1x and 2x) and Skip, with Skip placed away from where End Turn was so a double tap on End Turn cannot skip the animation |
 | Debug battle | Reset, as now |
 
 **What moves out of the side panel:** the pinned `#bar` (End Turn, Wall off, speed and skip,
-Replay, Reset) and the charge chips. **What stays:** the status strip, coach strip, turn summary,
-the Medication explanation, the info and preview card, the Key, the log, and the Orders card as the
-accessibility mirror. Without the bar and the charges the side panel gets noticeably shorter in a
-fight.
+Replay, Reset), the charge chips, and the dose's Clear. **What stays:** the status strip, coach
+strip, turn summary, the info and preview card, the Key, the log. The Medication card is left with
+a heading and a tip once the chips are gone, so its one sentence ("Each germ has an N% chance of
+being held back") moves onto the Medication status cell's tip, and the card goes.
 
-**The Orders card becomes the mirror.** It keeps: one row per swarm to select it, the status
-chip, the count, and a Wall off button for a loaded swarm. It loses the coordinates ("-> 5,4" is a
-grid position nobody sees on the board), the Clear button (tapping the swarm does it), and the
-"s1, s2, s3" names (they become "Swarm 1" to "Swarm 3"). A card heading such as "Orders (keyboard
-and screen reader)" and a quieter style say what it is for, so it does not read as a second set of
-controls for pointer users.
+**The Orders card becomes a mirror.** It is a `<details>`, closed by default, titled by its content
+("Swarm orders: 1 of 3"). It keeps one row per swarm to select it, the status chip and the dose row
+with its take-back button, and a Wall off button for a loaded swarm. It loses the coordinates ("->
+5,4" is a grid position nobody sees on the board) and the per-swarm Clear (tapping the swarm does
+it). This is a partial mirror: it selects swarms, shows status and takes back a dose. Moves,
+engulfs and charge targets stay pointer-only until the accessibility pass (B7, section 6).
+
+**The coach strip.** The Arc 1 coach strip lives at the top of the side panel and outlines the
+control it points at (End Turn, a charge). The outline moves with the buttons. On a laptop the strip
+(top right) and the bar (bottom left) are as far apart as the screen allows, so the spike checks
+whether the coach text should move closer to the bar.
 
 ## 4. The hold change (does not depend on the bar)
 
 - A tap on the selected swarm's own tile clears its order; if it has none, it deselects. The
   player never queues "hold" from the UI. The sim keeps the `hold` order type (bots and tests use
   it).
-- Wall off is reached by the Wall off button (the bar, or the card mirror) or the W key. The own-tile
-  tap cycle (hold, then wall off, then clear) is retired.
-- The idle ring keeps pulsing on swarms with no order for now. If it nags a player who is holding
-  deliberately, calm it after the next playtest.
-- The tutorial text changes: "Tap the swarm again to cancel its order." (`src/ui/help.ts`,
-  lines 30 and 34).
-- Until the bar lands, Wall off stays where it is, in the side panel's `#bar`.
+- Wall off is reached by the Wall off button or the W key. The own-tile tap cycle (hold, wall off,
+  clear) is retired.
+- **Idle ring:** it pulses on swarms with no order until the fight's first End Turn, then stays
+  steady. A swarm the player keeps still on purpose would otherwise pulse for the whole fight, which
+  reads as "you forgot". Reduced motion already gets a steady ring. The End Turn caption, "(2 swarms
+  will hold)", is the reassurance.
+- **Help text** (`src/ui/help.ts`): line 30 stops listing hold as an order; line 34 becomes "Tap the
+  swarm again to cancel its order."; line 50 changes ("pick a charge in the side panel", "press
+  Clear") to match the bar's take-back button.
+- **Orders card:** the coordinates go, and with them the per-swarm Clear.
+- Until the bar lands, Wall off and the other controls stay where they are, in the side panel's
+  `#bar`.
 
 ## 5. Layout per screen
 
 | Screen | Plan |
 | --- | --- |
-| Laptop, wide | The bar sits in the left column under the canvas, full width of the board area. The board gets a little shorter |
-| Phone portrait | Board, then the bar, then the side panel. The board's share of the height has to absorb the bar. The bar wraps to two rows if needed; targets stay at least 44px |
-| Phone landscape (short) | The compact bar rules (`max-height: 500px`) apply. Open question below |
+| Laptop, wide | The bar is under the board, in the left column, as wide as the board. The board gets a little shorter |
+| Phone portrait | Board, then the bar, then the side panel. In portrait the board's drawing is limited by width, so it has empty bands above and below, and the side panel loses `#bar`, so the two should absorb the bar without a visible loss. To be confirmed by screenshots |
+| Phone landscape (short) | The bar sits under the board in the left column. The height budget there is the risk (`max-height: 500px`, 44px targets); the spike decides whether it fits in one row |
 | Safe-area insets | The bar sits above the home indicator, as `#bar` does today (`env(safe-area-inset-bottom)`) |
 
-Zoreo's corner head stays at the board's top right. The brought-items strip and Zoreo's gaze
-logic need a check once the bar exists. In a fight he already looks at the board.
+Checks needed in the spike: 375x667, 390x844 and 844x390.
 
 ## 6. Accessibility
 
-- Every bar button is a real `<button>` with an accessible name; state changes (a charge picked,
-  Wall off appearing) are announced through a polite live region.
-- The existing keyboard model stays: Tab cycles swarms (it is captured on the battle screen), W
-  wall off, Enter or Space ends the turn or skips, Escape deselects.
-- The Orders card mirror keeps every battle action reachable without the board. The reading order
-  puts the bar before the side panel.
-- This is not a full accessibility pass. That is the deferred B7 work
-  (`b7-accessibility-design.md`), which this change should make easier, not harder.
+- Every bar button is a real `<button>` with an accessible name, and gets a `data-key` now (the
+  accessibility design's rule) so the B7 work does not rewrite the same code twice.
+- A disabled Wall off keeps its reason in the prompt line and in `aria-describedby`; use
+  `aria-disabled` so it stays focusable once B7 frees Tab.
+- One persistent prompt node, updated only when its text changes, so a screen reader is not
+  chatty.
+- The existing keyboard model stays: W wall off, Enter ends the turn or skips, Space skips, Escape
+  deselects. Tab remains captured until B7.
+- General accessibility, including the keyboard route to moves and engulfs (a board cursor with
+  number keys, per `b7-accessibility-design.md`), is deferred past the demo. B7's section on Enter
+  on a board tile still lists "hold, wall off, clear" and needs a one-line update after the hold
+  change.
 
 ## 7. What we are not doing for the demo
 
 - Moving the life-phase controls: the life phase is the side panel's job, so "Play the week" and
   its siblings stay where they are. The rule is satisfied there already.
 - Haptic feedback on selection.
-- A swarm label on the board that matches "Swarm 1" to "Swarm 3" in the card.
+- The "Swarm 1" to "Swarm 3" rename. The ids "s1, s2, s3" also appear in the wall card, the odds
+  text, the dose card and the log, so renaming only the card would make them disagree. Do it later
+  with one display-name helper, or not at all.
+- A swarm label on the board that matches the card's names.
 - The full accessibility pass.
 
 ## 8. Plan and cut line
@@ -127,33 +153,43 @@ logic need a check once the bar exists. In a fight he already looks at the board
 All work on a feature branch, `feat/battle-bar`; `main` stays releasable and production only changes
 on a tag. Demo target: 2026-11-21.
 
-1. This document, reviewed by the game designer. (Now.)
-2. The hold change (section 4). Small, independent, and shippable without the bar.
+1. This document, reviewed. (Done; section 11.)
+2. The hold change (section 4). Small and independent, so it is the first commits on the branch and
+   can be merged to `main` on its own if the bar does not make it.
 3. A spike of the bar at three viewports (laptop, phone portrait, phone landscape), checked with
    screenshots, before anything is polished.
 4. Move the charges and wire the contextual states, then update the tests.
 5. Check on a real phone, in portrait and landscape.
 
-**Cut line: 2026-11-18.** If the spike does not work at all three viewports by then, the demo ships
-the hold change on `main` and the existing panel, and the bar waits until after the demo.
+**Time box: 2026-11-18.** By then the bar must work at all three viewports and be checked on the
+phone. If it cannot, the demo ships the hold change on `main` with the existing panel, and the bar
+waits until after the demo. The tasks in this document are the demo's priority along with
+simplicity: the audience must see Plan, Battle, Reflect at a glance. More activities are a
+nice-to-have, and general accessibility is deferred.
 
-## 9. Questions for the game designer
+## 9. Open points for the spike
 
-1. **Charges:** always show both charge buttons (greyed when spent), or only those with charges
-   left? Showing both teaches that charges are finite; hiding them is quieter.
-2. **Playback controls:** 1x, 2x and Skip replace End Turn while a turn plays (as above), or sit
-   beside it?
-3. **Replay last turn:** it is a reflect action. Does it belong in the bar, or in the side panel's
-   log, where the story of the turn already is?
-4. **Phone landscape:** the board is already short there. Is a bar under the board acceptable, or
-   should the bar sit at the board's side in that orientation?
-5. **Idle ring:** keep the pulse on swarms with no order now that "no order" and "hold" are the
-   same thing, or only pulse until the player has ordered anything?
-6. **Wall off in Arc 1:** unchanged (not taught, so no button). Confirm.
-7. **Mirror card wording:** does a visible label such as "Orders (keyboard and screen reader)"
-   help, or should the card be collapsed by default?
+1. Phone landscape: does the bar fit in one row under the board?
+2. Coach strip: does its text need to move closer to the bar on a laptop?
+3. Replay last turn: it is a Reflect action. It starts in the bar, away from End Turn; if it
+   crowds the bar, it moves to the top of the log's body as "Watch last turn again".
 
-## 10. Where the rule goes once agreed
+## 10. Where the rule goes once the bar works
 
-A line in the UI rules of `AGENTS.md`: a phase's primary controls live in that phase's area; the
-side panel may mirror them for keyboard and screen-reader users, and never holds the only copy.
+A line in the UI rules of `AGENTS.md`: a phase's controls live in that phase's area; the side panel
+may mirror them but never holds the only copy; information cards may stay in the panel.
+
+## 11. Review outcome (2026-11-15)
+
+A game-design review checked this document against the code. **Adopted:** the factual corrections
+(keyboard model, the partial mirror, the disabled Wall off, the dose row and its take-back, the
+help text lines, "Tap a green diamond", the id rename, the canvas and bar structure and Zoreo, the
+fixed-height bar, the coach strip), the answers on charges, playback, the idle ring and the mirror
+card, and the Medication card going empty.
+
+**Not adopted:** the reviewer recommended skipping the docked bar for the demo and instead moving
+the charges into the existing pinned bar, and restating the rule as "a phase's controls sit
+together in one strip" with information allowed beside it. The owner kept the rule as "never look
+back and forth for controls", with information cards ceded for now, and decided to build the docked
+bar on a feature branch inside the time box above. The reviewer's pinned-strip version is the
+fallback if the bar does not fit by 2026-11-18.
