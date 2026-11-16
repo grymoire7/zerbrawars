@@ -64,8 +64,8 @@
         /* Clear of the sides and the panel below, so it reads as its own tray. */
         margin: 0 8px max(8px, env(safe-area-inset-bottom));
         /* A teal tray, so the bar reads as part of the board rather than the side panel. */
-        background: linear-gradient(#ffbf8c, #f58a62);
-        border: 2px solid #ffe6bd;
+        background: linear-gradient(#7fc0e0, #4a97bf);
+        border: 2px solid #fff7ee;
         border-radius: 18px;
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
         position: relative;
@@ -76,21 +76,22 @@
         border-radius: 14px;
         font-weight: 600;
         color: #15171c;
-        background: linear-gradient(#e3f4f1, #b9d9d4);
-        box-shadow: 0 3px 0 #9a4a2a;
+        background: linear-gradient(#f4f9fc, #cfe3ee);
+        box-shadow: 0 3px 0 #1b4a66;
         transition: transform 0.06s;
       }
       #dock button:active:not(:disabled) {
         transform: translateY(2px);
-        box-shadow: 0 1px 0 #9a4a2a;
+        box-shadow: 0 1px 0 #1b4a66;
       }
       #dock button:disabled {
         opacity: 0.55;
-        box-shadow: 0 3px 0 #9a4a2a;
+        box-shadow: 0 3px 0 #1b4a66;
       }
       #dock .zw-b-go {
-        background: linear-gradient(#b8e6f8, #7cc4e6);
-        box-shadow: 0 3px 0 #2c6f93;
+        background: linear-gradient(#fffaf3, #f2e6d8);
+        box-shadow: 0 3px 0 #1b4a66;
+        color: #1b2350;
         font-weight: 700;
       }
       #dock .zw-b-med {
@@ -111,7 +112,7 @@
         outline-offset: 1px;
       }
       #dock [role="status"] {
-        color: #3b1a0e;
+        color: #1b2350;
         font-weight: 600;
       }
       #dock:empty {
