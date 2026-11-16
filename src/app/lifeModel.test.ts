@@ -83,10 +83,19 @@ describe("placementCheck", () => {
 
 describe("placementCheck for the trip", () => {
   const week2 = () => createLife({ seed: 1, week: 2 });
-  it("explains the trip on days 1 and 2 in its own words", () => {
-    const c = placementCheck(week2(), 0, 1, "trip");
-    expect(c.ok).toBe(false);
-    expect(c.reasons).toEqual(["The trip leaves on the evening of day 3"]);
+  it("explains the trip on days 1 and 2's evenings in its own words", () => {
+    for (const d of [0, 1]) {
+      const c = placementCheck(week2(), d, 1, "trip");
+      expect(c.ok).toBe(false);
+      expect(c.reasons).toEqual(["The trip leaves on the evening of day 3"]);
+    }
+  });
+  it("leads with the day-3 reason on days 1 and 2's day slots", () => {
+    for (const d of [0, 1]) {
+      const c = placementCheck(week2(), d, 0, "trip");
+      expect(c.ok).toBe(false);
+      expect(c.reasons[0]).toBe("The trip leaves on the evening of day 3");
+    }
   });
   it("says the trip leaves in the evening when day 3's day slot is tapped", () => {
     const c = placementCheck(week2(), 2, 0, "trip");

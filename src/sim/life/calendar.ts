@@ -239,13 +239,13 @@ export function placementProblems(
   if (def.overnight && (slot !== EVENING || day >= L.days - 1)) {
     problems.push("a sleepover needs an evening before another day");
   }
+  if (def.lastDayOnly && day !== L.days - 1) {
+    problems.push(`the trip leaves on the evening of day ${L.days}`);
+  }
   if (def.eveningOnly && slot !== EVENING) {
     problems.push(
       `${def.base === "trip" ? "the trip" : "game night"} is only in the evening`,
     );
-  }
-  if (def.lastDayOnly && day !== L.days - 1) {
-    problems.push(`the trip leaves on the evening of day ${L.days}`);
   }
   const plan = withPlacement(life, day, slot, { card });
   if (energyPlan(life, plan).some((row) => row.some((e) => e < 0))) {
