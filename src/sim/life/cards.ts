@@ -28,7 +28,7 @@ interface CardText {
 
 const TEXT: Record<CardId, CardText> = {
   yard: {
-    label: "Yard work with Maya",
+    label: "Yard party with Maya",
     people: "Your sister Maya wants help clearing the yard before the party.",
     blurb: `Mulch, dead leaves and compost: ${organismName("aspergillus")} spores in the air.`,
     base: "yard",
@@ -36,7 +36,7 @@ const TEXT: Record<CardId, CardText> = {
     kinds: ["aspergillus"],
   },
   yardIndoor: {
-    label: "Indoor jobs for Maya",
+    label: "Indoor jobs for you",
     people: "Maya does the mulch; you set up inside and fire up the grill.",
     blurb: "Still helping, still hanging out, mostly away from the spores.",
     base: "yard",
@@ -44,14 +44,14 @@ const TEXT: Record<CardId, CardText> = {
   },
   lake: {
     label: "The lake with Jordan",
-    people: "Jordan wants you at the lake, lagoon swim and all.",
+    people: "Jordan invites you to the lake, lagoon swim and all.",
     blurb: `The warm, still lagoon carries ${organismList(["strep", "staph"])}, some of them the kind your cells can only hold.`,
     base: "lake",
     smarter: "beach",
     kinds: ["strep", "staph"],
   },
   beach: {
-    label: "The beach, not the lagoon",
+    label: "Open beach only, not the lagoon",
     people: "Same day with Jordan, but you swim off the open beach.",
     blurb: `Open, moving water brings far fewer ${formNoun("bacterium", true)}.`,
     base: "lake",
@@ -87,7 +87,7 @@ const TEXT: Record<CardId, CardText> = {
   gameEarly: {
     label: "Game night, home by 11",
     people: "Same crowd at Alex's, but you head out in time for your pills.",
-    blurb: "Fewer rounds, fewer points, and the routine holds.",
+    blurb: "Fewer games, fewer points, but pills are taken.",
     base: "game",
     kinds: ["strep"],
     eveningOnly: true,
