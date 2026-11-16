@@ -29,6 +29,8 @@ export interface OrderView {
   ): void;
   /** Pulses the idle rings. */
   tick(dtSeconds: number): void;
+  /** A steady idle ring instead of a pulse (after the fight's first End Turn). */
+  setSteady(steady: boolean): void;
 }
 
 const LIFT = 0.1;
@@ -293,11 +295,16 @@ export function createOrderView(
     group.add(m);
   };
 
+  let steady = false;
   return {
     group,
     tick(dt) {
       clock += dt;
-      idleMat.opacity = calm() ? 0.55 : 0.4 + 0.3 * Math.sin(clock * 3);
+      idleMat.opacity =
+        calm() || steady ? 0.55 : 0.4 + 0.3 * Math.sin(clock * 3);
+    },
+    setSteady(on) {
+      steady = on;
     },
     update(state, orders, targets = [], idle = [], dose) {
       group.clear();

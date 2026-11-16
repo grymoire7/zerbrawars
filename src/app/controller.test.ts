@@ -6,6 +6,7 @@ import {
   describeEvent,
   supportCardFor,
   tapTile,
+  toggleWallOff,
   type OrderUi,
 } from "./controller";
 
@@ -19,32 +20,37 @@ const loaded: BattleState = {
 const at = loaded.swarms[2]!.at;
 
 describe("tapping the selected swarm's own tile", () => {
-  it("cycles hold, wall off, clear for a loaded swarm", () => {
-    let ui: OrderUi = {
-      orders: [],
-      selected: "s3",
-      charge: null,
-      support: null,
-    };
-    const kinds: (string | undefined)[] = [];
-    for (let i = 0; i < 3; i++) {
-      ui = tapTile(loaded, ui, at);
-      kinds.push(ui.orders[0]?.type);
-    }
-    expect(kinds).toEqual(["hold", "wallOff", undefined]);
+  const sel = (id: string, orders: OrderUi["orders"] = []): OrderUi => ({
+    orders,
+    selected: id,
+    charge: null,
+    support: null,
   });
 
-  it("keeps hold for an empty swarm", () => {
-    let ui: OrderUi = {
-      orders: [],
-      selected: "s1",
-      charge: null,
-      support: null,
-    };
+  it("clears a queued move, then deselects", () => {
     const s1 = base.swarms[0]!.at;
+    let ui = sel("s1", [
+      { type: "move", swarmId: "s1", to: { x: s1.x, y: s1.y - 1 } },
+    ]);
     ui = tapTile(base, ui, s1);
+    expect(ui.orders).toEqual([]);
+    expect(ui.selected).toBe("s1");
     ui = tapTile(base, ui, s1);
-    expect(ui.orders.map((o) => o.type)).toEqual(["hold"]);
+    expect(ui.selected).toBeNull();
+  });
+
+  it("never queues a hold, even for a loaded swarm", () => {
+    let ui = sel("s3");
+    ui = tapTile(loaded, ui, at);
+    expect(ui.orders).toEqual([]);
+    expect(ui.selected).toBeNull();
+  });
+
+  it("clears a queued wall off too, which the W key sets", () => {
+    let ui = toggleWallOff(loaded, sel("s3"), "s3");
+    expect(ui.orders.map((o) => o.type)).toEqual(["wallOff"]);
+    ui = tapTile(loaded, ui, at);
+    expect(ui.orders).toEqual([]);
   });
 });
 

@@ -5,10 +5,8 @@ import { organismKeyText } from "../sim/organisms";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 export interface HudOrder {
   readonly swarmId: string;
-  /** Status chip text: "no order", "move", "hold", "engulf", "wall off", "busy". */
+  /** Status chip text: "no order", "move", "engulf", "wall off", "busy". */
   readonly label: string;
-  /** What the order does, e.g. "-> 5,4"; empty without one. */
-  readonly detail: string;
   readonly hasOrder: boolean;
   readonly idle: boolean;
   readonly selected: boolean;
@@ -146,7 +144,6 @@ export interface HudHandlers {
   /** Absent in arc play, where the menu has Start this fight over; the debug battle keeps Reset. */
   onReset?(): void;
   onSelect(swarmId: string): void;
-  onClearOrder(swarmId: string): void;
   onWallOff(): void;
   onPickCharge(charge: string): void;
   onClearSupport(): void;
@@ -523,15 +520,8 @@ export function createHud(
     pick.type = "button";
     pick.setAttribute("aria-pressed", String(o.selected));
     pick.append(el("strong", "", o.swarmId), chip(o.label, o.hasOrder));
-    if (o.detail)
-      pick.append(el("span", "font:12px monospace;opacity:0.75;", o.detail));
     pick.addEventListener("click", () => handlers.onSelect(o.swarmId));
     r.append(pick);
-    if (o.hasOrder) {
-      const clear = button("Clear", () => handlers.onClearOrder(o.swarmId));
-      clear.setAttribute("aria-label", `Clear order for ${o.swarmId}`);
-      r.append(clear);
-    }
     return r;
   };
 
