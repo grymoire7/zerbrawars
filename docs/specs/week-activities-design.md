@@ -1,6 +1,6 @@
 # Week activities: a hand for each week, and new hazards
 
-Status: draft for approval, 2026-11-16. Design only; nothing is built.
+Status: built, 2026-11-16. The numbers below are the starting points; see "As built" for what shipped.
 
 ## Intent
 
@@ -84,17 +84,16 @@ points, energy, landing odds and an entry tile in `PARAMS.life.cards`. Ids follo
 (`yard` and `yardIndoor`). Wording and the smarter versions are my proposal; the numbers are
 starting points for the builder to tune against the goal.
 
-| Activity (id / smarter id)                         | Hazard and how it reaches you                   | Germ         | Start odds / points / energy |
+| Activity (id / smarter id)                         | Hazard and how it reaches you                   | Germ         | Start odds / points / energy (as built) |
 | -------------------------------------------------- | ----------------------------------------------- | ------------ | ---------------------------- |
-| Green woodworking with Dad (`wood` / `woodDry`)    | Damp wood and sawdust, breathed in              | Aspergillus  | 40% / 5 / 2                  |
-| Crawlspace for the ball (`crawl` / `crawlRake`)    | Damp soil, old mold and dust in a tight space   | Aspergillus  | 35% / 4 / 1                  |
-| Gift flytrap (`flytrap` / `flytrapGarage`)         | Damp potting soil and moss kept in the house    | Aspergillus  | 35% / 4 / 1                  |
-| Leave for Vietnam (`trip` / `tripPlan`), day 3 evening only | Warm soil and muddy water on a trip abroad      | Burkholderia | 45% / 6 / 3                  |
+| Green woodworking with Dad (`wood` / `woodDry`)    | Damp wood and sawdust, breathed in              | Aspergillus  | 40% / 4 / 2                  |
+| Crawlspace for the ball (`crawl` / `crawlRake`)    | Damp soil, old mold and dust in a tight space   | Aspergillus  | 35% / 4 / 2                  |
+| Gift flytrap (`flytrap` / `flytrapGarage`)         | Damp potting soil and moss kept in the house    | Aspergillus  | 20% / 4 / 2                  |
+| Leave for Vietnam (`trip` / `tripPlan`), day 3 evening only | Warm soil and muddy water on a trip abroad      | Burkholderia | 45% / 7 / 4                  |
 
-Smarter versions, as proposed: woodworking with dry wood outdoors; the crawlspace with a rake to
+Smarter versions (odds 2% each; points 3, 3, 3 and 6; energy as the risky card): woodworking with dry wood outdoors; the crawlspace with a rake to
 hook the ball out; the flytrap moved to the garage next to Dad's wood pile, out of the living space (and next to a hazard the player should already avoid, so there is no reason to go near it; also the better social play if the person who gave it finds out). Re-gifting would also be safer than keeping it in the house, but the card UI, preview and bots assume exactly two versions of a card, so it is not built; the trip with a travel
-plan (closed shoes, no floodwater, bottled water; clinician item 36). Smarter odds are about a
-quarter of the risky odds and points a step lower, as the existing pairs are.
+plan (closed shoes, no floodwater, bottled water; clinician item 36). Smarter odds are 2% and points a step lower, as the existing pairs are.
 
 ### The trip: last day, evening only
 
@@ -171,3 +170,14 @@ strep, staph and Aspergillus by more than color (a shape or mark), and pass the 
 
 Clinician items 32 to 43 in `clinician-questions.md`. The build uses their working assumptions and
 changes later if the answers differ.
+
+## As built
+
+Tuned in Task 6 against the campaign balance targets. Differences from the starting points above:
+
+- Smarter odds are 2% for all four (the design guessed about a quarter of the risky odds): the best plan should rarely carry a reservoir out of the last week.
+- Flytrap risky odds are 20%, not 35%: it is the one card the doctor and the trip crowd least, and 35% overshot the risky bot's goal rate.
+- Energy is 2 for wood, crawlspace and flytrap (and their smarter versions) and 4 for the trip: a week then holds three cards, so the all-smarter week tops out at 12 points and the best plan takes one risky card.
+- Points: wood 4 (not 5), trip 7 (not 6), to hold the goal of 13 with those energies; smarter versions are 3, 3, 3 and 6.
+- Counts and sizes: wood and crawlspace 2 germs of size 2 (smarter: 1 of size 1); flytrap 1 of size 2 (smarter 1 of size 1); trip 2 of size 2 (smarter 1 of size 1).
+- In week 2 the risky bot meets the goal about 54% of the time, not about 75%: a late doctor visit displaces the trip, the last slot and the only card still to play.

@@ -8,12 +8,13 @@ export default defineConfig({
     // The balance and determinism suites run whole campaigns. They take a few seconds here and
     // more than the 5s default on a shared CI runner, so give them room.
     testTimeout: 30_000,
-    // Render and app tests cover pure modules only (no three, no DOM).
+    // Render and app tests cover pure modules only (no three, no DOM); the UI tests are the pure helpers in src/ui.
     include: [
       "src/sim/**/*.test.ts",
       "src/render/**/*.test.ts",
       "src/app/**/*.test.ts",
       "src/theme/**/*.test.ts",
+      "src/ui/**/*.test.ts",
     ],
   },
 });

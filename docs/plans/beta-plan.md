@@ -48,8 +48,8 @@ more battle, but neither felt noticeably harder or more fun; `?goal=N` still ove
 meets it in 95% of weeks and risky in 75%, and the best plan takes one risky late-night game night, so
 reaching the goal costs some safety. The week is still not hard; a seeded weekly event (week-phase
 design Option B, about 18h) is the candidate if the patient session says so. Careless full battles need
-backup 51% of the time (a battle knob); it also waits for the patient session. B1d slice 5 (a week-2 farm hand) is the first cut of B1d, then more cards.
-Backlog: a larger card pool drawn per week, so the weeks differ.
+backup 51% of the time (a battle knob); it also waits for the patient session. B1d slice 5 (a week-2 hand) is built; more cards can follow.
+Backlog: each week now deals its own authored hand from a pool (week 2 differs from week 1); a seeded random draw is still open.
 
 ## 1. Goal
 

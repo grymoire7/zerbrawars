@@ -7,6 +7,18 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Each week now deals its own hand of activities. Week 1 is unchanged; week 2 has band
+  practice, green woodworking with Dad, the crawlspace, the gift flytrap and the senior trip.
+- Four new activities, each with a risky and a smarter version: green woodworking (dry wood
+  outdoors is smarter), the crawlspace for the soccer ball (use a rake), the gift flytrap (keep
+  it in the garage) and "Leave for Vietnam" (make a travel plan).
+- A new germ, Burkholderia, brought by the trip. It is a sealed bacterium drawn as a rod, so
+  engulfing only contains it and a full week of antibacterial charge finishes a small one.
+- The trip can only go in the evening of day 3, so nothing is scheduled after leaving. The card
+  and the placement message say why.
+
 ### Changed
 
 - The battle button "End Turn" is now "Play Turn", since the turn plays out after you press it.
