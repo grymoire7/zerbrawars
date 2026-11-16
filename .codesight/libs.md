@@ -313,6 +313,7 @@
   - interface StatusStrip
   - type StatusBar
 - `src/ui/titleScene.ts`
+  - function createBoardBackdrop: (board) => void
   - function wordmarkMarkup: () => string
   - function createTitleScene: (root, before) => TitleScene
   - interface TitleScene

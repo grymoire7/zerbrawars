@@ -44,9 +44,9 @@
 - `src/ui/gameMenu.ts` — createGameMenu, GameMenuOptions, FacilitatorMenu, GameMenu
 - `src/ui/interlude.ts` — createInterlude, ScoreCardModel, InterludeModel, Interlude
 - `src/ui/menu.ts` — createMenu, MenuItem, MenuModel, Menu
+- `src/ui/titleScene.ts` — createBoardBackdrop, wordmarkMarkup, createTitleScene, TitleScene
 - `src/ui/broughtStrip.ts` — createBroughtStrip, BroughtView, BroughtStrip
 - `src/ui/infoTip.ts` — createInfoTips, InfoTip, InfoTipFactory
-- `src/ui/titleScene.ts` — wordmarkMarkup, createTitleScene, TitleScene
 - `src/ui/coachStrip.ts` — createCoachStrip, CoachStrip
 - `src/ui/download.ts` — downloadText, copyText
 - `src/ui/index.ts` — getUiRoot, getPanels

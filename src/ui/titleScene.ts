@@ -34,6 +34,16 @@ const SCENE_HTML =
   piece(germTeal, "zgt", "zs-germ zs-g-teal") +
   piece(hero, "zhe", "zs-hero");
 
+/** The title scene's sky (gradient, rays and bokeh spheres) as the battle board's backdrop. */
+export function createBoardBackdrop(board: HTMLElement): void {
+  const el = document.createElement("div");
+  el.className = "zs-scene";
+  el.setAttribute("aria-hidden", "true");
+  el.innerHTML =
+    '<div class="zs-rays"></div>' + piece(bokeh, "zbb", "zs-bokeh");
+  board.insertBefore(el, board.firstChild);
+}
+
 /** The glossy "Zebra Wars" wordmark as inline markup (decorative; the heading keeps the text). */
 export function wordmarkMarkup(): string {
   return piece(wordmark, "zwm", "zs-wordmark");

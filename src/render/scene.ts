@@ -21,11 +21,16 @@ export function createScene(
   canvas: HTMLCanvasElement,
   extent: { width: number; depth: number },
 ): SceneContext {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: true,
+  });
+  renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(hex("bg"));
+  // No scene background: the page behind the canvas (the board backdrop) shows through.
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
 

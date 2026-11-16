@@ -33,11 +33,13 @@ import {
   shouldWarnOnLeave,
 } from "./navGuardModel";
 import { applyCssTokens } from "../theme/palette";
+import { createBoardBackdrop } from "../ui/titleScene";
 import { createZoreoCorner } from "../ui/zoreoCorner";
 import { gazeFor, screenKindFor } from "./zoreoModel";
 
 applyCssTokens(document.documentElement);
 
+createBoardBackdrop(document.getElementById("board") as HTMLElement);
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
 const panels = getPanels();
