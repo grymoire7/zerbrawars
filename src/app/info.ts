@@ -95,6 +95,19 @@ export function endTurnHint(holding: number): string {
   return `(${holding} ${holding === 1 ? "swarm" : "swarms"} will hold)`;
 }
 
+/**
+ * What a fight with no free germ on the board is still waiting on, as the hint beside Play Turn:
+ * a germ swallowed inside a swarm (its carried roll goes on each turn) or an arrival still due.
+ * "" when a germ is on the board (the holding hint applies) or the fight is about to end.
+ */
+export function waitingHint(battle: BattleState): string {
+  if (battle.pathogens.some((p) => !p.hidden)) return "";
+  if (battle.swarms.some((w) => w.load.length > 0))
+    return "(waiting on a swallowed germ)";
+  if (battle.arrivals.length > 0) return "(a germ is still due to arrive)";
+  return "";
+}
+
 const nextTurn = (m: TelegraphMark | undefined, size: number): string => {
   if (!m) return "nothing planned";
   if (m.cancelledBy) return `nothing, ${m.cancelledBy} engulfs it first`;

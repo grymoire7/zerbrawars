@@ -4,6 +4,7 @@ import { loadScenario } from "../sim/scenarios";
 import type { BattleState, Order } from "../sim/types";
 import {
   endTurnHint,
+  waitingHint,
   entityAt,
   heatKey,
   infoFor,
@@ -65,6 +66,41 @@ describe("endTurnHint", () => {
     expect(endTurnHint(0)).toBe("");
     expect(endTurnHint(1)).toBe("(1 swarm will hold)");
     expect(endTurnHint(2)).toBe("(2 swarms will hold)");
+  });
+});
+
+describe("waitingHint", () => {
+  const empty = { ...battle, pathogens: [], arrivals: [] };
+  const withLoad = {
+    ...empty,
+    swarms: [
+      {
+        ...battle.swarms[0],
+        load: [{ kind: "staph" as const, size: 2 }],
+      },
+    ],
+  };
+
+  it("is quiet while a germ is on the board", () => {
+    expect(waitingHint(battle)).toBe("");
+  });
+
+  it("names a swallowed germ when the board is clear", () => {
+    expect(waitingHint(withLoad)).toBe("(waiting on a swallowed germ)");
+  });
+
+  it("names a germ still due to arrive", () => {
+    const due = {
+      ...empty,
+      arrivals: [
+        { turn: 3, kind: "strep" as const, size: 1, door: { x: 0, y: 0 } },
+      ],
+    };
+    expect(waitingHint(due)).toBe("(a germ is still due to arrive)");
+  });
+
+  it("is quiet when nothing is left", () => {
+    expect(waitingHint(empty)).toBe("");
   });
 });
 

@@ -77,7 +77,7 @@ import { luckLine, medDoses, stillHardLine, weekOdds } from "./lifeModel";
 import { battleStatusModel, type BattleStatusInput } from "./battleModel";
 import { createOutcomeOverlay, type OutcomeExtra } from "../ui/outcome";
 import { createController, describeSupport, logLines } from "./controller";
-import { endTurnHint, heatKey, orderCount } from "./info";
+import { endTurnHint, heatKey, orderCount, waitingHint } from "./info";
 import {
   loadoutFor,
   parseLoadoutParams,
@@ -610,7 +610,9 @@ export function mountBattle(
         };
       }),
       holding: orderCount(statuses).holding,
-      hint: playing ? "" : endTurnHint(orderCount(statuses).holding),
+      hint: playing
+        ? ""
+        : waitingHint(s) || endTurnHint(orderCount(statuses).holding),
       info: controller.info(),
       charges: playing ? [] : controller.charges(),
       noTargets: controller.noTargets(),
