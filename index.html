@@ -47,6 +47,9 @@
         display: flex;
         flex-direction: column;
       }
+      #stage {
+        position: relative;
+      }
       #board {
         position: relative;
         flex: 1 1 0;
@@ -61,8 +64,8 @@
         /* Clear of the sides and the panel below, so it reads as its own tray. */
         margin: 0 8px max(8px, env(safe-area-inset-bottom));
         /* A teal tray, so the bar reads as part of the board rather than the side panel. */
-        background: linear-gradient(#2fa8a6, #1b7f83);
-        border: 2px solid #7fe0d2;
+        background: linear-gradient(#ffbf8c, #f58a62);
+        border: 2px solid #ffe6bd;
         border-radius: 18px;
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
         position: relative;
@@ -74,16 +77,16 @@
         font-weight: 600;
         color: #15171c;
         background: linear-gradient(#e3f4f1, #b9d9d4);
-        box-shadow: 0 3px 0 #0f5a5e;
+        box-shadow: 0 3px 0 #9a4a2a;
         transition: transform 0.06s;
       }
       #dock button:active:not(:disabled) {
         transform: translateY(2px);
-        box-shadow: 0 1px 0 #0f5a5e;
+        box-shadow: 0 1px 0 #9a4a2a;
       }
       #dock button:disabled {
         opacity: 0.55;
-        box-shadow: 0 3px 0 #0f5a5e;
+        box-shadow: 0 3px 0 #9a4a2a;
       }
       #dock .zw-b-go {
         background: linear-gradient(#b8e6f8, #7cc4e6);
@@ -108,8 +111,8 @@
         outline-offset: 1px;
       }
       #dock [role="status"] {
-        color: #fff;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+        color: #3b1a0e;
+        font-weight: 600;
       }
       #dock:empty {
         display: none;

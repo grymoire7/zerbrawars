@@ -34,7 +34,7 @@ const SCENE_HTML =
   piece(germTeal, "zgt", "zs-germ zs-g-teal") +
   piece(hero, "zhe", "zs-hero");
 
-/** The title scene's sky (gradient, rays and bokeh spheres) as the battle board's backdrop. */
+/** The title scene's sky (gradient, rays and bokeh spheres) as the battle board's backdrop (it also shows in the battle bar's margins). */
 export function createBoardBackdrop(board: HTMLElement): void {
   const el = document.createElement("div");
   el.className = "zs-scene";

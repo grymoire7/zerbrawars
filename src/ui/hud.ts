@@ -669,7 +669,7 @@ export function createHud(
                 ? "Tap a tile to move, or a germ to engulf."
                 : "Tap a swarm to give it an order.";
       if (prompt.textContent !== promptText) prompt.textContent = promptText;
-      prompt.style.color = picked && m.noTargets ? "#fff3b0" : "";
+      prompt.style.color = picked && m.noTargets ? "#8a1c10" : "";
       problems.style.display = m.problems.length > 0 ? "block" : "none";
       problems.replaceChildren(...m.problems.map((t) => line(t)));
 

@@ -39,7 +39,7 @@ import { gazeFor, screenKindFor } from "./zoreoModel";
 
 applyCssTokens(document.documentElement);
 
-createBoardBackdrop(document.getElementById("board") as HTMLElement);
+createBoardBackdrop(document.getElementById("stage") as HTMLElement);
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
 const ui = getUiRoot();
 const panels = getPanels();
