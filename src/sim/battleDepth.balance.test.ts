@@ -230,7 +230,7 @@ describe("battle depth survey", () => {
     // plays the all-smarter plan, so its routine never breaks.
     const m = matched("forgetful", 1);
     expect(m.n).toBeGreaterThan(80);
-    // Measured: +0.37 tissue lost, 3% fewer cleared (the pills are left behind 30% of the time).
+    // Measured (week 1): +0.51 tissue lost, 4% fewer cleared (the pills are left behind 30% of the time).
     expect(m.lost).toBeGreaterThanOrEqual(0.25);
     expect(m.cleared).toBeGreaterThanOrEqual(0.02);
   });
