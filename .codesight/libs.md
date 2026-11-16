@@ -268,11 +268,11 @@
 - `src/ui/hud.ts`
   - function createHud: (mounts, handlers, options) => Hud
   - interface HudOrder
-  - interface HudMedication
   - interface HudCharge
   - interface HudSupport
   - interface HudSupportCard
-  - _...12 more_
+  - interface HudInfo
+  - _...11 more_
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
 - `src/ui/infoTip.ts`
   - function createInfoTips: () => InfoTipFactory

@@ -207,8 +207,8 @@ export function toggleWallOff(
  * What a tap on a tile (null = off the board) does:
  * - with a charge picked: a legal target queues the support order (or clears it if already
  *   queued); any other tap puts the charge back and acts as below;
- * - own tile of the selected swarm: queue hold (cancels a move); a second tap on a loaded swarm
- *   turns the hold into wall off, and a third clears it;
+ * - own tile of the selected swarm: clear its order, or deselect it if it has none (a swarm with no
+ *   order holds, so there is no hold order to queue; wall off has its own button and the W key);
  * - an option tile: queue the move, or clear it if that move is already queued;
  * - an engulf target's tile: queue the engulf, or clear it if already queued;
  * - another swarm: select it; anything else: deselect.
@@ -231,16 +231,9 @@ export function tapTile(
   const here = swarmAt(battle, at);
   const sel = battle.swarms.find((s) => s.id === ui.selected);
   if (here && here.id === sel?.id) {
-    const cur = ui.orders.find((o) => o.swarmId === here.id);
-    if (cur?.type === "wallOff")
-      return toggleWallOff(battle, ui, here.id, walls);
-    if (cur?.type === "hold" && walls && wallable(battle, here.id)) {
-      return toggleWallOff(battle, ui, here.id);
-    }
-    return {
-      ...ui,
-      orders: withOrder(ui.orders, { type: "hold", swarmId: here.id }),
-    };
+    if (ui.orders.some((o) => o.swarmId === here.id))
+      return { ...ui, orders: clearOrder(ui.orders, here.id) };
+    return { ...ui, selected: null };
   }
   if (here) return { ...ui, selected: here.id };
   const target = sel && targetAt(battle, ui, at);

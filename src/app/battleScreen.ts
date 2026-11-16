@@ -15,7 +15,6 @@ import {
   defaultSeedFor,
   isScenarioName,
 } from "../sim/scenarios";
-import { stallChance } from "../sim/battle/intents";
 import { battleStatus } from "../sim/battle/outcome";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 
@@ -77,12 +76,7 @@ import { thisWeekRows } from "./summaryModel";
 import { luckLine, medDoses, stillHardLine, weekOdds } from "./lifeModel";
 import { battleStatusModel, type BattleStatusInput } from "./battleModel";
 import { createOutcomeOverlay, type OutcomeExtra } from "../ui/outcome";
-import {
-  createController,
-  describeOrder,
-  describeSupport,
-  logLines,
-} from "./controller";
+import { createController, describeSupport, logLines } from "./controller";
 import { endTurnHint, heatKey, orderCount } from "./info";
 import {
   loadoutFor,
@@ -287,7 +281,6 @@ export function mountBattle(
       // The debug battle keeps Reset in its bar; arc play has Start this fight over in the menu.
       onReset: menu ? undefined : () => controller.reset(),
       onSelect: (id) => controller.select(id),
-      onClearOrder: (id) => controller.clearOrder(id),
       onWallOff: () => controller.wallOff(),
       onPickCharge: (charge) => controller.pickCharge(charge as ChargeKind),
       onClearSupport: () => controller.clearSupport(),
@@ -497,6 +490,9 @@ export function mountBattle(
       playing || controller.over()
         ? []
         : statuses.filter((w) => w.status === "none").map((w) => w.swarmId);
+    // The ring nudges until the first End Turn, then stays steady: a swarm kept still on purpose
+    // should not pulse for the rest of the fight.
+    orderView.setSteady(s.turn > 1);
     orderView.update(
       s,
       controller.orders(),
@@ -608,7 +604,6 @@ export function mountBattle(
         return {
           swarmId: w.swarmId,
           label: w.label,
-          detail: o ? describeOrder(o).slice(w.swarmId.length + 1) : "",
           hasOrder: o !== undefined,
           idle: w.status === "none",
           selected: w.selected,
@@ -617,10 +612,6 @@ export function mountBattle(
       holding: orderCount(statuses).holding,
       hint: playing ? "" : endTurnHint(orderCount(statuses).holding),
       info: controller.info(),
-      medication: {
-        level: s.meds.level,
-        stallChance: stallChance(s.meds.aura),
-      },
       charges: playing ? [] : controller.charges(),
       noTargets: controller.noTargets(),
       support: supportOrder && {
@@ -829,6 +820,7 @@ export function mountBattle(
       coachStrip?.clear();
       panels.scroll.replaceChildren();
       panels.bar.replaceChildren();
+      panels.dock.replaceChildren();
       ui.replaceChildren();
     },
   };

@@ -15,11 +15,13 @@ export function getPanels(): {
   status: HTMLElement;
   scroll: HTMLElement;
   bar: HTMLElement;
+  dock: HTMLElement;
 } {
   return {
     coach: need("coach"),
     status: need("status"),
     scroll: need("sideScroll"),
     bar: need("bar"),
+    dock: need("dock"),
   };
 }

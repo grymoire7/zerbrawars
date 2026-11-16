@@ -27,11 +27,11 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ["Your goal", "Clear the germs from the board before the tissue wears out."],
   [
     "Orders",
-    "Each swarm gets one order per turn: move, hold, engulf or wall off. A swarm with no order holds. You can end the turn with any number of orders.",
+    "Each swarm gets one order per turn: move, engulf or wall off. A swarm with no order holds still. You can end the turn with any number of orders.",
   ],
   [
     "How to order",
-    "Tap a swarm to select it. Then tap a highlighted tile to move there, or tap a germ to engulf it. Tap the swarm again to hold.",
+    "Tap a swarm to select it. Then tap a highlighted tile to move there, or tap a germ to engulf it. Tap the swarm again to cancel its order.",
   ],
   [
     "Arrows show what germs do next turn",
@@ -47,7 +47,7 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Charges",
-    `Medication also gives you charges: antibacterial kills a ${formNoun("bacterium")} (shelled or not), antifungal kills a ${formNoun("mold")}, and a strong charge (from a doctor visit) kills either. A charge only works on small germs (size 2 or less, strong up to 4). Once a turn, pick a charge in the side panel, then tap a green diamond: a germ, or a loaded swarm (which clears one carried germ). No dice are rolled, and a hit germ does nothing that turn. Tap the diamond again, or press Clear, to take it back.`,
+    `Medication also gives you charges: antibacterial kills a ${formNoun("bacterium")} (shelled or not), antifungal kills a ${formNoun("mold")}, and a strong charge (from a doctor visit) kills either. A charge only works on small germs (size 2 or less, strong up to 4). Once a turn, pick a charge under the board, then tap a green diamond: a germ, or a loaded swarm (which clears one carried germ). No dice are rolled, and a hit germ does nothing that turn. Tap the diamond again, or press Take it back, to undo it.`,
   ],
   [
     "Hidden germs",

@@ -179,7 +179,7 @@ focus, so Enter and Space on a button stay the button's.
 | --- | --- | --- |
 | Tab, Shift+Tab | always | Browser focus order. No longer cycles swarms. |
 | Arrow keys | board focused, planning | Move the cursor one tile (Up = row above on screen). Stops at the edge, no wrap. Shows the hover previews. |
-| Enter, Space | board focused, planning | Act on the cursor tile, exactly as a tap (select, move, engulf, hold, hold -> wall off -> clear, dose). |
+| Enter, Space | board focused, planning | Act on the cursor tile, exactly as a tap (select, move, engulf, clear or deselect on the swarm's own tile, dose; wall off stays on W). |
 | Enter, Space | board keys, playback | Skip to the end of the turn (unchanged). |
 | Enter | nothing focused, planning | End the turn (unchanged, for mouse players who click the board then press Enter). |
 | 1 to 9 | board keys, planning | Select swarm `s1`..`s9` if it exists; cursor jumps to it; focus moves to the board. |
@@ -242,7 +242,7 @@ Turn label does not change (phones have no keyboard).
 - **T targets**, in reading order (y, then x), recomputed on each press:
   - a charge is picked: its targets (`controller.dose().targets`);
   - else a swarm is selected: its engulf targets (the pathogen tiles of `controller.targets()`)
-    then its move options (`controller.options()`), then its own tile (hold);
+    then its move options (`controller.options()`), then its own tile (clears its order, or deselects);
   - else: the tiles of swarms that have no order yet, then all swarms.
   - From a cursor not on the list, T goes to the first entry after the cursor in reading order
     (wrapping); Shift+T the last before it.
@@ -276,7 +276,7 @@ latest text wins after 120 ms; to repeat the same text, clear it first.
 | selection to another swarm | `Enter: select s2.` | `s2 selected.` |
 | selection cleared | `Enter: deselect.` | `Nothing selected.` |
 | new move order | `Enter: move s1 here.` | `s1 will move here.` |
-| new hold order | `Enter: s1 holds.` | `s1 will hold.` |
+| order cleared | `Enter: s1's order is cleared.` | `s1 will hold still.` |
 | new wall off order | `Enter: s1 walls off here.` | `s1 will wall off here.` |
 | new engulf order | `Enter: s1 engulfs <title>, kill chance 30%.` (or `, loads it` when it cannot kill) | `s1 will engulf <title>.` |
 | order cleared | `Enter: clear s1's order.` | `s1's order cleared.` |

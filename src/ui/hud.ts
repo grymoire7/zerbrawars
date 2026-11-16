@@ -5,20 +5,11 @@ import { organismKeyText } from "../sim/organisms";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 export interface HudOrder {
   readonly swarmId: string;
-  /** Status chip text: "no order", "move", "hold", "engulf", "wall off", "busy". */
+  /** Status chip text: "no order", "move", "engulf", "wall off", "busy". */
   readonly label: string;
-  /** What the order does, e.g. "-> 5,4"; empty without one. */
-  readonly detail: string;
   readonly hasOrder: boolean;
   readonly idle: boolean;
   readonly selected: boolean;
-}
-
-export interface HudMedication {
-  /** 0..1 medication level (equal to the aura at setup). */
-  readonly level: number;
-  /** Chance each germ is held back each turn, 0..1. */
-  readonly stallChance: number;
 }
 
 export interface HudCharge {
@@ -110,7 +101,6 @@ export interface HudModel {
   readonly canEndTurn: boolean;
   readonly log: readonly string[];
   readonly orders: readonly HudOrder[];
-  readonly medication: HudMedication;
   readonly charges: readonly HudCharge[];
   /** The picked charge has nothing to hit right now. */
   readonly noTargets: boolean;
@@ -146,7 +136,6 @@ export interface HudHandlers {
   /** Absent in arc play, where the menu has Start this fight over; the debug battle keeps Reset. */
   onReset?(): void;
   onSelect(swarmId: string): void;
-  onClearOrder(swarmId: string): void;
   onWallOff(): void;
   onPickCharge(charge: string): void;
   onClearSupport(): void;
@@ -157,6 +146,8 @@ export interface HudHandlers {
 export interface HudMounts {
   readonly scroll: HTMLElement;
   readonly bar: HTMLElement;
+  /** The battle bar docked under the board. */
+  readonly dock: HTMLElement;
 }
 
 const PANEL =
@@ -184,7 +175,7 @@ export function createHud(
   handlers: HudHandlers,
   options: HudOptions = {},
 ): Hud {
-  const { scroll, bar } = mounts;
+  const { scroll, dock } = mounts;
   const el = (tag: string, css = "", text = "") => {
     const e = document.createElement(tag);
     if (css) e.style.cssText = css;
@@ -228,34 +219,17 @@ export function createHud(
   );
   stats.append(turnBox, help, progress);
 
-  // Medication: the note on the aura and the charge chips (the level is in the status strip).
-  const medBox = el("div", PANEL + "padding:8px 10px;");
-  const medHead = el("div", ROW + "font-weight:600;");
-  const medLabel = el("span", "", "Medication");
-  const medTip = tip("battle-med", "", "medication");
-  medHead.append(medLabel, medTip.button);
-  const medNote = medTip.note;
-  const chipRow = el(
+  // Orders: a mirror of the board for screen readers and keyboard users; closed by default.
+  const ordersBox = el("details", PANEL) as HTMLDetailsElement;
+  const ordersHead = el(
+    "summary",
+    "min-height:44px;display:flex;align-items:center;padding:0 10px;cursor:pointer;font-weight:600;",
+  );
+  const ordersList = el(
     "div",
-    "display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;",
+    "display:flex;flex-direction:column;gap:6px;padding:0 10px 10px;",
   );
-  const chipHint = el("div", "font-size:12px;margin-top:4px;line-height:1.3;");
-  chipHint.setAttribute("aria-live", "polite");
-  medBox.append(medHead, medNote, chipRow, chipHint);
-
-  // Orders: how many swarms have one, and a status chip per swarm.
-  const ordersBox = el("div", PANEL + "padding:8px 10px;");
-  const ordersHeadRow = el("div", ROW);
-  const ordersHead = el("span", "font-weight:600;");
-  const ordersTip = tip(
-    "battle-orders",
-    "One order per swarm each turn. No order means hold.",
-    "orders",
-  );
-  ordersHeadRow.append(ordersHead, ordersTip.button);
-  ordersTip.note.style.marginBottom = "6px";
-  const ordersList = el("div", "display:flex;flex-direction:column;gap:6px;");
-  ordersBox.append(ordersHeadRow, ordersTip.note, ordersList);
+  ordersBox.append(ordersHead, ordersList);
 
   const problems = el(
     "div",
@@ -298,22 +272,23 @@ export function createHud(
   log.setAttribute("aria-label", "What happened last turn");
   logBox.append(logSummary, log);
 
-  scroll.append(
-    stats,
-    medBox,
-    ordersBox,
-    problems,
-    infoBox,
-    preview,
-    key,
-    logBox,
-  );
+  scroll.append(stats, ordersBox, problems, infoBox, preview, key, logBox);
 
   // Pinned controls.
+  const prompt = el(
+    "div",
+    "min-height:18px;font-size:13px;line-height:18px;margin-bottom:4px;" +
+      "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;",
+  );
+  prompt.setAttribute("role", "status");
+  prompt.setAttribute("aria-live", "polite");
+  const chipRow = el("div", "display:contents;");
+  /** Charge kinds this fight has offered; a spent one stays in its slot, disabled. */
+  const seen = new Map<string, string>();
   const endTurn = button(
     "",
     handlers.onEndTurn,
-    "min-height:52px;flex:1 1 100%;",
+    "min-height:52px;flex:3 1 0;min-width:0;",
   );
   endTurn.className = "zw-endturn";
   endTurn.style.fontWeight = "700";
@@ -325,23 +300,29 @@ export function createHud(
   const endLabel = el("span", "font-size:16px;", "End Turn");
   const endHint = el("span", "font-size:12px;font-weight:400;opacity:0.7;");
   endTurn.append(endLabel, endHint);
-  const row = el("div", "display:flex;gap:6px;flex-wrap:wrap;");
-  const wallOff = button("Wall off (W)", handlers.onWallOff, "flex:1 1 auto;");
-  const x1 = button("1x", () => handlers.onSpeed(1), "flex:1 1 auto;");
-  const x2 = button("2x", () => handlers.onSpeed(2), "flex:1 1 auto;");
-  const skip = button("Skip", handlers.onSkip, "flex:2 1 auto;");
+  const row = el("div", "display:flex;gap:6px;");
+  row.className = "zw-dockrow";
+  const wallOff = button(
+    "Wall off (W)",
+    handlers.onWallOff,
+    "flex:1 1 0;min-width:0;",
+  );
+  const x1 = button("1x", () => handlers.onSpeed(1), "flex:1 1 0;");
+  const x2 = button("2x", () => handlers.onSpeed(2), "flex:1 1 0;");
+  const skip = button("Skip", handlers.onSkip, "flex:3 1 0;");
   skip.title = "Skip to the end of the turn (Enter or Space)";
   const replay = button(
     "Replay last turn",
     handlers.onReplay,
-    "flex:2 1 auto;",
+    "flex:1 1 0;min-width:0;",
   );
   const onReset = handlers.onReset;
-  const reset = onReset ? button("Reset", onReset, "flex:1 1 auto;") : null;
-  row.append(endTurn, x1, x2, skip, replay);
-  if (!options.tutorial) row.insertBefore(wallOff, x1);
+  const reset = onReset ? button("Reset", onReset, "flex:1 1 0;") : null;
+  // Skip sits on the far left, away from End Turn, so a double tap on End Turn cannot skip the animation.
+  row.append(skip, chipRow, replay, x1, x2, endTurn);
+  if (!options.tutorial) row.insertBefore(wallOff, endTurn);
   if (reset) row.append(reset);
-  bar.append(row);
+  dock.append(prompt, row);
 
   const swatch = (css: string) => {
     const sw = el(
@@ -523,15 +504,8 @@ export function createHud(
     pick.type = "button";
     pick.setAttribute("aria-pressed", String(o.selected));
     pick.append(el("strong", "", o.swarmId), chip(o.label, o.hasOrder));
-    if (o.detail)
-      pick.append(el("span", "font:12px monospace;opacity:0.75;", o.detail));
     pick.addEventListener("click", () => handlers.onSelect(o.swarmId));
     r.append(pick);
-    if (o.hasOrder) {
-      const clear = button("Clear", () => handlers.onClearOrder(o.swarmId));
-      clear.setAttribute("aria-label", `Clear order for ${o.swarmId}`);
-      r.append(clear);
-    }
     return r;
   };
 
@@ -635,45 +609,62 @@ export function createHud(
 
       ordersBox.style.display = pb.playing ? "none" : "";
       const ordered = m.orders.filter((o) => o.hasOrder).length;
-      ordersHead.textContent = `Orders: ${ordered} of ${m.orders.length} swarms`;
+      ordersHead.textContent = `Swarm orders: ${ordered} of ${m.orders.length}`;
       ordersList.replaceChildren(
         ...m.orders.map(orderRow),
         ...(m.support ? [supportRow(m.support)] : []),
       );
 
-      medBox.style.display = pb.playing ? "none" : "";
-      medTip.setText(
-        (m.medication.level > 0
-          ? `Each germ has a ${Math.round(m.medication.stallChance * 100)}% chance of being held back each turn.`
-          : "No medication: nothing holds the germs back.") +
-          (m.charges.length > 0
-            ? " Pick a charge to use one this turn (one per turn)."
-            : ""),
-      );
-      chipRow.style.display = m.charges.length > 0 ? "flex" : "none";
-      chipRow.replaceChildren(
-        ...m.charges.map((c) => {
+      for (const c of m.charges) seen.set(c.charge, c.label);
+      const chips: HTMLElement[] = [];
+      if (pb.playing) {
+        // The speed and skip buttons take the bar while a turn plays.
+      } else if (m.support) {
+        const b = button(
+          `Dose set: ${m.support.charge}. Take it back`,
+          handlers.onClearSupport,
+          "flex:2 1 0;min-width:0;",
+        );
+        b.dataset.key = "dose-clear";
+        chips.push(b);
+      } else {
+        for (const [charge, label] of seen) {
+          const c = m.charges.find((x) => x.charge === charge);
           const b = button(
-            `${c.label} x${c.count}`,
-            () => handlers.onPickCharge(c.charge),
-            "flex:1 1 auto;" +
-              (c.selected
+            c
+              ? c.selected
+                ? `Put back ${label}`
+                : `${label} x${c.count}`
+              : `${label} used`,
+            () => handlers.onPickCharge(charge),
+            "flex:1 1 0;min-width:0;" +
+              (c?.selected
                 ? "outline:2px solid var(--zw-med);font-weight:700;"
                 : ""),
           );
-          b.setAttribute("aria-pressed", String(c.selected));
-          b.classList.toggle("zw-coach-pulse", m.coachTarget === c.charge);
+          b.disabled = !c;
+          b.dataset.key = `charge-${charge}`;
+          b.setAttribute("aria-pressed", String(c?.selected ?? false));
+          b.classList.toggle("zw-coach-pulse", m.coachTarget === charge);
           b.title = "Use this charge on a germ or a carried load";
-          return b;
-        }),
-      );
+          chips.push(b);
+        }
+      }
+      chipRow.replaceChildren(...chips);
+      const w = m.wall;
       const picked = m.charges.some((c) => c.selected);
-      chipHint.textContent = picked
-        ? m.noTargets
-          ? "Nothing this charge can hit right now."
-          : "Tap a green diamond on the board."
-        : "";
-      chipHint.style.color = picked && m.noTargets ? "var(--zw-warn)" : "";
+      const wallBlocked = w && !w.queued && w.reason !== null ? w.reason : "";
+      const promptText = pb.playing
+        ? ""
+        : picked
+          ? m.noTargets
+            ? "Nothing this charge can hit right now."
+            : "Tap a green diamond on the board."
+          : wallBlocked
+            ? `Cannot wall off: ${wallBlocked}.`
+            : "";
+      if (prompt.textContent !== promptText) prompt.textContent = promptText;
+      prompt.style.color = picked && m.noTargets ? "var(--zw-warn)" : "";
       problems.style.display = m.problems.length > 0 ? "block" : "none";
       problems.replaceChildren(...m.problems.map((t) => line(t)));
 
@@ -689,7 +680,6 @@ export function createHud(
           : []),
       );
 
-      const w = m.wall;
       const f = m.forecast;
       const cards: HTMLElement[] = [
         ...(m.supportCard ? [supportCardEl(m.supportCard)] : []),
