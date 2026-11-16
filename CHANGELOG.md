@@ -7,10 +7,14 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-15
+
 ### Changed
 
+- The board now sits on the title screen's teal sky (light rays and bubbles), which
+  also shows behind the battle bar.
 - Battle controls (charges, Wall off, End Turn, Replay, speed and Skip) now sit in a bar
-  under the board instead of the side panel. Tapping a swarm again cancels its order;
+  under the board instead of the side panel, a rounded blue tray with colour-coded buttons. Tapping a swarm again cancels its order;
   there is no hold order, coordinates or per-swarm Clear. The Orders card is a closed
   "Swarm orders" list.
 - The "Week 1 · Day 1 of 3" bar is gone. The calendar card is titled "Week 1" and the
