@@ -61,6 +61,9 @@ describe("charge coverage", () => {
     expect(chargeCovers("antifungal", "strep")).toBe(false);
     expect(chargeCovers("strong", "strep")).toBe(true);
     expect(chargeCovers("strong", "aspergillus")).toBe(true);
+    expect(chargeCovers("antibacterial", "burkholderia")).toBe(true);
+    expect(chargeCovers("antifungal", "burkholderia")).toBe(false);
+    expect(chargeCovers("strong", "burkholderia")).toBe(true);
   });
 });
 

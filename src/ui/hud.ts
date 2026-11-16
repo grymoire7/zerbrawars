@@ -158,6 +158,7 @@ export const GERM_COLOR_WORD: Record<PathogenKindId, string> = {
   strep: "Orange",
   staph: "Teal",
   aspergillus: "Violet",
+  burkholderia: "Rose",
 };
 
 const STATUS_COLOR: Record<string, string> = {

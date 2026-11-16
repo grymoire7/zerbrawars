@@ -40,6 +40,7 @@ export interface PathogenView {
 export const KIND_COLOR: Record<PathogenKindId, number> = {
   strep: hex("strep"),
   staph: hex("staph"),
+  burkholderia: hex("burkholderia"),
   aspergillus: hex("aspergillus"),
 };
 const RIM_COLOR = hex("sealed-rim");
@@ -79,6 +80,11 @@ export function createPathogenView(
     }),
     staph: new THREE.MeshStandardMaterial({
       color: KIND_COLOR.staph,
+      roughness: 0.6,
+    }),
+    // Stand-in: staph's look until Task 2 gives it a rod.
+    burkholderia: new THREE.MeshStandardMaterial({
+      color: KIND_COLOR.burkholderia,
       roughness: 0.6,
     }),
     aspergillus: new THREE.MeshStandardMaterial({

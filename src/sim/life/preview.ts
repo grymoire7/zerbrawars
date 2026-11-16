@@ -99,6 +99,7 @@ export function exposurePreview(life: LifeState): WeekPreview {
     strep: 0,
     aspergillus: 0,
     staph: 0,
+    burkholderia: 0,
   };
   for (const e of life.exposures) expected[e.kind] += 1;
   let none = 1;

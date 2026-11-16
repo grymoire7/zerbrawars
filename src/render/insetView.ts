@@ -95,6 +95,12 @@ export function createInsetView(
   const bodies: Record<PathogenKindId, THREE.InstancedMesh> = {
     strep: new THREE.InstancedMesh(beadGeo, bodyMat("strep"), MAX_DOTS),
     staph: new THREE.InstancedMesh(beadGeo, bodyMat("staph"), MAX_DOTS),
+    // Stand-in: staph's bead until Task 2 gives it a rod.
+    burkholderia: new THREE.InstancedMesh(
+      beadGeo,
+      bodyMat("burkholderia"),
+      MAX_DOTS,
+    ),
     aspergillus: new THREE.InstancedMesh(
       moldGeometry(),
       bodyMat("aspergillus"),
@@ -147,7 +153,13 @@ export function createInsetView(
   const draw = () => {
     for (const m of [...bodyList, rims]) m.count = 0;
     if (!preview) return;
-    const used = { strep: 0, staph: 0, aspergillus: 0, rims: 0 };
+    const used = {
+      strep: 0,
+      staph: 0,
+      burkholderia: 0,
+      aspergillus: 0,
+      rims: 0,
+    };
     for (let i = 0; i < preview.count; i++) {
       const dot = preview.dots[i % preview.dots.length];
       // Reduced motion: dots sit evenly along the path instead of drifting.

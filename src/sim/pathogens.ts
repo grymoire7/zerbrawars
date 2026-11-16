@@ -33,6 +33,12 @@ export const PATHOGEN_KINDS = {
     form: "bacterium",
     canSpore: false,
   },
+  // A rod-shaped sealed bacterium, found in soil and muddy water; plays like staph.
+  burkholderia: {
+    wall: "sealed",
+    form: "bacterium",
+    canSpore: false,
+  },
 } as const satisfies Record<string, PathogenKindDef>;
 
 export type PathogenKindId = keyof typeof PATHOGEN_KINDS;

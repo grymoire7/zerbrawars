@@ -435,6 +435,19 @@ describe("the sleepover friction event", () => {
 });
 
 describe("exposure", () => {
+  it("carries a Burkholderia reservoir as a sore spot", () => {
+    const life = createLife({
+      seed: 1,
+      reservoirs: [{ kind: "burkholderia", size: 1, hidden: true }],
+    });
+    expect(life.reservoirs[0].kind).toBe("burkholderia");
+    const r = advanceDay(life);
+    const kinds = r.events.flatMap((e) =>
+      e.type === "SymptomAppeared" ? [e.symptom.kind] : [],
+    );
+    expect(kinds).toContain("soreSpot");
+  });
+
   it("previews each card's odds, kind, size and points", () => {
     const life = createLife({ seed: 1 });
     expect(cardPreview(life, "lake")).toMatchObject({

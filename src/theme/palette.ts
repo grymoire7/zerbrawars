@@ -41,6 +41,8 @@ export const PALETTE = {
   "strep-ink": "#F2B35B",
   staph: "#1FA39A",
   "staph-ink": "#4FD3C7",
+  burkholderia: "#D9467F",
+  "burkholderia-ink": "#F08AB0",
   aspergillus: "#9A80E8",
   "aspergillus-ink": "#B9A2F0",
   virus: "#B8C7D9",

@@ -37,6 +37,14 @@ const ORGANISMS: Record<PathogenKindId, OrganismText> = {
     short: "Staph",
     description: "a round bacterium in a shell",
   },
+  // Species is deliberately not named (clinician item 32).
+  burkholderia: {
+    name: "Burkholderia",
+    scientific: "Burkholderia",
+    short: "Burkholderia",
+    description:
+      "a rod-shaped bacterium in a shell, found in soil and muddy water",
+  },
   aspergillus: {
     name: "Aspergillus",
     scientific: "Aspergillus",

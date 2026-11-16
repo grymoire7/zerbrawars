@@ -71,6 +71,16 @@ export const PARAMS = {
       sporeMinDistance: 0,
       sporeMaxDistance: 0,
     },
+    // Burkholderia: copies staph's numbers exactly (a slow sealed abscess); see clinician items 33 to 35.
+    burkholderia: {
+      growAmount: 1,
+      actMinSize: 3,
+      actChance: 0.5,
+      actCost: 1,
+      childSize: 1,
+      sporeMinDistance: 0,
+      sporeMaxDistance: 0,
+    },
   },
   /**
    * Turns a swarm stays busy after the turn it walls off (it cannot move, engulf or wall off).

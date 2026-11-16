@@ -29,6 +29,10 @@ describe("organisms", () => {
     expect(organismName("aspergillus")).toBe("Aspergillus");
     expect(organismScientific("staph")).toBe("Staphylococcus aureus");
     expect(organismShort("staph")).toBe("Staph");
+    expect(organismName("burkholderia")).toBe("Burkholderia");
+    expect(organismShort("burkholderia")).toBe("Burkholderia");
+    expect(organismKeyText("burkholderia")).toBe("Burkholderia, a bacterium");
+    expect(organismDescription("burkholderia")).toMatch(/shell/);
   });
 
   it("counts without a plural s", () => {
