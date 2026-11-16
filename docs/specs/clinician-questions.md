@@ -61,3 +61,25 @@ C = deferred / low priority.
 | 29 | In the game, daily prophylaxis does not change whether a germ arrives; it makes the fight easier (germs slowed, smaller arrivals, charges). Is that an acceptable game picture, given that real prophylaxis lowers the chance an exposure becomes an infection? | Acceptable as a declared game rule (related to 21 and 26) | B |
 | 30 | Before diagnosis the tutorial ends with "Infection: not finished. Your body is still sick." Is "still sick" fair and not frightening wording for that moment? | Fair; the card goes straight on to "the doctors helped your body clear it" | B |
 | 31 | Arc 1 Part A uses no residual (blunt-weapon) kill chance for either variant, so the cells cannot finish the mold. For an AR (p47phox) patient with some residual activity, is that an acceptable simplification for the pre-diagnosis picture? | Acceptable simplification; Part B uses the variant value (0.25 for AR is an assumption, see item 1) Folded into item 1 in the clinician handout (A1c) on 2026-11-14. | B |
+
+## New hazards and organisms (week activities)
+
+Added 2026-11-16. Each week should draw its own activities from a larger pool, and the pool should
+teach a variety of hazards. Burkholderia comes first (it fits the lung map); Salmonella follows once
+its site and shell are answered. Until answered, the game uses the working assumption. Not yet in
+the clinician handout.
+
+| # | Question | Working assumption | Priority |
+|---|----------|--------------------|----------|
+| 32 | Burkholderia: which one should we show? The cepacia group, or Burkholderia pseudomallei (soil and water in southeast Asia), or both under one name? Is a senior class trip to a warm, wet region a fair way to meet it? | One game organism named Burkholderia, from soil and muddy water on a trip abroad. Species not shown. Unanswered. | A |
+| 33 | Burkholderia in the lung: is the lung a fair first site for it? Does it also tend to turn up in the lymph node, liver or skin? | Lung first, same map as Aspergillus. Unanswered. | A |
+| 34 | Burkholderia and the shell: in CGD, can the cells only swallow and contain it, not finish it (our "sealed" germs, like Staph and Aspergillus)? Is it fair to show it that way, given item 11? | Sealed bacterium, like Staph. Unanswered. | A |
+| 35 | Does antibacterial prophylaxis (for example TMP-SMX) help against Burkholderia in CGD, or is it one that gets through? In the game this decides whether a full week of pills finishes a small one. | Antibacterial charge finishes a small one, as it does for Staph. Unanswered. | B |
+| 36 | Travel: what are patients actually told about trips to warm, wet regions? What is the smart version of the trip (for example staying out of floodwater and muddy fields, closed shoes, bottled water)? Does it fit the fodder note on warm-climate vacations as a fungal and bacterial source? | The smart version is a trip with the same fun and fewer soil and water risks. Unanswered. | B |
+| 37 | Salmonella: how high does it rank among the hazards a teen with CGD should learn (reptile pets, undercooked eggs and poultry), compared with the molds and soil germs? | A good hazard to teach, ranked after the mold hazards. Unanswered. | B |
+| 38 | Salmonella, where and how: in CGD does it settle mainly in the gut, blood, liver or bone rather than the lung? Does it need its own site, or can it be shown on the liver map we already plan? | Liver or gut site, not the lung. Unanswered. | A |
+| 39 | Salmonella and the shell: can the cells finish it, or only contain it? | Sealed, as many organisms are in CGD. Unanswered. | A |
+| 40 | Does antibacterial prophylaxis help against Salmonella in CGD? | Same as item 35. Unanswered. | B |
+| 41 | Salmonella, the smart choice: is "hang out with a friend's pet but do not handle it, and wash your hands" a valid safer version? Is there a safer version that is not "give up the pet"? | Safer version keeps the visit and drops the handling. Unanswered. | B |
+| 42 | Salmonella symptoms: fever, or also diarrhea and stomach pain? In the game, a symptom never says which germ, so we would show it as a low fever or "off" day. Is that safe? | Low fever, as for other hidden infections (see item 7). Unanswered. | B |
+| 43 | Other settings we plan as activities. For each, does it matter for CGD, which germ is the concern, and what is the smarter version? (a) Helping with green woodworking (wet wood, sawdust). (b) Crawling under the house for a lost ball (damp soil, dust). (c) A koji recipe at home (a mold grown on purpose). (d) A gift flytrap plant (damp potting soil and moss), kept in the house, in the garage, or re-gifted. Patient-side: indoor plants in damp soil are not recommended. (e) Caves, scuba and live trees, already in handout A6. | (a), (b) and (d) bring Aspergillus (mold), (c) is a surprise worth checking, (e) as in A6. All are guesses. Unanswered. | B |
