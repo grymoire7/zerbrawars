@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { BOTS, playBattle, SUPPORT_BOTS } from "../battle/bots";
 import { battleFromLoadout } from "../battle/setup";
 import type { BattleGrade, BattleOutcome, BattleState } from "../types";
-import { LIFE_BOTS, playWeek } from "./bots";
+import { bestPlacements, LIFE_BOTS, playWeek } from "./bots";
+import { createLife } from "./calendar";
+import { cardDef, handFor } from "./cards";
 import { battleDue, loadoutFromLife } from "./loadout";
 
 // Headless life-to-battle balance: each life strategy plays the same seeded weeks; any battle that
@@ -58,7 +60,7 @@ function bestPlay(start: BattleState, seed: number): BattleOutcome {
   return key(b) > key(a) ? b : a;
 }
 
-function survey(name: string): Row {
+function survey(name: string, week: number): Row {
   const row: Row = {
     points: 0,
     goal: 0,
@@ -75,7 +77,7 @@ function survey(name: string): Row {
     tissueLost: 0,
   };
   for (let seed = 1; seed <= SEEDS; seed++) {
-    const life = playWeek(LIFE_BOTS[name], seed);
+    const life = playWeek(LIFE_BOTS[name], seed, week);
     row.points += life.goal.points / SEEDS;
     if (life.goal.points >= life.goal.target) row.goal += 1 / SEEDS;
     row.pathogens += life.exposures.length / SEEDS;
@@ -95,31 +97,40 @@ function survey(name: string): Row {
   return row;
 }
 
-describe("life strategies into battle", () => {
-  const rows = Object.fromEntries(
-    Object.keys(LIFE_BOTS).map((n) => [n, survey(n)]),
+const pct = (x: number) => `${Math.round(100 * x)}%`.padStart(6);
+const share = (r: Row, k: Result) => r.results[k] / SEEDS;
+
+function printTable(title: string, rows: Record<string, Row>): void {
+  const lines = [
+    title,
+    "strategy         pts  goal  path   med skirm loose clear  cont  back score tissue",
+    ...Object.entries(rows).map(
+      ([n, r]) =>
+        n.padEnd(15) +
+        r.points.toFixed(1).padStart(5) +
+        pct(r.goal) +
+        r.pathogens.toFixed(2).padStart(6) +
+        r.med.toFixed(2).padStart(6) +
+        RESULTS.map((k) => pct(share(r, k))).join("") +
+        r.score.toFixed(2).padStart(6) +
+        r.tissueLost.toFixed(1).padStart(6),
+    ),
+  ];
+  (globalThis as unknown as { console: { log(s: string): void } }).console.log(
+    lines.join("\n"),
+  );
+}
+
+const surveyAll = (week: number) =>
+  Object.fromEntries(
+    Object.keys(LIFE_BOTS).map((n) => [n, survey(n, week)]),
   ) as Record<string, Row>;
-  const pct = (x: number) => `${Math.round(100 * x)}%`.padStart(6);
-  const share = (r: Row, k: Result) => r.results[k] / SEEDS;
+
+describe("life strategies into battle", () => {
+  const rows = surveyAll(1);
 
   it("prints the table", () => {
-    const lines = [
-      "strategy         pts  goal  path   med skirm loose clear  cont  back score tissue",
-      ...Object.entries(rows).map(
-        ([n, r]) =>
-          n.padEnd(15) +
-          r.points.toFixed(1).padStart(5) +
-          pct(r.goal) +
-          r.pathogens.toFixed(2).padStart(6) +
-          r.med.toFixed(2).padStart(6) +
-          RESULTS.map((k) => pct(share(r, k))).join("") +
-          r.score.toFixed(2).padStart(6) +
-          r.tissueLost.toFixed(1).padStart(6),
-      ),
-    ];
-    (
-      globalThis as unknown as { console: { log(s: string): void } }
-    ).console.log(lines.join("\n"));
+    printTable("week 1", rows);
   });
 
   it("scores nothing for staying home, which still skirmishes, and the most for every risk", () => {
@@ -161,5 +172,83 @@ describe("life strategies into battle", () => {
     // Full meds kill the staph and the mold with charges; no doses leave only the swarms.
     const cleared = (n: string) => share(rows[n], "cleared");
     expect(cleared("riskySkipMeds")).toBeLessThan(cleared("risky") - 0.1);
+  });
+});
+
+describe("week 2 strategies into battle", () => {
+  const rows = surveyAll(2);
+  const life = createLife({ seed: 1, week: 2 });
+  const points = (cards: readonly { card: Parameters<typeof cardDef>[0] }[]) =>
+    cards.reduce((n, p) => n + cardDef(p.card).points, 0);
+
+  it("prints the table", () => {
+    printTable("week 2", rows);
+  });
+
+  it("lets the best plan reach the goal in at least 90% of weeks", () => {
+    expect(rows.smarter.goal).toBeGreaterThanOrEqual(0.9);
+  });
+
+  // A fresh week is luck-free (energy 5, points are paid by card), so each fixed plan meets the
+  // goal always or never, and the all-risky plan has the most points of any plan. Its 55-85% goal
+  // rate is a campaign number (late doctor, varying energy): see campaign.balance.test.ts.
+  it("lets the all-risky plan reach the goal whenever the best plan does", () => {
+    expect(rows.smarter.goal).toBeGreaterThanOrEqual(0.9);
+    expect(rows.risky.goal).toBeGreaterThanOrEqual(rows.smarter.goal);
+  });
+
+  it("cannot reach the goal with the all-smarter versions alone", () => {
+    expect(points(bestPlacements(life, "smarter"))).toBeLessThan(
+      life.goal.target,
+    );
+  });
+
+  it("scores the risky plan below the smarter one", () => {
+    expect(rows.risky.score).toBeLessThan(rows.smarter.score);
+  });
+
+  it("makes the trip the best-paying and riskiest card of the hand", () => {
+    const others = handFor(2)
+      .filter((c) => c !== "trip")
+      .map(cardDef);
+    const trip = cardDef("trip");
+    for (const c of others) {
+      expect(trip.points, c.id).toBeGreaterThan(c.points);
+      expect(trip.exposure.chance, c.id).toBeGreaterThan(c.exposure.chance);
+    }
+  });
+
+  it("places the trip and at least two more cards for the risky bot", () => {
+    const placed = (seed: number) =>
+      playWeek(LIFE_BOTS.risky, seed, 2)
+        .plan.flat()
+        .filter((p) => p !== null);
+    const ok = [1, 2, 3, 4, 5].some((seed) => {
+      const cards = placed(seed).map((p) => p.card);
+      return cards.includes("trip") && cards.length >= 3;
+    });
+    expect(ok).toBe(true);
+  });
+
+  it("scores nothing for staying home, which still skirmishes, and the most for every risk", () => {
+    expect(rows.home.points).toBe(0);
+    expect(rows.home.results.skirmish + rows.home.results.loose).toBe(SEEDS);
+    expect(share(rows.home, "loose")).toBeLessThan(0.05);
+    const best = Math.max(...Object.values(rows).map((r) => r.points));
+    expect(rows.risky.points).toBe(best);
+    expect(rows.smarter.points).toBeLessThan(rows.risky.points);
+  });
+
+  it("makes the smarter week safer in battle than the risky one", () => {
+    const bad = (r: Row) => share(r, "contained") + share(r, "neededBackup");
+    expect(bad(rows.smarter)).toBeLessThan(bad(rows.risky));
+    expect(rows.smarter.tissueLost).toBeLessThan(rows.risky.tissueLost);
+    expect(share(rows.risky, "skirmish")).toBeGreaterThan(0.1);
+  });
+
+  it("makes skipped doses visibly worsen the same week's battles", () => {
+    expect(rows.smarterSkipMeds.med).toBe(0);
+    expect(rows.riskySkipMeds.score).toBeLessThan(rows.risky.score);
+    expect(rows.smarterSkipMeds.score).toBeLessThan(rows.smarter.score);
   });
 });

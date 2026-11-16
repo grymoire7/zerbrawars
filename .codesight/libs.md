@@ -137,8 +137,8 @@
 - `src/sim/life/bots.ts`
   - function planPlacements: (plan) => readonly Placement[]
   - function placeFitting: (life, placements) => LifeState
-  - function bestPlacements: (life) => readonly Placement[]
-  - function playWeek: (bot, seed) => LifeState
+  - function bestPlacements: (life, versions, "risky" | "smarter">>) => readonly Placement[]
+  - function playWeek: (bot, seed, week) => LifeState
   - interface Placement
   - interface WeekPlan
   - _...2 more_

@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 60 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,700 tokens. **Saves ~19,900 tokens per conversation.**
-> **Last scanned:** 2026-11-16 20:24 — re-run after significant changes
+> **Last scanned:** 2026-11-16 20:55 — re-run after significant changes
 
 ---
 
@@ -147,8 +147,8 @@
 - `src/sim/life/bots.ts`
   - function planPlacements: (plan) => readonly Placement[]
   - function placeFitting: (life, placements) => LifeState
-  - function bestPlacements: (life) => readonly Placement[]
-  - function playWeek: (bot, seed) => LifeState
+  - function bestPlacements: (life, versions, "risky" | "smarter">>) => readonly Placement[]
+  - function playWeek: (bot, seed, week) => LifeState
   - interface Placement
   - interface WeekPlan
   - _...2 more_
@@ -361,9 +361,9 @@
 - `src/app/arcs.ts` — imported by **15** files
 - `src/sim/campaign.ts` — imported by **15** files
 - `src/sim/organisms.ts` — imported by **15** files
+- `src/sim/life/cards.ts` — imported by **13** files
 - `src/app/run.ts` — imported by **12** files
-- `src/sim/life/cards.ts` — imported by **11** files
-- `src/sim/battle/bots.ts` — imported by **10** files
+- `src/sim/life/calendar.ts` — imported by **10** files
 
 ## Import Map (who imports what)
 

@@ -160,6 +160,15 @@ describe("campaign strategies", () => {
         expect(rows.smarter.score, n).toBeGreaterThan(r.score);
   });
 
+  // Over both weeks: the risky plan always fits the goal in a fresh week (life/balance.test.ts), so
+  // its misses come from the campaign: a late doctor visit in week 2 drops the trip (the last slot,
+  // the only card still to play). Measured at 400 seeds: smarter 100%, risky 72%.
+  it("meets the goal across the campaign: the best plan nearly always, the risky one 55-85%", () => {
+    expect(rows.smarter.goals).toBeGreaterThanOrEqual(0.9);
+    expect(rows.risky.goals).toBeGreaterThanOrEqual(0.55);
+    expect(rows.risky.goals).toBeLessThanOrEqual(0.85);
+  });
+
   it("never carries a reservoir out of a skirmish-only campaign", () => {
     for (let seed = 1; seed <= SEEDS; seed++) {
       const c = playCampaign(CAMPAIGN_BOTS.home, seed);

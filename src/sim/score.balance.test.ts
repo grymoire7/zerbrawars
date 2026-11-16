@@ -28,6 +28,8 @@ interface Row {
   max: number;
   /** Share of weeks that met the life-points goal. */
   goal: number;
+  /** Share of week-1 weeks that met the goal (the week-1 hand). */
+  goal1: number;
   /** Highest single-campaign Choices, for the best-possible reference. */
   topChoices: number;
 }
@@ -46,13 +48,17 @@ function survey(bot: CampaignBot): Row {
     min: Infinity,
     max: 0,
     goal: 0,
+    goal1: 0,
     topChoices: 0,
   };
   for (let seed = 1; seed <= SEEDS; seed++) {
     const c = playCampaign(bot, seed);
     const s = campaignSummary(c).score;
     for (const h of c.history) {
-      if (h.score.choices.goalMet > 0) r.goal += 1 / (SEEDS * c.history.length);
+      if (h.score.choices.goalMet > 0) {
+        r.goal += 1 / (SEEDS * c.history.length);
+        if (h.week === 1) r.goal1 += 1 / SEEDS;
+      }
       for (const n of parts(h)) expect(n).toBeGreaterThanOrEqual(0);
       for (const [k, v] of Object.entries({
         ...h.score.choices,
@@ -61,8 +67,12 @@ function survey(bot: CampaignBot): Row {
         PART_MAX[k] = Math.max(PART_MAX[k] ?? 0, v);
       // The all-risky week with six energy reaches 17 points (170); the smarter hand never passes 14.
       expect(h.score.choices.living).toBeLessThanOrEqual(170);
-      // Odds pushed at 0.7 per percent: yard indoors 25 plus the beach 21 is the most a week can push.
-      expect(h.score.choices.dodged).toBeLessThanOrEqual(46);
+      // Odds pushed at 0.7 per percent: yard indoors 25 plus the beach 21 is the most week 1 can
+      // push. Week 2's hand fits three cards (each costs 2 energy, the trip 4), and the most the
+      // smarter versions push is the travel plan 30, dry wood 27 and the rake 23: 80.
+      expect(h.score.choices.dodged).toBeLessThanOrEqual(
+        h.week === 1 ? 46 : 80,
+      );
       expect(h.score.choices.goalMet).toBeLessThanOrEqual(40);
       expect(h.score.choices.meds).toBeLessThanOrEqual(90);
       expect(h.score.choices.checked).toBeLessThanOrEqual(20);
@@ -150,12 +160,17 @@ describe("score ranges", () => {
     // that gone a safe plan fits a fifth card when energy carries over), home 0%.
     expect(rows.home.goal).toBe(0);
     expect(rows.skipMeds.goal).toBeLessThanOrEqual(0.5);
-    expect(rows.forgetful.goal).toBeGreaterThanOrEqual(0.95);
+    // Forgetful's broken routine (the late game night) is a week-1 hand; in week 2 it plays the
+    // all-smarter plan, which by design cannot reach the goal.
+    expect(rows.forgetful.goal1).toBeGreaterThanOrEqual(0.95);
     for (const n of ["smarter", "planner"])
       expect(rows[n].goal, n).toBeGreaterThanOrEqual(0.9);
     expect(rows.mixed.goal).toBeGreaterThanOrEqual(0.8);
-    expect(rows.risky.goal).toBeGreaterThanOrEqual(0.75);
-    expect(rows.risky.goal).toBeLessThanOrEqual(0.95);
+    // The risky range is the week-1 hand's. In week 2 a late doctor visit drops the trip (the last
+    // slot, the only card still to play), so risky meets that goal in about half the weeks; the
+    // campaign-wide risky rate (55-85%) is checked in campaign.balance.test.ts.
+    expect(rows.risky.goal1).toBeGreaterThanOrEqual(0.75);
+    expect(rows.risky.goal1).toBeLessThanOrEqual(0.95);
   });
 
   it("makes the planner and smarter the best on Choices", () => {

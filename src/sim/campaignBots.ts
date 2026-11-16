@@ -25,7 +25,8 @@ import {
   planPlacements,
   type WeekPlan,
 } from "./life/bots";
-import type { LifeState } from "./life/types";
+import { cardDef, DOCTOR_CARD } from "./life/cards";
+import type { HandCardId, LifeState } from "./life/types";
 import { PARAMS } from "./params";
 import { rngFromSeed, rngNext } from "./rng";
 import type { BattleGrade, BattleOutcome, BattleState } from "./types";
@@ -93,6 +94,24 @@ function setLife(c: Campaign, life: LifeState): Campaign {
 }
 
 /**
+ * The hand's cards (the doctor aside) in the order the doctor displaces them: the cheapest by
+ * energy first, then the lowest points, then the lowest landing odds (for the week-1 hand: band,
+ * game night, sleepover, yard, lake).
+ */
+function dropOrder(life: LifeState): HandCardId[] {
+  const key = (c: HandCardId) => {
+    const d = cardDef(c);
+    return [d.energy, d.points, d.exposure.chance];
+  };
+  return life.hand
+    .filter((c) => c !== DOCTOR_CARD)
+    .sort((a, b) => {
+      const [x, y] = [key(a), key(b)];
+      return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+    });
+}
+
+/**
  * Books the doctor once it is in hand: early policy on the first slot in the early window, late on
  * the first slot after it (else the last day). Empty slots first; if the energy will not stretch,
  * the cheapest card still to play is dropped and it tries again.
@@ -119,7 +138,7 @@ function bookDoctor(life: LifeState, policy: DoctorPolicy): LifeState {
         placementProblems(life, day, slot, "doctor").length === 0,
     );
     if (ok) return placeCard(life, ok.day, ok.slot, "doctor").state;
-    const cheapest = (["band", "game", "sleepover", "yard", "lake"] as const)
+    const cheapest = dropOrder(life)
       .map((card) => findPlaced(life, card))
       .find((at) => at && at.day >= life.day);
     if (!cheapest) return life;

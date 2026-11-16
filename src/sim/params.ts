@@ -335,68 +335,82 @@ export const PARAMS = {
         count: 1,
         at: [{ x: 6, y: 1 }],
       },
-      /** Week 2 hazards. Starting numbers; tuned in the balance task. */
+      /**
+       * Week 2 hazards, tuned in life/balance.test.ts and campaign.balance.test.ts. Each costs 2
+       * energy (the trip 4), so a week holds three cards: the all-smarter week tops out at 12 points
+       * and the best plan takes one risky card. The smarter versions' odds are low so the best
+       * plan rarely carries a reservoir out of the last week.
+       */
       wood: {
-        points: 5,
+        points: 4,
         energy: 2,
         chance: 0.4,
         size: 2,
-        count: 1,
-        at: [{ x: 5, y: 0 }],
+        count: 2,
+        at: [
+          { x: 5, y: 0 },
+          { x: 3, y: 0 },
+        ],
       },
       woodDry: {
-        points: 4,
+        points: 3,
         energy: 2,
-        chance: 0.1,
+        chance: 0.02,
         size: 1,
         count: 1,
         at: [{ x: 5, y: 0 }],
       },
       crawl: {
         points: 4,
-        energy: 1,
+        energy: 2,
         chance: 0.35,
         size: 2,
-        count: 1,
-        at: [{ x: 1, y: 0 }],
+        count: 2,
+        at: [
+          { x: 1, y: 0 },
+          { x: 0, y: 2 },
+        ],
       },
       crawlRake: {
         points: 3,
-        energy: 1,
-        chance: 0.09,
+        energy: 2,
+        chance: 0.02,
         size: 1,
         count: 1,
         at: [{ x: 1, y: 0 }],
       },
       flytrap: {
         points: 4,
-        energy: 1,
-        chance: 0.35,
+        energy: 2,
+        chance: 0.2,
         size: 2,
         count: 1,
         at: [{ x: 3, y: 0 }],
       },
       flytrapGarage: {
         points: 3,
-        energy: 1,
-        chance: 0.1,
+        energy: 2,
+        chance: 0.02,
         size: 1,
         count: 1,
         at: [{ x: 3, y: 0 }],
       },
-      /** The senior class trip: day 3's evening only. Starting numbers; tuned in the balance task. */
+      /** The senior class trip: day 3's evening only. The best-paying and riskiest card of week 2. */
       trip: {
-        points: 6,
-        energy: 3,
+        points: 7,
+        energy: 4,
         chance: 0.45,
         size: 2,
-        count: 1,
-        at: [{ x: 6, y: 2 }],
+        count: 2,
+        at: [
+          { x: 6, y: 2 },
+          { x: 6, y: 1 },
+        ],
       },
       tripPlan: {
-        points: 5,
-        energy: 3,
-        chance: 0.12,
+        points: 6,
+        energy: 4,
+        chance: 0.02,
         size: 1,
         count: 1,
         at: [{ x: 6, y: 2 }],

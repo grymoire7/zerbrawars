@@ -83,13 +83,15 @@ const num = (x: number) => x.toFixed(2).padStart(6);
 
 /**
  * `name` against smarter on the same seed and week (same cards, same battle dice; only the doses
- * differ): mean extra tissue lost and the drop in cleared share per full battle.
+ * differ): mean extra tissue lost and the drop in cleared share per full battle. `week` limits it
+ * to that week's battles.
  */
-function matched(name = "skipMeds") {
+function matched(name = "skipMeds", week?: number) {
   let n = 0;
   let lost = 0;
   let cleared = 0;
   for (const [key, s] of rows[name].full.byKey) {
+    if (week !== undefined && !key.endsWith(`:${week}`)) continue;
     const m = rows.smarter.full.byKey.get(key);
     if (!m) continue;
     n++;
@@ -117,7 +119,7 @@ describe("battle depth survey", () => {
       }
     }
     for (const name of ["skipMeds", "forgetful"]) {
-      const m = matched(name);
+      const m = matched(name, name === "forgetful" ? 1 : undefined);
       lines.push(
         `matched ${name} vs smarter (${m.n} full battles): +${m.lost.toFixed(2)} tissue lost, -${pct(m.cleared)} cleared`,
       );
@@ -224,8 +226,10 @@ describe("battle depth survey", () => {
   });
 
   it("lets a broken routine reach the battle: forgetful does worse than smarter on matched seeds", () => {
-    const m = matched("forgetful");
-    expect(m.n).toBeGreaterThan(100);
+    // Week 1 only: the broken routine is the week-1 hand's late game night; in week 2 forgetful
+    // plays the all-smarter plan, so its routine never breaks.
+    const m = matched("forgetful", 1);
+    expect(m.n).toBeGreaterThan(80);
     // Measured: +0.37 tissue lost, 3% fewer cleared (the pills are left behind 30% of the time).
     expect(m.lost).toBeGreaterThanOrEqual(0.25);
     expect(m.cleared).toBeGreaterThanOrEqual(0.02);

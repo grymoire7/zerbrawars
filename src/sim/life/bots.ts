@@ -1,5 +1,5 @@
 import { rngFromSeed, rngNext } from "../rng";
-import { cardDef, DOCTOR_CARD } from "./cards";
+import { cardDef, DOCTOR_CARD, handFor } from "./cards";
 import {
   advanceDay,
   createLife,
@@ -16,7 +16,9 @@ import type { CardId, HandCardId, LifeState } from "./types";
 // calendar shape, which fits a first week's energy:
 //   day 1: yard, sleepover   day 2: rest, lake   day 3: band, game night
 // The full hand costs more than a week's energy, so cards are placed in the bot's drop order (first
-// = most wanted) and any that no longer fit stay home. The planner picks its own shape.
+// = most wanted) and any that no longer fit stay home. The planner picks its own shape. The shape
+// only fits the week-1 hand: with any other hand these bots play the best plan from the versions
+// they name (bestPlacements with "risky" or "smarter").
 
 /** Where each hand card sits in the fixed calendar shape. */
 export const SLOTS: Partial<
@@ -109,13 +111,26 @@ export function placeFitting(
 
 const bestCache = new Map<string, readonly Placement[]>();
 
+/** Which versions a plan search may use: both, or only the risky or the smarter one. */
+type Versions = "any" | "risky" | "smarter";
+
 /**
  * The legal plan with the highest planned Choices (ties: the lowest total landing chance), found by
- * trying every card version in every slot. Memoized by what the search reads
- * (hand, energy, doses), since the answer does not depend on the seed.
+ * trying every card version in every slot. `versions` limits the search to the risky or the
+ * smarter version of each card ("any" tries both), or picks per card (unnamed cards: both). Memoized by what the search reads
+ * (versions, hand, energy, doses), since the answer does not depend on the seed.
  */
-export function bestPlacements(life: LifeState): readonly Placement[] {
-  const key = JSON.stringify([life.hand, life.energy, life.day, life.doses]);
+export function bestPlacements(
+  life: LifeState,
+  versions: Versions | Partial<Record<HandCardId, "risky" | "smarter">> = "any",
+): readonly Placement[] {
+  const key = JSON.stringify([
+    versions,
+    life.hand,
+    life.energy,
+    life.day,
+    life.doses,
+  ]);
   const hit = bestCache.get(key);
   if (hit) return hit;
   const bases = life.hand.filter((c) => c !== DOCTOR_CARD);
@@ -136,10 +151,18 @@ export function bestPlacements(life: LifeState): readonly Placement[] {
     }
     walk(i + 1, at, chosen);
     const base = bases[i];
-    const versions: CardId[] = [base];
     const smarter = cardDef(base).smarter;
-    if (smarter) versions.push(smarter);
-    for (const card of versions)
+    const pick =
+      typeof versions === "string" ? versions : (versions[base] ?? "any");
+    const cards: CardId[] =
+      pick === "risky"
+        ? [base]
+        : pick === "smarter"
+          ? [smarter ?? base]
+          : smarter
+            ? [base, smarter]
+            : [base];
+    for (const card of cards)
       for (let day = at.day; day < at.plan.length; day++)
         for (let slot = 0; slot < at.plan[day].length; slot++) {
           if (placementProblems(at, day, slot, card).length > 0) continue;
@@ -152,6 +175,31 @@ export function bestPlacements(life: LifeState): readonly Placement[] {
   return best;
 }
 
+/** True when `life` holds the week-1 hand the fixed shape was built for (a doctor aside). */
+function fixedShapeFits(life: LifeState | undefined): boolean {
+  if (!life) return true;
+  const bases: readonly HandCardId[] = life.hand.filter(
+    (c) => c !== DOCTOR_CARD,
+  );
+  const week1 = handFor(1);
+  return bases.length === week1.length && week1.every((c) => bases.includes(c));
+}
+
+/** A fixed-shape bot for the week-1 hand; the best plan from `versions` for any other hand. */
+const shaped =
+  (
+    versions: "risky" | "smarter",
+    plan: (roll: () => number) => WeekPlan,
+  ): LifeBot =>
+  (roll, life) => {
+    if (!life || fixedShapeFits(life)) return plan(roll);
+    return {
+      cards: {},
+      skipMeds: plan(roll).skipMeds,
+      placements: bestPlacements(life, versions),
+    };
+  };
+
 export const LIFE_BOTS: Record<string, LifeBot> = {
   /** Rests every slot. */
   home: () => ({ cards: {}, skipMeds: false }),
@@ -161,11 +209,11 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
     skipMeds: false,
   }),
   /** Every card in its risky version (game night at Alex's included). */
-  risky: () => ({
+  risky: shaped("risky", () => ({
     cards: RISKY,
     skipMeds: false,
     order: RISKY_ORDER,
-  }),
+  })),
   /**
    * The thoughtful player: with the week in view it plays the best plan by the score's own forecast
    * (at goal 13 that takes one risky card, since the all-smarter week scores 12). Without a week it
@@ -179,8 +227,21 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
           placements: bestPlacements(life),
         }
       : { cards: SMARTER, skipMeds: false },
-  /** A coin flip per card version. Drops in the smart order. */
-  mixed: (roll) => {
+  /**
+   * A coin flip per card version. Drops in the smart order. With another hand, the best plan
+   * from the flipped versions.
+   */
+  mixed: (roll, life) => {
+    if (life && !fixedShapeFits(life)) {
+      const versions: Partial<Record<HandCardId, "risky" | "smarter">> = {};
+      for (const c of life.hand)
+        if (c !== DOCTOR_CARD) versions[c] = roll() < 0.5 ? "risky" : "smarter";
+      return {
+        cards: {},
+        skipMeds: false,
+        placements: bestPlacements(life, versions),
+      };
+    }
     const cards = {
       yard: roll() < 0.5 ? "yard" : "yardIndoor",
       lake: roll() < 0.5 ? "lake" : "beach",
@@ -195,10 +256,10 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
    * late: the routine breaks. (Unlike the thoughtful player it reaches the goal through the late
    * game night, not through a plan.)
    */
-  forgetful: () => ({
+  forgetful: shaped("smarter", () => ({
     cards: { ...SMARTER, game: "game" },
     skipMeds: false,
-  }),
+  })),
   /** The reference best: the legal plan with the highest planned Choices. */
   planner: (_roll, life) => {
     if (!life) throw new Error("the planner needs the week's life state");
@@ -209,24 +270,27 @@ export const LIFE_BOTS: Record<string, LifeBot> = {
     };
   },
   /** Smarter cards but skips every dose ("I feel fine"): a test bot that models misses with skipMeds. */
-  smarterSkipMeds: () => ({ cards: SMARTER, skipMeds: true }),
+  smarterSkipMeds: shaped("smarter", () => ({
+    cards: SMARTER,
+    skipMeds: true,
+  })),
   /** Risky cards and skips every dose. */
-  riskySkipMeds: () => ({
+  riskySkipMeds: shaped("risky", () => ({
     cards: RISKY,
     skipMeds: true,
     order: RISKY_ORDER,
-  }),
+  })),
 };
 
-/** Plays a whole week from a fresh life with `bot`. */
-export function playWeek(bot: LifeBot, seed: number): LifeState {
+/** Plays a whole week (week 1 unless given) from a fresh life with `bot`. */
+export function playWeek(bot: LifeBot, seed: number, week = 1): LifeState {
   let rng = rngFromSeed(seed * 31 + 7);
   const roll = () => {
     const r = rngNext(rng);
     rng = r.rng;
     return r.value;
   };
-  let life = createLife({ seed });
+  let life = createLife({ seed, week });
   const plan = bot(roll, life);
   life = placeFitting(life, planPlacements(plan));
   while (!weekOver(life)) {
