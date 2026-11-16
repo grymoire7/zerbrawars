@@ -335,6 +335,23 @@ export const PARAMS = {
         count: 1,
         at: [{ x: 6, y: 1 }],
       },
+      /** The senior class trip: day 3's evening only. Starting numbers; tuned in the balance task. */
+      trip: {
+        points: 6,
+        energy: 3,
+        chance: 0.45,
+        size: 2,
+        count: 1,
+        at: [{ x: 6, y: 2 }],
+      },
+      tripPlan: {
+        points: 5,
+        energy: 3,
+        chance: 0.12,
+        size: 1,
+        count: 1,
+        at: [{ x: 6, y: 2 }],
+      },
       /** Only in hand once a symptom shows; its energy is set by PARAMS.campaign.doctor. */
       doctor: {
         points: 0,

@@ -19,9 +19,8 @@ import type { CardId, HandCardId, LifeState } from "./types";
 // = most wanted) and any that no longer fit stay home. The planner picks its own shape.
 
 /** Where each hand card sits in the fixed calendar shape. */
-export const SLOTS: Record<
-  Exclude<HandCardId, "doctor">,
-  { day: number; slot: number }
+export const SLOTS: Partial<
+  Record<Exclude<HandCardId, "doctor">, { day: number; slot: number }>
 > = {
   yard: { day: 0, slot: 0 },
   sleepover: { day: 0, slot: 1 },
@@ -89,8 +88,9 @@ export function planPlacements(plan: WeekPlan): readonly Placement[] {
   const out: Placement[] = [];
   for (const base of (plan.order ?? SMART_ORDER) as readonly Base[]) {
     const card = plan.cards[base];
-    if (!card || !(base in SLOTS)) continue;
-    const { day, slot } = SLOTS[base];
+    const at = SLOTS[base];
+    if (!card || !at) continue;
+    const { day, slot } = at;
     out.push({ card, day, slot });
   }
   return out;

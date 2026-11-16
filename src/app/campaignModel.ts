@@ -159,6 +159,8 @@ const CARD_ICON: Record<CardId, string> = {
   sleepover: "🌙",
   game: "🎲",
   gameEarly: "🎲",
+  trip: "✈️",
+  tripPlan: "✈️",
   doctor: "🩺",
 };
 

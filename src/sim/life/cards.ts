@@ -20,6 +20,8 @@ interface CardText {
   readonly overnight?: boolean;
   /** Evening slot only (nothing keeps the day free for it). */
   readonly eveningOnly?: boolean;
+  /** Only on the last day of the week (with eveningOnly: that day's evening). */
+  readonly lastDayOnly?: boolean;
   /** Runs late: its day's evening pills may slip (PARAMS.life.meds.slip.lateNight). */
   readonly lateNight?: boolean;
   /** The doctor visit: costs set by its timing (PARAMS.campaign.doctor), brings nothing in. */
@@ -91,6 +93,27 @@ const TEXT: Record<CardId, CardText> = {
     base: "game",
     kinds: ["strep"],
     eveningOnly: true,
+  },
+  trip: {
+    label: "Leave for Vietnam",
+    people:
+      "The senior class is going to Vietnam, and your friends want you on the trip.",
+    blurb: `Warm soil and muddy water on the way and in the first days can carry ${organismName("burkholderia")}.`,
+    base: "trip",
+    smarter: "tripPlan",
+    kinds: ["burkholderia"],
+    eveningOnly: true,
+    lastDayOnly: true,
+  },
+  tripPlan: {
+    label: "Leave for Vietnam, with a travel plan",
+    people: "Same class trip, but you and your care team plan it together.",
+    blurb:
+      "Closed shoes, bottled water and no wading through mud keep you away from warm soil and muddy water.",
+    base: "trip",
+    kinds: ["burkholderia"],
+    eveningOnly: true,
+    lastDayOnly: true,
   },
   doctor: {
     label: "See the doctor",

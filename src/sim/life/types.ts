@@ -15,11 +15,13 @@ export type CardId =
   | "sleepover"
   | "game"
   | "gameEarly"
+  | "trip"
+  | "tripPlan"
   | "doctor";
 
 /** The five cards dealt each week, plus the doctor once a symptom shows. */
 export type HandCardId =
-  "yard" | "lake" | "band" | "sleepover" | "game" | "doctor";
+  "yard" | "lake" | "band" | "sleepover" | "game" | "trip" | "doctor";
 
 /** A card on the calendar. */
 export interface Placement {

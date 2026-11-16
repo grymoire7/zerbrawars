@@ -19,7 +19,7 @@ import {
   unplaceCard,
   weekOver,
 } from "./calendar";
-import { CARD_IDS, cardDef, handFor, versionsOf } from "./cards";
+import { CARD_IDS, cardDef, exposureKind, handFor, versionsOf } from "./cards";
 import { battleDue, battleSeed, loadoutFromLife } from "./loadout";
 import { medLevelOf } from "./meds";
 import { cardPreview, exposurePreview } from "./preview";
@@ -823,5 +823,58 @@ describe("game night at Alex's", () => {
         { kind: "sleepover", chance: L.meds.slip.sleepover },
       ],
     });
+  });
+});
+
+describe("the trip", () => {
+  const withTrip = () => ({
+    ...createLife({ seed: 1 }),
+    hand: [...handFor(1), "trip" as const],
+  });
+
+  it("places the trip only in day 3's evening", () => {
+    const life = withTrip();
+    expect(placementProblems(life, 0, 1, "trip")).toContain(
+      "the trip leaves on the evening of day 3",
+    );
+    expect(placementProblems(life, 1, 1, "trip").length).toBeGreaterThan(0);
+    expect(placementProblems(life, 2, 0, "trip").length).toBeGreaterThan(0);
+    expect(placementProblems(life, 2, 1, "trip")).toEqual([]);
+    expect(placementProblems(life, 2, 1, "tripPlan")).toEqual([]);
+    expect(placementProblems(life, 2, 0, "trip").join()).not.toMatch(
+      /game night/,
+    );
+  });
+
+  it("leaves day 3's day slot to the doctor, and lets the trip replace a doctor in the evening", () => {
+    const life = {
+      ...withTrip(),
+      hand: [...withTrip().hand, "doctor" as const],
+    };
+    expect(placementProblems(life, 2, 0, "doctor")).toEqual([]);
+    const withDoc = placeCard(life, 2, 1, "doctor").state;
+    const r = placeCard(withDoc, 2, 1, "trip");
+    expect(r.state.plan[2][1]?.card).toBe("trip");
+    expect(r.events.map((e) => e.type)).toEqual(["CardRemoved", "CardPlaced"]);
+  });
+
+  it("rejects the trip with too little energy rather than crashing", () => {
+    const s = run(
+      createLife({ seed: 1 }),
+      place(0, 0, "yard"),
+      place(0, 1, "lake"),
+      place(1, 0, "band"),
+    ).state;
+    const life = { ...s, hand: [...s.hand, "trip" as const] };
+    expect(placementProblems(life, 2, 1, "trip")).toContain(
+      "not enough energy",
+    );
+  });
+
+  it("brings Burkholderia when the trip lands", () => {
+    expect(exposureKind("trip", 0)).toBe("burkholderia");
+    expect(cardDef("trip").exposure.kinds).toEqual(["burkholderia"]);
+    expect(cardDef("trip").smarter).toBe("tripPlan");
+    expect(cardDef("tripPlan").base).toBe("trip");
   });
 });
