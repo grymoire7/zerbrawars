@@ -9,6 +9,10 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Battle controls (charges, Wall off, End Turn, Replay, speed and Skip) now sit in a bar
+  under the board instead of the side panel. Tapping a swarm again cancels its order;
+  there is no hold order, coordinates or per-swarm Clear. The Orders card is a closed
+  "Swarm orders" list.
 - The "Week 1 · Day 1 of 3" bar is gone. The calendar card is titled "Week 1" and the
   current day is highlighted in its table (How to play is in the Menu).
 - The side-panel Medication card is gone; the Medication meter in the status

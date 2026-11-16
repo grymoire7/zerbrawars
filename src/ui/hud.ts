@@ -12,13 +12,6 @@ export interface HudOrder {
   readonly selected: boolean;
 }
 
-export interface HudMedication {
-  /** 0..1 medication level (equal to the aura at setup). */
-  readonly level: number;
-  /** Chance each germ is held back each turn, 0..1. */
-  readonly stallChance: number;
-}
-
 export interface HudCharge {
   readonly charge: string;
   readonly label: string;
@@ -108,7 +101,6 @@ export interface HudModel {
   readonly canEndTurn: boolean;
   readonly log: readonly string[];
   readonly orders: readonly HudOrder[];
-  readonly medication: HudMedication;
   readonly charges: readonly HudCharge[];
   /** The picked charge has nothing to hit right now. */
   readonly noTargets: boolean;
@@ -227,28 +219,17 @@ export function createHud(
   );
   stats.append(turnBox, help, progress);
 
-  // Medication: the note on the aura and the charge chips (the level is in the status strip).
-  const medBox = el("div", PANEL + "padding:8px 10px;");
-  const medHead = el("div", ROW + "font-weight:600;");
-  const medLabel = el("span", "", "Medication");
-  const medTip = tip("battle-med", "", "medication");
-  medHead.append(medLabel, medTip.button);
-  const medNote = medTip.note;
-  medBox.append(medHead, medNote);
-
-  // Orders: how many swarms have one, and a status chip per swarm.
-  const ordersBox = el("div", PANEL + "padding:8px 10px;");
-  const ordersHeadRow = el("div", ROW);
-  const ordersHead = el("span", "font-weight:600;");
-  const ordersTip = tip(
-    "battle-orders",
-    "One order per swarm each turn. No order means hold.",
-    "orders",
+  // Orders: a mirror of the board for screen readers and keyboard users; closed by default.
+  const ordersBox = el("details", PANEL) as HTMLDetailsElement;
+  const ordersHead = el(
+    "summary",
+    "min-height:44px;display:flex;align-items:center;padding:0 10px;cursor:pointer;font-weight:600;",
   );
-  ordersHeadRow.append(ordersHead, ordersTip.button);
-  ordersTip.note.style.marginBottom = "6px";
-  const ordersList = el("div", "display:flex;flex-direction:column;gap:6px;");
-  ordersBox.append(ordersHeadRow, ordersTip.note, ordersList);
+  const ordersList = el(
+    "div",
+    "display:flex;flex-direction:column;gap:6px;padding:0 10px 10px;",
+  );
+  ordersBox.append(ordersHead, ordersList);
 
   const problems = el(
     "div",
@@ -291,16 +272,7 @@ export function createHud(
   log.setAttribute("aria-label", "What happened last turn");
   logBox.append(logSummary, log);
 
-  scroll.append(
-    stats,
-    medBox,
-    ordersBox,
-    problems,
-    infoBox,
-    preview,
-    key,
-    logBox,
-  );
+  scroll.append(stats, ordersBox, problems, infoBox, preview, key, logBox);
 
   // Pinned controls.
   const prompt = el(
@@ -311,6 +283,8 @@ export function createHud(
   prompt.setAttribute("role", "status");
   prompt.setAttribute("aria-live", "polite");
   const chipRow = el("div", "display:contents;");
+  /** Charge kinds this fight has offered; a spent one stays in its slot, disabled. */
+  const seen = new Map<string, string>();
   const endTurn = button(
     "",
     handlers.onEndTurn,
@@ -335,7 +309,7 @@ export function createHud(
   );
   const x1 = button("1x", () => handlers.onSpeed(1), "flex:1 1 0;");
   const x2 = button("2x", () => handlers.onSpeed(2), "flex:1 1 0;");
-  const skip = button("Skip", handlers.onSkip, "flex:2 1 0;");
+  const skip = button("Skip", handlers.onSkip, "flex:3 1 0;");
   skip.title = "Skip to the end of the turn (Enter or Space)";
   const replay = button(
     "Replay last turn",
@@ -344,7 +318,8 @@ export function createHud(
   );
   const onReset = handlers.onReset;
   const reset = onReset ? button("Reset", onReset, "flex:1 1 0;") : null;
-  row.append(chipRow, replay, x1, x2, skip, endTurn);
+  // Skip sits on the far left, away from End Turn, so a double tap on End Turn cannot skip the animation.
+  row.append(skip, chipRow, replay, x1, x2, endTurn);
   if (!options.tutorial) row.insertBefore(wallOff, endTurn);
   if (reset) row.append(reset);
   dock.append(prompt, row);
@@ -634,37 +609,48 @@ export function createHud(
 
       ordersBox.style.display = pb.playing ? "none" : "";
       const ordered = m.orders.filter((o) => o.hasOrder).length;
-      ordersHead.textContent = `Orders: ${ordered} of ${m.orders.length} swarms`;
+      ordersHead.textContent = `Swarm orders: ${ordered} of ${m.orders.length}`;
       ordersList.replaceChildren(
         ...m.orders.map(orderRow),
         ...(m.support ? [supportRow(m.support)] : []),
       );
 
-      medBox.style.display = pb.playing ? "none" : "";
-      medTip.setText(
-        (m.medication.level > 0
-          ? `Each germ has a ${Math.round(m.medication.stallChance * 100)}% chance of being held back each turn.`
-          : "No medication: nothing holds the germs back.") +
-          (m.charges.length > 0
-            ? " Pick a charge to use one this turn (one per turn)."
-            : ""),
-      );
-      chipRow.replaceChildren(
-        ...m.charges.map((c) => {
+      for (const c of m.charges) seen.set(c.charge, c.label);
+      const chips: HTMLElement[] = [];
+      if (pb.playing) {
+        // The speed and skip buttons take the bar while a turn plays.
+      } else if (m.support) {
+        const b = button(
+          `Dose set: ${m.support.charge}. Take it back`,
+          handlers.onClearSupport,
+          "flex:2 1 0;min-width:0;",
+        );
+        b.dataset.key = "dose-clear";
+        chips.push(b);
+      } else {
+        for (const [charge, label] of seen) {
+          const c = m.charges.find((x) => x.charge === charge);
           const b = button(
-            `${c.label} x${c.count}`,
-            () => handlers.onPickCharge(c.charge),
+            c
+              ? c.selected
+                ? `Put back ${label}`
+                : `${label} x${c.count}`
+              : `${label} used`,
+            () => handlers.onPickCharge(charge),
             "flex:1 1 0;min-width:0;" +
-              (c.selected
+              (c?.selected
                 ? "outline:2px solid var(--zw-med);font-weight:700;"
                 : ""),
           );
-          b.setAttribute("aria-pressed", String(c.selected));
-          b.classList.toggle("zw-coach-pulse", m.coachTarget === c.charge);
+          b.disabled = !c;
+          b.dataset.key = `charge-${charge}`;
+          b.setAttribute("aria-pressed", String(c?.selected ?? false));
+          b.classList.toggle("zw-coach-pulse", m.coachTarget === charge);
           b.title = "Use this charge on a germ or a carried load";
-          return b;
-        }),
-      );
+          chips.push(b);
+        }
+      }
+      chipRow.replaceChildren(...chips);
       const w = m.wall;
       const picked = m.charges.some((c) => c.selected);
       const wallBlocked = w && !w.queued && w.reason !== null ? w.reason : "";

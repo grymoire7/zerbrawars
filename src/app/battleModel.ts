@@ -1,3 +1,4 @@
+import { stallChance } from "../sim/battle/intents";
 import { PARAMS } from "../sim/params";
 import type { MedCharges } from "../sim/types";
 import type { StatusCell, StatusModel } from "../ui/statusStrip";
@@ -27,6 +28,11 @@ export function tissueState(tissue: number): string {
 export function inflammationState(damage: number): "calm" | "warm" | "hot" {
   return damage <= 0 ? "calm" : damage < 3 ? "warm" : "hot";
 }
+
+const medHold = (level: number) =>
+  level > 0
+    ? `Each germ has a ${Math.round(stallChance(level) * 100)}% chance of being held back each turn.`
+    : "Nothing holds the germs back.";
 
 const chargeCount = (c: MedCharges) =>
   c.antibacterial + c.antifungal + c.strong;
@@ -59,7 +65,7 @@ export function battleStatusModel(i: BattleStatusInput): StatusModel {
         showState: doses < window,
         bar: { kind: "segments", count: window, solid: doses, ghost: doses },
         color: "med",
-        explain: `Your aura slows germs. Charges come from doses taken: ${n} ${n === 1 ? "charge" : "charges"} (${chargesText(i.charges)}).`,
+        explain: `${medHold(i.medLevel)} Charges come from doses taken: ${n} ${n === 1 ? "charge" : "charges"} (${chargesText(i.charges)}).`,
       };
 
   const cells: StatusCell[] = [

@@ -15,7 +15,6 @@ import {
   defaultSeedFor,
   isScenarioName,
 } from "../sim/scenarios";
-import { stallChance } from "../sim/battle/intents";
 import { battleStatus } from "../sim/battle/outcome";
 import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
 
@@ -613,10 +612,6 @@ export function mountBattle(
       holding: orderCount(statuses).holding,
       hint: playing ? "" : endTurnHint(orderCount(statuses).holding),
       info: controller.info(),
-      medication: {
-        level: s.meds.level,
-        stallChance: stallChance(s.meds.aura),
-      },
       charges: playing ? [] : controller.charges(),
       noTargets: controller.noTargets(),
       support: supportOrder && {

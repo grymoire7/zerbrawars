@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 60 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,700 tokens. **Saves ~19,900 tokens per conversation.**
-> **Last scanned:** 2026-11-16 02:55 — re-run after significant changes
+> **Last scanned:** 2026-11-16 03:06 — re-run after significant changes
 
 ---
 
@@ -278,11 +278,11 @@
 - `src/ui/hud.ts`
   - function createHud: (mounts, handlers, options) => Hud
   - interface HudOrder
-  - interface HudMedication
   - interface HudCharge
   - interface HudSupport
   - interface HudSupportCard
-  - _...12 more_
+  - interface HudInfo
+  - _...11 more_
 - `src/ui/index.ts` — function getUiRoot: () => HTMLElement, function getPanels: () => void
 - `src/ui/infoTip.ts`
   - function createInfoTips: () => InfoTipFactory
@@ -371,7 +371,7 @@
 - `src/sim/pathogens.ts` ← `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/coachModel.ts`, `src/app/info.ts`, `src/app/lifeModel.ts` +23 more
 - `src/sim/scenarios.ts` ← `src/app/arcs.ts`, `src/app/arrivalModel.test.ts`, `src/app/coachModel.test.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +15 more
 - `src/sim/battle/setup.ts` ← `src/app/arrivalModel.test.ts`, `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts` +15 more
-- `src/sim/battle/intents.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/controller.ts`, `src/app/info.test.ts` +13 more
+- `src/sim/battle/intents.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleModel.ts`, `src/app/controller.ts`, `src/app/info.test.ts` +13 more
 - `src/theme/palette.ts` ← `src/app/boot.ts`, `src/app/lifeModel.ts`, `src/app/main.ts`, `src/render/boardView.ts`, `src/render/granulomaView.ts` +13 more
 - `src/sim/board.ts` ← `src/app/controller.ts`, `src/app/info.ts`, `src/render/boardView.ts`, `src/render/orderView.ts`, `src/sim/battle/arrivals.test.ts` +13 more
 - `src/sim/rng.ts` ← `src/sim/battle/bots.ts`, `src/sim/battle/engulf.test.ts`, `src/sim/battle/hidden.test.ts`, `src/sim/battle/intents.ts`, `src/sim/battle/orders.test.ts` +13 more

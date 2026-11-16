@@ -27,3 +27,4 @@ The repo needs four Actions secrets: `DREAMHOST_HOST`, `DREAMHOST_USERNAME`, `DR
 
 - No screen is ever monochrome (black, white and grey only). Every full-screen card built with `createMenu` sets `scene: { wordmark: false }` (the title scene) or sits over the board (`overBoard`). A new menu, intro, question or ending card that omits both renders on a black page.
 - Player-facing text says "disease", not "character". "Character" stays only as an internal term (identifiers, per-character parameters in code and clinical docs).
+- A phase's controls live in that phase's area (the battle bar under the board for a fight). The side panel may mirror them but never holds the only copy; information cards may stay in the panel.
