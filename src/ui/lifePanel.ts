@@ -66,8 +66,11 @@ export interface LifeSummaryModel {
 }
 
 export interface LifePanelModel {
+  /** "Week 1", or "Week 1 is done"; the heading of the calendar card. */
   readonly title: string;
   readonly over: boolean;
+  /** The day being planned (0-based), or null once the week is over. */
+  readonly day: number | null;
   /** What to do next while something is picked, or why a move was refused; empty when idle. */
   readonly hint: string;
   /** How the planner works, behind the (?) beside "Your week". */
@@ -104,7 +107,6 @@ export interface LifePanelModel {
 }
 
 export interface LifePanelHandlers {
-  onHelp(): void;
   onPickCard(base: string): void;
   onPickRest(): void;
   onSwap(base: string): void;
@@ -161,17 +163,6 @@ export function createLifePanel(
     b.addEventListener("click", onClick);
     return b;
   };
-  const top = el(
-    "div",
-    PANEL +
-      "padding:4px 4px 4px 10px;min-height:44px;box-sizing:border-box;display:flex;align-items:center;font-size:15px;",
-  );
-  const title = el("span", "font-weight:600;");
-  const help = button("?", h.onHelp, "margin-left:auto;font-weight:700;");
-  help.setAttribute("aria-label", "How to play");
-  help.title = "How to play";
-  top.append(title, help);
-
   const calBox = el(
     "div",
     PANEL + "padding:8px 10px;display:flex;flex-direction:column;gap:6px;",
@@ -267,15 +258,7 @@ export function createLifePanel(
   keyBody.firstElementChild?.append(keyTip.button);
   key.append(keyBody);
 
-  mounts.scroll.append(
-    top,
-    aftermathBox,
-    feelBox,
-    calBox,
-    handBox,
-    beatsBox,
-    key,
-  );
+  mounts.scroll.append(aftermathBox, feelBox, calBox, handBox, beatsBox, key);
 
   const playBtn = button(
     "",
@@ -342,7 +325,7 @@ export function createLifePanel(
         ? "position:sticky;top:0;z-index:1;box-shadow:0 4px 8px rgba(0,0,0,0.35);"
         : "");
     const head = el("div", ROW);
-    head.append(el("span", "font-weight:600;font-size:14px;", "Your week"));
+    head.append(el("span", "font-weight:600;font-size:14px;", m.title));
     const planTip = tip("life-plan", m.help, "planning your week");
     head.append(planTip.button);
     calBox.replaceChildren(head, planTip.note);
@@ -361,11 +344,25 @@ export function createLifePanel(
     const headRow = el("tr");
     headRow.append(el("td", "width:62px;"));
     m.grid.forEach((_, i) => {
+      // Today is a filled pill (shape, not just colour) and a played day is muted.
+      const now = m.day === i;
+      const gone = m.day !== null && i < m.day;
       const th = el(
         "th",
-        "font-size:13px;font-weight:700;text-align:center;padding:2px 0;",
-        `Day ${i + 1}`,
+        "font-size:13px;font-weight:700;text-align:center;padding:2px 0;" +
+          (gone ? "opacity:0.55;" : ""),
+        "",
       );
+      th.append(
+        el(
+          "span",
+          now
+            ? "display:inline-block;padding:2px 12px;border-radius:999px;background:var(--zw-primary);color:var(--zw-primary-ink);"
+            : "",
+          `Day ${i + 1}`,
+        ),
+      );
+      if (now) th.setAttribute("aria-current", "date");
       th.setAttribute("scope", "col");
       headRow.append(th);
     });
@@ -595,7 +592,6 @@ export function createLifePanel(
   return {
     update(m) {
       const focus = activeKey();
-      title.textContent = m.title;
       aftermathBox.style.display = m.aftermath ? "flex" : "none";
       aftermathBox.replaceChildren(
         ...(m.aftermath

@@ -322,10 +322,9 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
           ? `Now tap a time slot for ${cardDef(versionOf(sel)).label}.${pickShift()}`
           : "";
     return {
-      title: over
-        ? `Week ${life.week} is done`
-        : `Week ${life.week} · Day ${life.day + 1} of ${L.days}`,
+      title: over ? `Week ${life.week} is done` : `Week ${life.week}`,
       over,
+      day: over ? null : life.day,
       hint: message ? `Can't do that: ${message}` : hintBase,
       help: "Tap an activity, then a time slot. Or tap a time slot first. Tap a planned activity to take it off.",
       restSelected: sel === "rest",
@@ -450,7 +449,6 @@ export function mountLife(env: ScreenEnv, run: Run): Screen {
   }
 
   const panel = createLifePanel(panels, {
-    onHelp: () => help.open(),
     onPickCard: (base) => {
       clearBanner();
       const r = tapActivity(pending, base);

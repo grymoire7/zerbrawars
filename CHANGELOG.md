@@ -9,6 +9,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The "Week 1 · Day 1 of 3" bar is gone. The calendar card is titled "Week 1" and the
+  current day is highlighted in its table (How to play is in the Menu).
 - The side-panel Medication card is gone; the Medication meter in the status
   bar now shades from green to red as a full set of doses gets less likely,
   and tapping it names the days at risk.
