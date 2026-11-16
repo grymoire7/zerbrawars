@@ -4,7 +4,17 @@ import type { PaletteName } from "../theme/palette";
 // apart at a glance. Colour never carries meaning alone: the icon and the title ride with it.
 
 export type CardFamily =
-  "yard" | "lake" | "band" | "sleepover" | "game" | "doctor" | "rest";
+  | "yard"
+  | "lake"
+  | "band"
+  | "sleepover"
+  | "game"
+  | "doctor"
+  | "rest"
+  | "wood"
+  | "crawl"
+  | "flytrap"
+  | "trip";
 
 /** The family colour of every card id (and "rest"). */
 export const CARD_FAMILY: Readonly<Record<string, CardFamily>> = {
@@ -18,6 +28,14 @@ export const CARD_FAMILY: Readonly<Record<string, CardFamily>> = {
   gameEarly: "game",
   doctor: "doctor",
   rest: "rest",
+  wood: "wood",
+  woodDry: "wood",
+  crawl: "crawl",
+  crawlRake: "crawl",
+  flytrap: "flytrap",
+  flytrapGarage: "flytrap",
+  trip: "trip",
+  tripPlan: "trip",
 };
 
 /** 24x24 outline icons, drawn in currentColor. */
@@ -44,6 +62,28 @@ export const CARD_ICON: Readonly<Record<string, string>> = {
   doctor: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',
   // Two Zs.
   rest: '<path d="M4 5h7L4 12h7"/><path d="M13 13h6l-6 7h6"/>',
+  // A log, cut end showing its rings.
+  wood: '<path d="M4 8v8a8 3 0 0 0 16 0V8"/><ellipse cx="12" cy="8" rx="8" ry="3"/><path d="M12 8h.01M9.5 8a2.5 1 0 0 1 5 0"/>',
+  // A log under a roof: the dry woodpile.
+  woodDry:
+    '<path d="M3 10 12 3l9 7"/><path d="M5 20v-8h14v8"/><path d="M5 16h14"/><path d="M9 14h.01M15 18h.01"/>',
+  // A ball and a low arch.
+  crawl:
+    '<circle cx="7" cy="16" r="3.5"/><path d="M3 21h18"/><path d="M12 21v-4a5 5 0 0 1 10 0v4"/>',
+  // The same arch with a rake: the cleared yard.
+  crawlRake:
+    '<path d="M2 21h20"/><path d="M4 21v-4a4 4 0 0 1 8 0v4"/><path d="M15 4v10"/><path d="M12 14h6M12 14v4M15 14v4M18 14v4"/>',
+  // A leaf with a toothed edge.
+  flytrap:
+    '<path d="M3 12 6 7l2 3 4-5 2 4 3-3 2 4 2 0c0 6-5 10-10 10-3 0-5-1-7-3z"/><path d="M5 19 14 11"/>',
+  // A garage door: the trap kept indoors.
+  flytrapGarage:
+    '<path d="M3 20V9l9-5 9 5v11"/><path d="M7 20v-8h10v8"/><path d="M7 14.5h10M7 17h10"/>',
+  // A suitcase.
+  trip: '<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5h6v3"/><path d="M4 13h16"/>',
+  // A suitcase with a checked list.
+  tripPlan:
+    '<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5h6v3"/><path d="m8.5 14.5 2 2 4-4"/>',
 };
 
 /** The accent colour token of a card id (or "rest"). */

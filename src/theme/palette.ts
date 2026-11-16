@@ -88,6 +88,14 @@ export const PALETTE = {
   "card-doctor-bg": "#3F434B",
   "card-rest": "#93A3BA",
   "card-rest-bg": "#343A46",
+  "card-wood": "#C8935E",
+  "card-wood-bg": "#43382F",
+  "card-crawl": "#FF6B5A",
+  "card-crawl-bg": "#473130",
+  "card-flytrap": "#D07CFF",
+  "card-flytrap-bg": "#3E3049",
+  "card-trip": "#5CCBF5",
+  "card-trip-bg": "#2A3B47",
 } as const;
 
 export type PaletteName = keyof typeof PALETTE;
