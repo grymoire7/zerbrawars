@@ -1,7 +1,8 @@
 # Battle bar: design
 
-> Status: agreed to build on a feature branch, time-boxed to 2026-11-18. Revised 2026-11-15 after a
-> game-design review (section 11). Nothing here is built yet.
+> Status: built and released in v0.3.0 (2026-11-15), three days inside the 2026-11-18 time box.
+> Revised after a game-design review (section 11). The sections below are the design as agreed;
+> section 12 records where the build differs.
 
 ## 1. The rule
 
@@ -193,3 +194,21 @@ together in one strip" with information allowed beside it. The owner kept the ru
 back and forth for controls", with information cards ceded for now, and decided to build the docked
 bar on a feature branch inside the time box above. The reviewer's pinned-strip version is the
 fallback if the bar does not fit by 2026-11-18.
+
+## 12. As built (2026-11-15)
+
+- The bar is a rounded blue tray with a deep-blue edge and 12px side and bottom margins, over the
+  title scene's sky, which the stage (board plus bar) now shows behind both. Buttons are chunky and
+  colour-coded: End Turn deep blue, charges pale sky blue, Wall off periwinkle.
+- The prompt line is never blank: it says "Tap a swarm to give it an order.", "Tap a tile to move,
+  or a germ to engulf.", or "Watch the turn play out.", and the charge and Wall off messages replace
+  those when they apply. This keeps the tray's vertical balance.
+- Phone portrait puts the charges, Wall off and Replay on one row and End Turn full width under
+  them; phone landscape fits one row at 11px labels.
+- Skip sits on the far left in playback, away from End Turn.
+- The Orders card is a closed "Swarm orders: N of 3" list. It does not have the Wall off mirror
+  button from section 3; Wall off is in the bar and on W.
+- The coach strip kept its place in the side panel. The outline on End Turn is enough to find the
+  button, so its text did not move (open point 2). Replay stayed in the bar (open point 3).
+- Not done, as planned: the keyboard route to moves and engulfs, and the real-phone check beyond
+  the owner's own testing.
