@@ -73,20 +73,24 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
 
 export const LIFE_LINES: readonly (readonly [string, string])[] = [
   [
+    "An arc",
+    "An arc has one or more weeks to play. The basic pattern in a week is Plan, Battle, Reflect. You plan your week, battle in the body, and see a summary of how things went.",
+  ],
+  [
     "Your week",
-    "Plan three days, with two time slots each: daytime and evening. Hit the goal by saying yes to the people who ask. A time slot with nothing in it is a rest.",
+    "Plan three days, with two time slots each: daytime and evening. Hit the goal by planning activities. A time slot with nothing in it is a rest.",
   ],
   [
     "Placing an activity",
-    "Tap an activity, then tap a time slot. It works the other way round too: tap a time slot, then pick an activity. Tap an activity on your calendar to take it back off, or press Escape to cancel your pick. Each activity can be used once. Time slots that cannot take it are dimmed and say why.",
+    "Tap an activity, then tap a time slot. It works the other way round too. Tap an activity on your calendar to take it back off, or press Escape to cancel your pick. Each activity can be used only once. Time slots that cannot take it are dimmed and say why.",
   ],
   [
-    "The odds are real",
-    "Every activity shows its chance of an exposure. When a day is played, each activity rolls once. Look at the body view: more drifting dots means better odds.",
+    "The odds matter",
+    "Every activity shows its chance of an exposure. When a day is played, each activity rolls once. Look at the body view: more drifting dots means higher odds of infection.",
   ],
   [
     "Easier versions",
-    "Most activities have an alternative that keeps the plan and the people, but brings fewer germs. Tap it under the activity to swap. It often scores a bit less.",
+    "Some activities have an alternative that keeps the plan and the people, but brings fewer germs. Tap it under the activity to swap. It often scores a bit less.",
   ],
   [
     "Medication",
@@ -98,15 +102,15 @@ export const LIFE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Energy",
-    "Energy is just a game resource for planning, not a measure of your health. Activities spend it, rests give a little back, and a plan can never go below zero.",
+    "Energy is not a measure of your health. Activities spend it, rests give a little back. It can never be negative.",
   ],
   [
     "The doctor",
     "When a symptom shows up, play stops and a banner offers Book the doctor or Play on. Booking puts a doctor visit on the next free slot.",
   ],
   [
-    "After the week",
-    "If something landed or flared, you head into a full battle with what you brought in and the medication you kept up. If nothing big landed, your body is still on patrol: a small skirmish, a few turns long.",
+    "Battle",
+    "If something landed or flared, you go into a full battle with what you brought in and the medication you kept up. If nothing big landed, your body is still on patrol: a small skirmish, a few turns long.",
   ],
 ];
 
