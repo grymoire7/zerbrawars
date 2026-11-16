@@ -71,6 +71,23 @@ export function skirmishLoadout(seed: number, medLevel = 1): Loadout {
 }
 
 /**
+ * What week 2's trip brings when it lands, plus a woodworking mold: a Burkholderia (a sealed
+ * bacterium), a staph and an Aspergillus, for seeing the new germ in a fight without playing the
+ * week (`?mode=battle&scenario=trip-week`).
+ */
+export function tripWeekLoadout(seed: number, medLevel = 1): Loadout {
+  return {
+    ...firstBoardLoadout(seed, medLevel),
+    scenario: "trip-week",
+    exposures: [
+      { kind: "burkholderia", size: 2, at: { x: 1, y: 2 } },
+      { kind: "burkholderia", size: 2, at: { x: 3, y: 0 } },
+      { kind: "aspergillus", size: 2, at: { x: 5, y: 2 } },
+    ],
+  };
+}
+
+/**
  * The tutorial's one seed, shared by both parts so the dice line up: on turn 1 the mold grows
  * with no medication (part A) and stalls with it (part B), and in A it telegraphs a spore on turn
  * 2. Pinned by tutorial.test.ts.
@@ -130,6 +147,7 @@ export const SCENARIO_LOADOUTS = {
   duel: duelLoadout,
   "lake-week": lakeWeekLoadout,
   skirmish: skirmishLoadout,
+  "trip-week": tripWeekLoadout,
   "tutorial-a": tutorialALoadout,
   "tutorial-b": tutorialBLoadout,
 } as const satisfies Record<

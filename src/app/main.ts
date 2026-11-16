@@ -74,7 +74,9 @@ function newRun(
   const fromUrl =
     raw !== null && Number.isFinite(Number(raw)) ? Number(raw) : null;
   const med = q.has("med") ? Number(q.get("med")) : NaN;
+  const week = Number(q.get("week"));
   return createRun({
+    week: Number.isInteger(week) && week >= 1 ? week : undefined,
     seed: seed ?? fromUrl ?? PARAMS.defaultSeed,
     reservoirs: parseReservoirs(q.get("reservoirs")),
     med: Number.isFinite(med) ? Math.min(1, Math.max(0, med)) : undefined,

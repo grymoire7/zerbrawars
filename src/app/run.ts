@@ -36,6 +36,8 @@ export interface RunOptions {
   /** Debug start: the first week's med level, 0..1. */
   readonly med?: number;
   readonly energy?: number;
+  /** Debug start: which week's hand the first life deals (?week=2), default 1. */
+  readonly week?: number;
   /** Debug start: the goal target (?goal=N), in place of PARAMS.life.goalTarget. */
   readonly goalTarget?: number;
   /** ?mode=life: the calendar on its own, its battle a separate debug screen. */
@@ -93,14 +95,15 @@ export function createRun(opts: RunOptions): Run {
     goalTarget: opts.goalTarget,
   });
   let campaign = first.state;
-  if (opts.med !== undefined) {
+  if (opts.med !== undefined || opts.week !== undefined) {
     campaign = {
       ...campaign,
       life: createLife({
         seed: opts.seed,
+        week: opts.week,
         reservoirs: opts.reservoirs,
         energy: opts.energy,
-        doses: dosesForMed(opts.med),
+        doses: opts.med === undefined ? undefined : dosesForMed(opts.med),
         goalTarget: opts.goalTarget,
       }),
     };

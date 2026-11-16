@@ -227,6 +227,7 @@ const DEBUG_KEYS = [
   "scenario",
   "doctor",
   "residual",
+  "week",
 ];
 
 /** A developer start: the URL carries a debug lever (?mode, ?seed, ?med and the rest). */
