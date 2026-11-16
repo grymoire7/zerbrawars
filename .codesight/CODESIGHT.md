@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 0 components | 60 lib files | 0 env vars | 0 middleware | 0% test coverage
 > **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,700 tokens. **Saves ~19,900 tokens per conversation.**
-> **Last scanned:** 2026-11-16 20:08 — re-run after significant changes
+> **Last scanned:** 2026-11-16 20:11 — re-run after significant changes
 
 ---
 
@@ -346,7 +346,7 @@
 
 - `src/sim/params.ts` — imported by **55** files
 - `src/sim/types.ts` — imported by **53** files
-- `src/sim/pathogens.ts` — imported by **28** files
+- `src/sim/pathogens.ts` — imported by **24** files
 - `src/sim/scenarios.ts` — imported by **20** files
 - `src/sim/battle/setup.ts` — imported by **20** files
 - `src/sim/battle/intents.ts` — imported by **18** files
@@ -369,7 +369,7 @@
 
 - `src/sim/params.ts` ← `src/app/arcModel.test.ts`, `src/app/arcModel.ts`, `src/app/arcs.ts`, `src/app/battleModel.test.ts`, `src/app/battleModel.ts` +50 more
 - `src/sim/types.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleModel.ts`, `src/app/battleScreen.ts`, `src/app/campaignModel.ts` +48 more
-- `src/sim/pathogens.ts` ← `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/coachModel.ts`, `src/app/info.ts`, `src/app/lifeModel.ts` +23 more
+- `src/sim/pathogens.ts` ← `src/app/arrivalModel.ts`, `src/app/battleScreen.ts`, `src/app/coachModel.ts`, `src/app/info.ts`, `src/app/lifeModel.ts` +19 more
 - `src/sim/scenarios.ts` ← `src/app/arcs.ts`, `src/app/arrivalModel.test.ts`, `src/app/coachModel.test.ts`, `src/app/controller.test.ts`, `src/app/info.test.ts` +15 more
 - `src/sim/battle/setup.ts` ← `src/app/arrivalModel.test.ts`, `src/app/battleScreen.ts`, `src/app/interludeScreen.ts`, `src/app/lifeScreen.ts`, `src/app/loadoutOptions.test.ts` +15 more
 - `src/sim/battle/intents.ts` ← `src/app/arrivalModel.test.ts`, `src/app/arrivalModel.ts`, `src/app/battleModel.ts`, `src/app/controller.ts`, `src/app/info.test.ts` +13 more

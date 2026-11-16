@@ -13,11 +13,22 @@ import {
   organismShort,
   organismSub,
 } from "./organisms";
-import { PATHOGEN_KINDS, type PathogenKindId } from "./pathogens";
+import {
+  PATHOGEN_KINDS,
+  type PathogenKindDef,
+  type PathogenKindId,
+} from "./pathogens";
 
 const KINDS = Object.keys(PATHOGEN_KINDS) as PathogenKindId[];
 
 describe("organisms", () => {
+  it("gives only Burkholderia a rod look", () => {
+    const rods = KINDS.filter(
+      (k) => (PATHOGEN_KINDS[k] as PathogenKindDef).look === "rod",
+    );
+    expect(rods).toEqual(["burkholderia"]);
+  });
+
   it("names every kind", () => {
     for (const k of KINDS) {
       expect(organismName(k)).toBeTruthy();

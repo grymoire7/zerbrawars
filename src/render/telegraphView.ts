@@ -4,7 +4,11 @@ import { labelSprite } from "./labels";
 import type { BattleState, Coord } from "../sim/types";
 import { hex } from "../theme/palette";
 import { arrivalMarkModel } from "../app/arrivalModel";
-import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
+import {
+  PATHOGEN_KINDS,
+  type PathogenKindDef,
+  type PathogenKindId,
+} from "../sim/pathogens";
 import { KIND_COLOR } from "./pathogenView";
 
 export interface TelegraphView {
@@ -289,7 +293,11 @@ export function createTelegraphView(
       b.renderOrder = 10.2;
       group.add(b);
     };
-    if (def.form === "bacterium") {
+    if (def.form === "bacterium" && (def as PathogenKindDef).look === "rod") {
+      ball(-0.2, 0, 0.09);
+      ball(0, 0, 0.09);
+      ball(0.2, 0, 0.09);
+    } else if (def.form === "bacterium") {
       ball(-0.1, 0.06, 0.1);
       ball(0.1, 0.06, 0.1);
       ball(0, -0.1, 0.1);

@@ -2,7 +2,11 @@ import type { HudMounts } from "./hud";
 import { cardAccent, cardBadge, cardTint } from "./cardStyle";
 import { createInfoTips } from "./infoTip";
 import { organismKeyText } from "../sim/organisms";
-import { PATHOGEN_KINDS } from "../sim/pathogens";
+import {
+  PATHOGEN_KINDS,
+  type PathogenKindDef,
+  type PathogenKindId,
+} from "../sim/pathogens";
 import { GERM_COLOR_WORD as KEY_COLOR } from "./hud";
 
 // The calendar screen's side panel. Views are read-only: the app builds a LifePanelModel from the
@@ -232,8 +236,9 @@ export function createLifePanel(
       dot(`border-radius:50%;background:${MINT};box-shadow:0 0 6px ${MINT};`),
       "Green glow: your medication",
     ),
-    ...(["strep", "staph", "aspergillus"] as const).map((id) => {
-      const def = PATHOGEN_KINDS[id];
+    ...(Object.keys(PATHOGEN_KINDS) as PathogenKindId[]).map((id) => {
+      const def: PathogenKindDef = PATHOGEN_KINDS[id];
+      const rod = def.look === "rod";
       const body =
         def.form === "mold"
           ? `background:var(--zw-${id});clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);`
@@ -241,12 +246,13 @@ export function createLifePanel(
       const sealed = def.wall === "sealed";
       return keyRow(
         dot(
-          body +
+          (rod ? "width:22px;" : "") +
+            body +
             (sealed
               ? "outline:2px solid var(--zw-sealed-rim);outline-offset:1px;"
               : ""),
         ),
-        `${KEY_COLOR[id]} ${def.form === "mold" ? "spiky" : "round"} dots${sealed ? " with a ring" : ""}: ${organismKeyText(id)}${sealed ? " in a shell" : ""}`,
+        `${KEY_COLOR[id]} ${def.form === "mold" ? "spiky" : rod ? "rod-shaped" : "round"} dots${sealed ? " with a ring" : ""}: ${organismKeyText(id)}${sealed ? " in a shell" : ""}`,
       );
     }),
     keyRow(

@@ -59,7 +59,7 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Engulfing",
-    `${organismName("strep")}, ${organismDescription("strep")}, is killed when engulfed. A germ with a pale ring (a shell) is not: engulfing it loads your swarm instead, whether it is ${organismName("aspergillus")} or ${organismName("staph")}. Loaded swarms move slower.`,
+    `${organismName("strep")}, ${organismDescription("strep")}, is killed when engulfed. A germ with a pale ring (a shell) is not: engulfing it loads your swarm instead, whether it is ${organismName("aspergillus")}, ${organismName("staph")} or ${organismName("burkholderia")}. Loaded swarms move slower.`,
   ],
   [
     "Wall off",

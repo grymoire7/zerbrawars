@@ -14,6 +14,8 @@ export interface PathogenKindDef {
   readonly wall: Wall;
   readonly form: PathogenForm;
   readonly canSpore: boolean;
+  /** Drawn as a straight rod instead of a round cluster, so a kind differs from staph by shape. */
+  readonly look?: "rod";
 }
 
 export const PATHOGEN_KINDS = {
@@ -38,6 +40,7 @@ export const PATHOGEN_KINDS = {
     wall: "sealed",
     form: "bacterium",
     canSpore: false,
+    look: "rod",
   },
 } as const satisfies Record<string, PathogenKindDef>;
 

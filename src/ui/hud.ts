@@ -2,7 +2,11 @@ import type { BattleKind } from "../sim/types";
 import { turnText } from "../app/arrivalModel";
 import { createInfoTips } from "./infoTip";
 import { organismKeyText } from "../sim/organisms";
-import { PATHOGEN_KINDS, type PathogenKindId } from "../sim/pathogens";
+import {
+  PATHOGEN_KINDS,
+  type PathogenKindDef,
+  type PathogenKindId,
+} from "../sim/pathogens";
 export interface HudOrder {
   readonly swarmId: string;
   /** Status chip text: "no order", "move", "engulf", "wall off", "busy". */
@@ -400,10 +404,11 @@ export function createHud(
         def.form === "mold"
           ? `background:var(--zw-${id});clip-path:polygon(50% 0,62% 30%,100% 50%,62% 70%,50% 100%,38% 70%,0 50%,38% 30%);`
           : `background:var(--zw-${id});border-radius:50%;`;
+      const rod = (def as PathogenKindDef).look === "rod";
       const sealed = def.wall === "sealed";
       const mark = el(
         "span",
-        `display:inline-block;width:16px;height:16px;flex:none;box-sizing:border-box;${body}` +
+        `display:inline-block;width:${rod ? 26 : 16}px;height:16px;flex:none;box-sizing:border-box;${body}` +
           (sealed
             ? "outline:2px solid var(--zw-sealed-rim);outline-offset:1px;"
             : ""),
@@ -411,7 +416,7 @@ export function createHud(
       mark.setAttribute("aria-hidden", "true");
       return keyRow(
         mark,
-        `${GERM_COLOR_WORD[id]} ${def.form === "mold" ? "spiky dots" : "round dots"}` +
+        `${GERM_COLOR_WORD[id]} ${def.form === "mold" ? "spiky dots" : rod ? "rod-shaped dots" : "round dots"}` +
           (sealed ? " with a ring" : "") +
           `: ${organismKeyText(id)}`,
       );

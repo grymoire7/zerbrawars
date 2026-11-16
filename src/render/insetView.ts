@@ -92,12 +92,14 @@ export function createInsetView(
     });
   // One instanced draw per organism: colour names the organism, the shape names the form.
   const beadGeo = new THREE.SphereGeometry(0.8, 10, 8);
+  const rodGeo = new THREE.CapsuleGeometry(0.55, 1.1, 4, 10);
+  rodGeo.rotateZ(Math.PI / 2);
   const bodies: Record<PathogenKindId, THREE.InstancedMesh> = {
     strep: new THREE.InstancedMesh(beadGeo, bodyMat("strep"), MAX_DOTS),
     staph: new THREE.InstancedMesh(beadGeo, bodyMat("staph"), MAX_DOTS),
-    // Stand-in: staph's bead until Task 2 gives it a rod.
+    // A stretched capsule lying along x: the rod.
     burkholderia: new THREE.InstancedMesh(
-      beadGeo,
+      rodGeo,
       bodyMat("burkholderia"),
       MAX_DOTS,
     ),

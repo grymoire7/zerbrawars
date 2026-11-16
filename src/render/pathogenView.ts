@@ -3,6 +3,7 @@ import { labelMaterial, sizeLabel } from "./labels";
 import {
   PATHOGEN_KINDS,
   type PathogenForm,
+  type PathogenKindDef,
   type PathogenKindId,
 } from "../sim/pathogens";
 import type { BattleState, Coord, Pathogen, PathogenId } from "../sim/types";
@@ -47,6 +48,12 @@ const RIM_COLOR = hex("sealed-rim");
 const BADGE_HEIGHT = 0.34;
 
 // Fixed offsets (unit-ish sphere packing) so every bacterium cluster looks the same.
+// A rod: three beads in a straight line (drawn for kinds with look "rod").
+const ROD: readonly (readonly [number, number, number, number])[] = [
+  [-0.2, 0.15, 0, 0.12],
+  [0, 0.15, 0, 0.12],
+  [0.2, 0.15, 0, 0.12],
+];
 const CLUSTER: readonly (readonly [number, number, number, number])[] = [
   [0, 0.2, 0, 0.17],
   [0.17, 0.12, 0.05, 0.13],
@@ -82,7 +89,6 @@ export function createPathogenView(
       color: KIND_COLOR.staph,
       roughness: 0.6,
     }),
-    // Stand-in: staph's look until Task 2 gives it a rod.
     burkholderia: new THREE.MeshStandardMaterial({
       color: KIND_COLOR.burkholderia,
       roughness: 0.6,
@@ -139,7 +145,11 @@ export function createPathogenView(
     const body = new THREE.Group();
     const mat = mats[kind];
     if (form === "bacterium") {
-      for (const [x, y, z, r] of CLUSTER) addSphere(body, mat, x, y, z, r);
+      const beads =
+        (PATHOGEN_KINDS[kind] as PathogenKindDef).look === "rod"
+          ? ROD
+          : CLUSTER;
+      for (const [x, y, z, r] of beads) addSphere(body, mat, x, y, z, r);
     } else {
       addSphere(body, mat, 0, 0.2, 0, 0.15);
       // Spikes fan out over the upper hemisphere (golden-angle spiral).
