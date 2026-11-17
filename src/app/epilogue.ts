@@ -29,8 +29,8 @@ export const EPILOGUE_BACK = "Back to your summary";
 const PARAGRAPHS: readonly string[] = [
   "Bone marrow transplant and gene therapy are real options for CGD. They keep changing, and the choice is made together with your care team.",
   "After one of them works, there is no more prophylaxis medicine, restrictions ease to what anyone else has, and the immune response is about normal.",
-  "The process can be long and arduous, and it looks different for each person.",
-  "Gene therapy does not have to correct every cell. In early results, roughly 20 to 30 percent corrected cells looked like enough, and one recent patient reached about 70 percent.",
+  "The conditioning process can be arduous, the recovery long and filled with side effects, and it looks different for each person.",
+  "Gene therapy does not have to correct every cell. In early results, roughly 20 to 30 percent corrected cells looked like enough, and one recent patient reached nearly 70 percent.",
   "This is information, not medical advice. Your care team knows your situation, so talk with them about anything here.",
 ];
 
