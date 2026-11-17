@@ -341,7 +341,7 @@ Floor that answers the owner: O1, O2, O4 (about 9h). Cut first: O5, then O3. If 
 10. **"This week" block** on the outcome card replacing the single score line. Default: yes.
 11. **Short labels on phones** ("Meds"). Default: yes.
 
-## 8. Clinician questions to add (`clinician-questions.md`)
+## 8. Clinician questions to add (now `clinician-brief-nih.md`; numbers here are the old list, see its notes block)
 
 Numbering continues after 26 (note: `week-phase-design.md` proposed 22 and a farm 23 that were never
 added; 23 is now an Arc 1 item).

@@ -100,7 +100,7 @@ choices that should shape it (doses above all) do not reach it.
 8. **Short sessions.** A full battle should take about 3-4 minutes for a human (4-6 turns at
    20-40 seconds), a skirmish about 1.5 minutes (3-4 turns). Longer is not better.
 9. **Accurate enough to trust.** Every new rule has a one-line clinical story, or is openly a game
-   rule. Anything we are unsure of goes to `clinician-questions.md` with a working assumption.
+   rule. Anything we are unsure of goes to `clinician-brief-nih.md` with a working assumption.
 
 ## 3. Options
 

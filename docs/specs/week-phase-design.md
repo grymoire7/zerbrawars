@@ -446,7 +446,7 @@ over-reward.
 12. Is it acceptable that a plan can knowingly risk a dose (game night at Alex's) for a bit more
     fun, given the miss is a chance, not a choice, and the score still favours protecting the
     routine? **Suggested: yes**; it is the honest teen trade-off, and the battle shows the result.
-13. Add to `clinician-questions.md`: item 22 (priority B) "What do your teen patients say makes them
+13. Add to `clinician-brief-nih.md` (numbers here are the old list): item 22 (priority B) "What do your teen patients say makes them
     miss prophylaxis doses, and is showing misses as a chance from disrupted routines (nights away,
     late nights) a fair picture?"; item 23 (priority B) "Is hay or a barn loft a fair Aspergillus
     exposure for a farm card, with the orchard as the smarter option?" **Suggested: yes.**

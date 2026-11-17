@@ -1,7 +1,7 @@
 # Zebra Wars: beta plan (target 2026-11-21)
 
 Builds on `prototype-plan.md` (Milestones 1-2 are done; merged to `main` on 2026-11-02).
-Clinical corrections in `../specs/fodder.md` still win. Open clinical questions live in `../specs/clinician-questions.md`.
+Clinical corrections in `../specs/fodder.md` still win. Open clinical questions live in `../specs/clinician-brief-nih.md`.
 Items marked **(my call)** are defaults I picked; change them freely.
 
 **How the docs split.** `docs/specs/` says what a feature is and why (designs, rules, clinical notes); a
@@ -41,7 +41,7 @@ status table below is the only place that tracks slices.
 | B8 demo build (D1 `mise run demo`, D2 WebGL message, D3 clean profile, D4 offline rehearsal, D5 one-page sheet) | done (D4 rehearsed offline on 2026-11-14: fast start, played Arc 1 and a week; sheet in `docs/demo-sheet.md`, hosted address still to be filled in by hand) | | |
 | Title screen and Zoreo (T1 mocks and pieces, T2 tokens, T3 pure model, T4 corner head, T5 title scene, T6 small screens, T7 opening beat and blinks) | done, merged to `main`, released as v0.2.0 (2026-11-14); Zoreo behaviour checked on a phone in portrait and landscape | match by message: "add the pure Zoreo model", "add Zoreo's corner head", "bright pop-up title scene", "opening pop-up and volley beat" | `title-zoreo-design.md`, plan `title-zoreo-plan.md` |
 | B9 patient session | facilitator guide written (`docs/patient-session.md`); session itself pending | | |
-| B10 | clinician question handout written (`clinician-brief-nih.md`, 30 questions in groups A, B and C, for a clinician to answer on paper); polish and tuning open | | |
+| B10 | clinician question handout written (`clinician-brief-nih.md`, grouped by topic in two parts, for a clinician to answer on paper; researched answers in `clinician-research-notes.md`); polish and tuning open | | |
 
 Open after B1d: the week goal is now 13 points (Tracy preferred it to 12 after playing both: a little
 more battle, but neither felt noticeably harder or more fun; `?goal=N` still overrides). The smarter bot
@@ -75,7 +75,7 @@ life-to-battle link, always a fight). The beta is about onboarding, content, pla
   doctor) framed with an intro and an ending, on the lung map, with organism names.
 - **Epilogue (not gameplay, my call: include a short draft):** a hopeful information screen about curative
   options, marked in the build as "draft: pending clinical review". Contains the claims in
-  `../specs/clinician-questions.md` items 14-17. Easy to hide with a flag if the clinician says no.
+  `../specs/clinician-brief-nih.md` section 9. Easy to hide with a flag if the clinician says no.
 - **Organism names everywhere:** info cards, odds panel, calendar exposure text, outcome lists, key,
   how-to-play (generic labels stay as the primary line where helpful).
 - **Mobile and touch:** portrait and landscape phone layouts, tablet, tap targets >= 44px, no hover

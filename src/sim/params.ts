@@ -27,8 +27,8 @@ export const PARAMS = {
   /**
    * Residual kill chance per CGD variant (the title's X-linked / autosomal recessive choice).
    * XL is the default above. The AR number is a working assumption, not clinical data: the clinician
-   * file says "low for XL, higher for AR, tunable per character" (docs/specs/clinician-questions.md,
-   * item 1), pending clinician review.
+   * handout notes say "low for XL, higher for AR, tunable per character" (docs/specs/clinician-brief-nih.md,
+   * 2.1), pending clinician review.
    */
   residualByVariant: { xl: 0.1, ar: 0.25 },
   maxPathogenSize: 4,

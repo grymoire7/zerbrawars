@@ -129,7 +129,7 @@ These override anything in the pitches or the review that conflicts.
 
 - Solo developer. One CGD patient (over 18) is available for testing at any stage. Possibly one
   clinician, only after an initial version is fully developed. Open clinical questions are kept
-  in `clinician-questions.md`, each with a working assumption, so the game can be adjusted later.
+  in `clinician-brief-nih.md`, each with a working assumption, so the game can be adjusted later.
 - Prototype: desktop only, tested in person or locally. Organism names are not required in the
   prototype (leaky/sealed is fine), though they seem easy.
 - First version (beta): must support mobile, and organism names are required.

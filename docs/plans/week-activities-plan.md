@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Vitest, three.js renderers, Vite. Node via mise: run everything with `mise exec -- npx vitest run <file>` and finish with `mise run check`.
 
-**Spec:** `docs/specs/week-activities-design.md` (clinician items 32 to 43 in `docs/specs/clinician-questions.md` are the working assumptions).
+**Spec:** `docs/specs/week-activities-design.md` (clinician items 1.1, 1.4, 3.1 to 3.3, 5.1 and 7 in `docs/specs/clinician-brief-nih.md` have the working assumptions).
 
 ## Global Constraints
 

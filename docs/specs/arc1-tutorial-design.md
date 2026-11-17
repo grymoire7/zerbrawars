@@ -297,7 +297,7 @@ B4's done line is T1 to T5 with copy as written here.
 - **B7 keyboard.** Tab cycles swarms on the battle screen, so A1's "Tap one" is also true for Tab.
   B7 still owns Tab reaching the buttons.
 
-## 6. Clinical assumptions to add to `clinician-questions.md`
+## 6. Clinical assumptions to add to `clinician-brief-nih.md` (numbers here are the old list, see its notes block)
 
 New numbers start at 23 (week-phase-design reserves 22).
 
@@ -356,7 +356,7 @@ All defaults in section 7 are accepted except as follows.
   infection the cells cannot finish is a fair picture (item 23). Aspergillus is in the range of possibility (item 25).
   "CGD does not put you in a bubble, but it takes away one of the tools your immune system uses to
   fight infections" is fair (item 24). Item 26 is unanswered. These are recorded in
-  `clinician-questions.md` as patient-side answers, still pending a clinician.
+  `clinician-brief-nih.md` (notes block) as patient-side answers, still pending a clinician.
 
 ### Built differently from sections 3.2 and 3.3 (T1)
 

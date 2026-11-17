@@ -551,7 +551,7 @@ order, not a commitment.
 
 Target: a playable beta by **2026-11-21**, demoed at NIH a few days later. Solo developer; one adult
 CGD patient is the only patient tester (a weaker signal, accepted). Clinician review is limited;
-open questions live in `../specs/clinician-questions.md`.
+open questions live in `../specs/clinician-brief-nih.md` (the notes block at the bottom holds working assumptions).
 
 Amendments to this plan:
 - **Mobile.** Beta must support mobile. Use pointer events and large tap targets from T4; do the
@@ -602,7 +602,7 @@ Design amendments from the T1 sim review (Opus):
 1. Patients: one adult patient, local logs only.
 2. Devices: desktop for the prototype; the beta must support mobile.
 3. Hosting: in person or local for all prototype testing.
-4. Clinician check: limited, after the initial version. Questions are in `../specs/clinician-questions.md`.
+4. Clinician check: limited, after the initial version. Questions are in `../specs/clinician-brief-nih.md` (the notes block at the bottom holds working assumptions).
 5. Naming: leaky/sealed in the prototype is fine; organism names required for the beta.
 6. Default character: XL-like (low kill chance).
 7. Tech: TypeScript, Vite and plain DOM accepted.

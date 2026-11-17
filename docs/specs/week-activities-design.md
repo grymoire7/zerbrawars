@@ -43,7 +43,7 @@ hazard after playing than before; and the week goal still takes real choices to 
 ## Constraints
 
 - **Clinician answers are not available until the demo.** Tracy's call: build from the working
-  assumptions in `clinician-questions.md` items 32 to 43. Wrong is fine; it will be corrected before
+  assumptions in `clinician-brief-nih.md` items 1.1, 1.4, 3.1 to 3.3, 5.1 and 7. Wrong is fine; it will be corrected before
   patients play. Every new card and Burkholderia's behavior must be easy to change.
 - **The week goal** is 13 points (`PARAMS.life.goalTarget`). Today the smarter bot meets it in 95% of
   weeks and the risky bot in 75% (`balance.test.ts`). Week 2 should land near those numbers.
@@ -93,7 +93,7 @@ were starting points, tuned against the goal (the table shows what shipped).
 
 Smarter versions (odds 2% each; points 3, 3, 3 and 6; energy as the risky card): woodworking with dry wood outdoors; the crawlspace with a rake to
 hook the ball out; the flytrap moved to the garage next to Dad's wood pile, out of the living space (and next to a hazard the player should already avoid, so there is no reason to go near it; also the better social play if the person who gave it finds out). Re-gifting would also be safer than keeping it in the house, but the card UI, preview and bots assume exactly two versions of a card, so it is not built; the trip with a travel
-plan (closed shoes, no floodwater, bottled water; clinician item 36). Smarter odds are 2% and points a step lower. The existing pairs' smarter odds are 10% and 15%, so the 2% was chosen for balance, not teaching (clinician item 44).
+plan (closed shoes, no floodwater, bottled water; clinician item 3.1). Smarter odds are 2% and points a step lower. The existing pairs' smarter odds are 10% and 15%, so the 2% was chosen for balance, not teaching (clinician item 3.3(c)).
 
 ### The trip: last day, evening only
 
@@ -168,7 +168,7 @@ strep, staph and Aspergillus by more than color (a shape or mark), and pass the 
 
 ## Open and not blocking
 
-Clinician items 32 to 43 in `clinician-questions.md`. The build uses their working assumptions and
+Clinician items 1.1, 1.4, 3.1 to 3.3, 5.1 and 7 in `clinician-brief-nih.md`. The build uses their working assumptions and
 changes later if the answers differ.
 
 ## As built
