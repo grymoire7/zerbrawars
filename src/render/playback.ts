@@ -173,7 +173,7 @@ export const TIMING = {
   engulfStagger: 0.28,
   grow: 0.5,
   reveal: 0.6,
-  dose: 1.0,
+  dose: 1.9,
   wall: 0.7,
   carried: 0.8,
   spread: 0.65,

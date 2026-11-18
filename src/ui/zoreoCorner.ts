@@ -4,6 +4,8 @@ import zoreoSvg from "./zoreo/Zoreo.svg?raw";
 
 /** Zoreo's head in the corner of the board; where he looks says which phase the player is in. */
 export interface ZoreoCorner {
+  /** Where his mouth is on the page (client pixels), or null while he is hidden. */
+  mouth(): { x: number; y: number } | null;
   /** Look at the panel or the board, or hide. Idempotent; a change of gaze blinks once. */
   set(gaze: Gaze | null): void;
   dispose(): void;
@@ -58,6 +60,12 @@ export function createZoreoCorner(board: HTMLElement): ZoreoCorner {
       } else {
         delete el.dataset.gaze;
       }
+    },
+    mouth() {
+      // The smile path's box follows the layout and the flip, so there is no art maths here.
+      const r = el.querySelector('[id$="-smile"]')?.getBoundingClientRect();
+      if (!r || r.width === 0 || r.height === 0) return null;
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     },
     dispose() {
       clearTimeout(idle);

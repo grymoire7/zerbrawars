@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**60 library files** across 4 modules
+**61 library files** across 4 modules
 
 ## Sim (25 files)
 
@@ -53,12 +53,13 @@
 - `src/ui/probe.ts` — createProbe, Probe
 - `src/ui/zoreoCorner.ts` — createZoreoCorner, ZoreoCorner
 
-## Render (16 files)
+## Render (17 files)
 
 - `src/render/playback.ts` — buildTimeline, beatProgress, createPlayback, PhaseSpan, Timeline, Playback, …
 - `src/render/cellShape.ts` — cellHash, cellOutline, outlineArea, Point2, CELL_POINTS
 - `src/render/labels.ts` — setLabelBoost, labelMaterial, sizeLabel, labelSprite, LabelOptions
 - `src/render/boardView.ts` — createBoardView, BoardView, ORDER_COLOR
+- `src/render/launch.ts` — clientToNdc, hitPlane, Vec3
 - `src/render/orderView.ts` — createOrderView, DoseMarks, OrderView
 - `src/render/pathogenView.ts` — createPathogenView, PathogenView, KIND_COLOR
 - `src/render/swarmView.ts` — createSwarmView, SwarmPose, SwarmView

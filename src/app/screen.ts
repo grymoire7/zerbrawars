@@ -8,6 +8,8 @@ import type { TutorialPart } from "./tutorialModel";
 export interface ScreenEnv {
   readonly canvas: HTMLCanvasElement;
   readonly camera: THREE.PerspectiveCamera;
+  /** Zoreo's mouth in client pixels, or null while he is hidden (a pill starts there). */
+  readonly mouth?: () => { x: number; y: number } | null;
   /** A fresh child scene for this screen's meshes; removed when the screen is disposed. */
   readonly root: THREE.Scene;
   readonly panels: {

@@ -20,6 +20,10 @@
   - function sizeLabel: (sprite, height) => void
   - function labelSprite: (text, height, opts?) => THREE.Sprite
   - interface LabelOptions
+- `src/render/launch.ts`
+  - function clientToNdc: (x, y, rect) => void
+  - function hitPlane: (origin, dir, y) => Vec3 | null
+  - interface Vec3
 - `src/render/motion.ts` — function calm
 - `src/render/orderView.ts`
   - function createOrderView: (scene, tilePosition) => void

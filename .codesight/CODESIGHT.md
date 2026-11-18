@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 0 routes | 0 models | 0 components | 60 lib files | 0 env vars | 0 middleware | 0% test coverage
-> **Token savings:** this file is ~4,800 tokens. Without it, AI exploration would cost ~24,700 tokens. **Saves ~19,900 tokens per conversation.**
-> **Last scanned:** 2026-11-18 20:18 — re-run after significant changes
+> 0 routes | 0 models | 0 components | 61 lib files | 0 env vars | 0 middleware | 0% test coverage
+> **Token savings:** this file is ~4,900 tokens. Without it, AI exploration would cost ~25,000 tokens. **Saves ~20,100 tokens per conversation.**
+> **Last scanned:** 2026-11-18 20:54 — re-run after significant changes
 
 ---
 
@@ -30,6 +30,10 @@
   - function sizeLabel: (sprite, height) => void
   - function labelSprite: (text, height, opts?) => THREE.Sprite
   - interface LabelOptions
+- `src/render/launch.ts`
+  - function clientToNdc: (x, y, rect) => void
+  - function hitPlane: (origin, dir, y) => Vec3 | null
+  - interface Vec3
 - `src/render/motion.ts` — function calm
 - `src/render/orderView.ts`
   - function createOrderView: (scene, tilePosition) => void
@@ -383,7 +387,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 52 test files found
+> 53 test files found
 
 ---
 

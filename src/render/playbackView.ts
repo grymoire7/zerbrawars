@@ -34,6 +34,8 @@ interface Views {
   granulomas: GranulomaView;
   fx: FxView;
   tilePosition: (c: Coord) => THREE.Vector3;
+  /** Where a pill leaves Zoreo's mouth, as a world point; null when he is not on screen. */
+  launch?: () => THREE.Vector3 | null;
 }
 
 const TOKEN_Y = 0.2;
@@ -51,6 +53,8 @@ const DOSE = hex("med");
 const INCOMING = hex("incoming");
 const PING = hex("focus");
 const DOSE_HEIGHT = 4.2;
+const PILL_ARC = 1.1;
+const PILL_SIZE = 0.32;
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const seg = (p: number, a: number, b: number) => clamp01((p - a) / (b - a));
@@ -134,12 +138,16 @@ export function createPlaybackView(v: Views): PlaybackView {
       case "grow":
       case "killed":
       case "reveal":
-      case "dose":
       case "walled":
       case "carried":
       case "inflame":
         a = pos(beat.at);
         b = a.clone();
+        break;
+      case "dose":
+        a = pos(beat.at);
+        // b is where the pill starts: Zoreo's mouth, or straight above the target without him.
+        b = v.launch?.() ?? a.clone();
         break;
       case "tissue":
         break;
@@ -297,47 +305,54 @@ export function createPlaybackView(v: Views): PlaybackView {
     }
   };
 
-  /** A dose falls from above the board onto the target; a pathogen dies, a carried load is cleared. */
+  /**
+   * A pill arcs from Zoreo's mouth onto the target (or, with him off screen, a drop falls from
+   * above). A pathogen squashes, hops and vanishes; a carried load is cleared.
+   */
   const dose = (c: Cache, t: number, p: number) => {
     const beat = c.beat;
     if (beat.kind !== "dose") return;
     const time = (x: number) => beat.start + beat.duration * x;
-    const hit = 0.5;
-    const fall = easeIn(seg(p, 0.05, hit));
-    const top = c.a.y + DOSE_HEIGHT;
+    const hit = 0.65;
+    const flown = seg(p, 0.05, hit);
     const killed = beat.target === "pathogen";
-    if (p < hit) {
-      // A drop with a short streak behind it, plus a faint column down to the target.
-      for (let k = 0; k < 5; k++) {
-        const fk = Math.max(0, fall - k * 0.06);
-        if (fall <= 0) break;
-        v.fx.blob(
-          c.a.x,
-          top - (top - c.a.y - TOKEN_Y) * fk,
-          c.a.z,
-          0.16 * (1 - k * 0.15),
-          DOSE,
-          1 - k * 0.2,
-        );
+    const hasMouth = c.b.distanceToSquared(c.a) > 0.01;
+    const target = tmp.set(c.a.x, c.a.y + TOKEN_Y, c.a.z);
+    if (p < hit && flown > 0) {
+      if (hasMouth) {
+        // Straight in the plane, a parabola in height, tumbling; a short streak behind it.
+        for (let k = 0; k < 4; k++) {
+          const e = Math.max(0, flown - k * 0.05);
+          const x = c.b.x + (target.x - c.b.x) * e;
+          const y = c.b.y + (target.y - c.b.y) * e + PILL_ARC * 4 * e * (1 - e);
+          const z = c.b.z + (target.z - c.b.z) * e;
+          if (k === 0) v.fx.pill(x, y, z, e * Math.PI * 2, PILL_SIZE, DOSE);
+          else v.fx.blob(x, y, z, 0.1 * (1 - k * 0.22), DOSE, 0.7 - k * 0.15);
+        }
+      } else {
+        const fall = easeIn(flown);
+        const top = c.a.y + DOSE_HEIGHT;
+        for (let k = 0; k < 5; k++) {
+          const fk = Math.max(0, fall - k * 0.06);
+          v.fx.blob(
+            c.a.x,
+            top - (top - c.a.y - TOKEN_Y) * fk,
+            c.a.z,
+            0.16 * (1 - k * 0.15),
+            DOSE,
+            1 - k * 0.2,
+          );
+        }
       }
-      v.fx.ring(
-        c.a.x,
-        c.a.y + 0.04,
-        c.a.z,
-        0.5,
-        0.35 * seg(p, 0.05, hit),
-        DOSE,
-      );
+      v.fx.ring(c.a.x, c.a.y + 0.04, c.a.z, 0.5, 0.35 * flown, DOSE);
     }
     if (killed && beat.pathogenId) {
-      v.pathogens.setPose(
-        beat.pathogenId,
-        1 - easeIn(seg(p, hit, hit + 0.12)),
-        1,
-        0,
-        0,
-        0,
-      );
+      // Squash on impact, a small hop, then gone.
+      const after = 1 - hit;
+      const squash = 1 - 0.4 * bump(seg(p, hit, hit + after * 0.22));
+      const hop = 0.3 * bump(seg(p, hit + after * 0.22, hit + after * 0.67));
+      const scale = 1 - easeIn(seg(p, hit + after * 0.67, hit + after * 0.93));
+      v.pathogens.setPose(beat.pathogenId, scale, squash, 0, hop, 0);
     }
     const pose = beat.swarmId ? v.swarms.pose(beat.swarmId) : null;
     if (pose && !killed) {
@@ -364,16 +379,9 @@ export function createPlaybackView(v: Views): PlaybackView {
         hex("white"),
       );
       v.fx.burst(c.seed, c.a.x, c.a.y + TOKEN_Y, c.a.z, q, 22, 1.4, DOSE);
-      label(
-        t,
-        time(hit),
-        killed ? `${beat.charge} dose` : `${beat.charge}: load cleared`,
-        PALETTE.med,
-        c.a,
-        0.8,
-        0.9,
-      );
+      // The pill and the button already say what it was; only the outcome earns a label.
       if (killed) label(t, time(hit + 0.1), "KILLED", PALETTE.kill, c.a, 1.1);
+      else label(t, time(hit), "load cleared", PALETTE.med, c.a, 0.8, 0.9);
     }
   };
 

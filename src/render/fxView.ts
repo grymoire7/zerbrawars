@@ -39,6 +39,18 @@ export interface FxView {
     color: number,
     opacity: number,
   ): void;
+  /**
+   * A two-tone pill (white half, `color` half) centred at (x, y, z), tumbled by `spin` radians.
+   * One at a time: a second call in the same frame replaces the first.
+   */
+  pill(
+    x: number,
+    y: number,
+    z: number,
+    spin: number,
+    scale: number,
+    color: number,
+  ): void;
   /** Floating text; `scale` 1 = normal size. */
   label(
     text: string,
@@ -110,6 +122,36 @@ export function createFxView(scene: THREE.Scene): FxView {
     return m;
   });
 
+  // A pill is two open half-capsules, one flipped, so each half takes its own colour.
+  const pillHalf = (material: THREE.Material, flip: boolean) => {
+    const R = 0.5;
+    const H = 0.5;
+    const profile = [new THREE.Vector2(0, 0), new THREE.Vector2(R, 0)];
+    profile.push(new THREE.Vector2(R, H));
+    for (let i = 1; i <= 6; i++) {
+      const a = (i / 6) * (Math.PI / 2);
+      profile.push(new THREE.Vector2(R * Math.cos(a), H + R * Math.sin(a)));
+    }
+    const m = new THREE.Mesh(new THREE.LatheGeometry(profile, 14), material);
+    if (flip) m.rotation.x = Math.PI;
+    return m;
+  };
+  const pillWhite = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: 0x666666,
+    roughness: 0.35,
+    side: THREE.DoubleSide,
+  });
+  const pillTint = new THREE.MeshStandardMaterial({
+    roughness: 0.35,
+    side: THREE.DoubleSide,
+  });
+  const pillGroup = new THREE.Group();
+  pillGroup.add(pillHalf(pillWhite, false), pillHalf(pillTint, true));
+  pillGroup.visible = false;
+  pillGroup.renderOrder = 22;
+  group.add(pillGroup);
+
   const textures = new Map<string, THREE.CanvasTexture>();
   const texture = (text: string, color: string) => {
     const key = `${color}|${text}`;
@@ -153,10 +195,12 @@ export function createFxView(scene: THREE.Scene): FxView {
   let nSpark = 0;
   let nBlob = 0;
   let nLabel = 0;
+  let pillShown = false;
 
   return {
     reset() {
       nRing = nSpark = nBlob = nLabel = 0;
+      pillShown = false;
     },
     ring(x, y, z, radius, opacity, color) {
       if (nRing >= RINGS || opacity <= 0.01 || radius <= 0) return;
@@ -198,6 +242,14 @@ export function createFxView(scene: THREE.Scene): FxView {
       m.material.color.setHex(color);
       m.material.opacity = opacity;
     },
+    pill(x, y, z, spin, scale, color) {
+      pillShown = true;
+      pillGroup.position.set(x, y, z);
+      pillGroup.rotation.set(spin, 0, spin * 0.6);
+      pillGroup.scale.setScalar(scale);
+      pillTint.color.setHex(color);
+      pillTint.emissive.setHex(color).multiplyScalar(0.35);
+    },
     label(text, color, x, y, z, opacity, scale) {
       if (nLabel >= LABELS || opacity <= 0.01) return;
       const s = labels[nLabel++]!;
@@ -217,6 +269,7 @@ export function createFxView(scene: THREE.Scene): FxView {
       for (let i = nRing; i < RINGS; i++) rings[i]!.visible = false;
       for (let i = nBlob; i < BLOBS; i++) blobs[i]!.visible = false;
       for (let i = nLabel; i < LABELS; i++) labels[i]!.visible = false;
+      pillGroup.visible = pillShown;
       sparks.count = nSpark;
       if (nSpark > 0) {
         sparks.instanceMatrix.needsUpdate = true;

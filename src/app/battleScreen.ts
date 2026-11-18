@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import { createBoardView } from "../render/boardView";
 import { createFxView } from "../render/fxView";
 import { createGranulomaView } from "../render/granulomaView";
@@ -5,6 +6,7 @@ import { createOrderView } from "../render/orderView";
 import { organismName } from "../sim/organisms";
 import { createPathogenView } from "../render/pathogenView";
 import type { Playback } from "../render/playback";
+import { clientToNdc, hitPlane } from "../render/launch";
 import { createPlaybackView } from "../render/playbackView";
 import { createSwarmView } from "../render/swarmView";
 import { createTelegraphView } from "../render/telegraphView";
@@ -84,6 +86,9 @@ import {
   writeLoadoutParams,
   type LoadoutOptions,
 } from "./loadoutOptions";
+
+/** Height above the board of the plane a pill starts on (the sight line through Zoreo's mouth meets it). */
+const PILL_START_Y = 1.6;
 
 /** The battle screen: the board canvas, the orders panel and the turn controls. */
 export function mountBattle(
@@ -169,6 +174,18 @@ export function mountBattle(
     granulomas: granulomaView,
     fx: fxView,
     tilePosition: view.tilePosition,
+    launch: () => {
+      const m = env.mouth?.();
+      const ndc = m && clientToNdc(m.x, m.y, canvas.getBoundingClientRect());
+      if (!ndc) return null;
+      camera.updateMatrixWorld();
+      const dir = new THREE.Vector3(ndc.x, ndc.y, 0.5)
+        .unproject(camera)
+        .sub(camera.position)
+        .normalize();
+      const hit = hitPlane(camera.position, dir, PILL_START_Y);
+      return hit && new THREE.Vector3(hit.x, hit.y, hit.z);
+    },
   });
   const help = createHelp(ui);
   // The debug standalone battle has no title to go back to, so no menu.

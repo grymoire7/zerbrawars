@@ -170,7 +170,15 @@ function mount(req: ScreenRequest) {
   if (root) ctx.scene.remove(root);
   root = new THREE.Scene();
   ctx.scene.add(root);
-  const env = { canvas, camera: ctx.camera, root, panels, ui, go };
+  const env = {
+    canvas,
+    camera: ctx.camera,
+    mouth: corner.mouth,
+    root,
+    panels,
+    ui,
+    go,
+  };
   const url = new URL(window.location.href);
   const setMode = (m: string | null) => {
     if (m) url.searchParams.set("mode", m);
