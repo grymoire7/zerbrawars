@@ -288,7 +288,7 @@ describe("B2", () => {
   it("shows once B1 is done and a charge is available, pointing at the chip", () => {
     expect(coachMark(s, input("b", B()))).toEqual({
       id: "B2",
-      text: "Your medicine also gives you charges. Tap Antifungal.",
+      text: "Your medicine also gives you charges. Tap Kill mold.",
       target: "antifungal",
     });
   });

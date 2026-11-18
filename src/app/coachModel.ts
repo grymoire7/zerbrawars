@@ -4,7 +4,7 @@ import { wallOf } from "../sim/pathogens";
 import type { BattleState, ChargeKind, SimEvent } from "../sim/types";
 import { incomingKey } from "./arrivalModel";
 import {
-  CHARGE_LABEL,
+  CHARGE_BUTTON,
   orderSupportTargets,
   orderTargets,
   type OrderUi,
@@ -209,7 +209,7 @@ const RULES_B: readonly Rule[] = [
     const charge = have.includes("antifungal") ? "antifungal" : have[0]!;
     return {
       id: "B2",
-      text: `Your medicine also gives you charges. ${verb(i)} ${CHARGE_LABEL[charge]}.`,
+      text: `Your medicine also gives you charges. ${verb(i)} ${CHARGE_BUTTON[charge]}.`,
       target: charge,
     };
   },

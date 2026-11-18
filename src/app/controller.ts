@@ -24,7 +24,7 @@ import {
   turnProblems,
   type InflammationPreview,
 } from "../sim/battle/resolve";
-import { organismName, organismSub } from "../sim/organisms";
+import { formNoun, organismName, organismSub } from "../sim/organisms";
 import {
   entityAt,
   infoFor,
@@ -66,6 +66,13 @@ export const CHARGE_LABEL: Record<ChargeKind, string> = {
   antibacterial: "Antibacterial",
   antifungal: "Antifungal",
   strong: "Strong",
+};
+
+/** What the battle-bar button says: the action and its target, not the medicine's name. */
+export const CHARGE_BUTTON: Record<ChargeKind, string> = {
+  antibacterial: `Kill ${formNoun("bacterium", true)}`,
+  antifungal: `Kill ${formNoun("mold")}`,
+  strong: "Kill any",
 };
 
 /** Legal targets of the picked charge, given the pending swarm orders. */
@@ -579,7 +586,7 @@ export function createController(
     charges: () =>
       availableCharges(state).map((charge) => ({
         charge,
-        label: CHARGE_LABEL[charge],
+        label: CHARGE_BUTTON[charge],
         count: state.meds.charges[charge],
         selected: ui.charge === charge,
       })),
