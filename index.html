@@ -56,7 +56,10 @@
         min-height: 0;
         min-width: 0;
       }
-      /* Battle bar: fixed height so the board never jumps as buttons change. */
+      /*
+       * Battle bar: the same height in every state, so the board never jumps as buttons change.
+       * While a turn plays Play Turn (and the charges) are hidden; the row still reserves its height.
+       */
       #dock {
         flex: none;
         box-sizing: border-box;
@@ -118,10 +121,16 @@
       #dock:empty {
         display: none;
       }
+      #dock .zw-dockrow {
+        min-height: 52px;
+      }
       /* Narrow portrait: secondary buttons on one row, Play Turn full width under them. */
       @media (max-width: 600px) and (min-height: 501px) {
+        /* Two rows: the buttons, then Play Turn. Playing shows one row, centred in the same space. */
         #dock .zw-dockrow {
           flex-wrap: wrap;
+          min-height: calc(44px + 6px + 44px);
+          align-content: center;
         }
         #dock .zw-dockrow button {
           min-height: 44px !important;
