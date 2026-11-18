@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-18
+
 ### Added
 
 - Each week now deals its own hand of activities. Week 1 is unchanged; week 2 has band
@@ -18,10 +20,26 @@ and this project uses [Semantic Versioning](https://semver.org/).
   engulfing only contains it and a full week of antibacterial charge finishes a small one.
 - The trip can only go in the evening of day 3, so nothing is scheduled after leaving. The card
   and the placement message say why.
+- A charge now arrives as a pill that arcs from Zoreo's mouth onto the germ. A germ it kills
+  squashes, hops and vanishes. The old drop from above is the fallback when Zoreo is not on
+  screen.
+- A quiet fight now says what it is waiting on.
 
 ### Changed
 
 - The battle button "End Turn" is now "Play Turn", since the turn plays out after you press it.
+- The charge buttons now say what they do: "Kill bacteria", "Kill mold" and "Kill any".
+- The "spread" and "stalled" labels on the board are gone, since the yellow arrow and the pause
+  sign already say it, and the key card explains them. The dose label is gone too, apart from
+  "load cleared".
+- The closing screen now says the conditioning for a transplant or gene therapy is arduous and
+  the recovery long, rather than the whole process, and "nearly 70 percent" to match the
+  clinician handout.
+
+### Fixed
+
+- The battle bar keeps the same height while a turn plays, so the board no longer bounces up
+  and down. It was most noticeable on a phone.
 
 ## [0.3.0] - 2026-11-15
 
