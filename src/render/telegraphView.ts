@@ -232,14 +232,13 @@ export function createTelegraphView(
     );
   };
 
-  // Held back by medication: a calm pause sign and a label, nothing that reads as an action.
+  // Held back by medication: a calm pause sign, nothing that reads as an action.
   const drawStall = (m: TelegraphMark) => {
     for (const dx of [-0.07, 0.07]) {
       const bar = add(boxGeo, mats.stall, tileY(m.from, 0.78));
       bar.position.x += dx;
       bar.scale.set(0.06, 0.2, 0.06);
     }
-    label("stalled", tileY(m.from, 1.02), STALL_COLOR, 0.2);
   };
 
   /**
@@ -360,14 +359,6 @@ export function createTelegraphView(
     );
     head.quaternion.setFromUnitVectors(UP, dir);
     outline(to, mats.spread, false);
-    label(
-      "spread",
-      a
-        .clone()
-        .lerp(b, 0.5)
-        .add(new THREE.Vector3(0, 0.3, 0)),
-      SPREAD_COLOR,
-    );
   };
 
   const drawSpore = (m: TelegraphMark, to: Coord) => {

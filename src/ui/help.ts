@@ -35,7 +35,7 @@ export const BATTLE_LINES: readonly (readonly [string, string])[] = [
   ],
   [
     "Arrows show what germs do next turn",
-    "Yellow arrow: spread to the next tile. Blue dotted arc: a spore lands further away. A germ that slowly swells, with a faint larger outline: it grows (grow 3 to 4). Red cross: blocked by your swarm. If you engulf a germ first, or hit it with a charge, its arrow disappears. A green pause sign and the word stalled: medication is holding that germ back, so it does nothing this turn.",
+    "Yellow arrow: spread to the next tile. Blue dotted arc: a spore lands further away. A germ that slowly swells, with a faint larger outline: it grows (grow 3 to 4). Red cross: blocked by your swarm. If you engulf a germ first, or hit it with a charge, its arrow disappears. A green pause sign: medication is holding that germ back, so it does nothing this turn.",
   ],
   [
     "Germs arrive at doors",
